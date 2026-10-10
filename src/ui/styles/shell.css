@@ -1655,15 +1655,22 @@ button:disabled {
    --------------------------------------------------------------------------- */
 
 .workshop-modal-card {
-  width: min(1060px, 96vw);
-  max-height: min(92dvh, 920px);
+  width: min(920px, 95vw);
+  max-height: min(90dvh, 840px);
 }
 
 .workshop-header-title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.workshop-title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
 }
 
@@ -1671,12 +1678,160 @@ button:disabled {
   font-size: 16px;
   font-weight: 750;
   color: var(--shell-fg);
+  line-height: 1.25;
 }
 
 .workshop-prod-sub {
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 12px;
   color: var(--shell-fg-muted);
+}
+
+/* Granular Sub-Unit Pill Selector Bar */
+.workshop-subunits-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 9px 18px;
+  background: rgba(10, 14, 21, 0.72);
+  border-bottom: 1px solid var(--shell-line);
+  flex-shrink: 0;
+}
+
+.workshop-subunits-label {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--shell-fg-faint);
+  white-space: nowrap;
+}
+
+.workshop-subunits-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.workshop-subunit-pill {
+  appearance: none;
+  height: 27px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--shell-fg-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.workshop-subunit-pill:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--shell-fg);
+}
+
+.workshop-subunit-pill.is-active {
+  background: rgba(56, 239, 140, 0.16);
+  border-color: #38ef8c;
+  color: #74f8b0;
+}
+
+.workshop-subunit-pill.is-macro {
+  border-style: dashed;
+}
+
+.workshop-subunit-pill.is-macro.is-active {
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
+  border-style: solid;
+  color: var(--shell-accent);
+}
+
+/* Compact 4-Stat Metric Strip */
+.workshop-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 780px) {
+  .workshop-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.workshop-stat-box {
+  background: rgba(255, 255, 255, 0.032);
+  border: 1px solid var(--shell-line);
+  border-radius: 10px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workshop-stat-kicker {
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--shell-fg-faint);
+}
+
+.workshop-stat-val {
+  font-family: var(--shell-mono);
+  font-size: 12.5px;
+  font-weight: 750;
+  color: var(--shell-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workshop-stat-val.is-accent {
+  color: var(--shell-accent);
+}
+
+.workshop-stat-val.is-cnc {
+  color: #4ef29b;
+}
+
+.workshop-stat-val.is-muted {
+  color: var(--shell-fg-muted);
+}
+
+.workshop-stat-sub {
+  font-size: 10.5px;
+  color: var(--shell-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workshop-view-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workshop-construction-note-compact {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--shell-fg-muted);
+  padding: 2px 2px 0;
+}
+
+.workshop-construction-note-compact strong {
+  color: var(--shell-fg);
 }
 
 /* Fabrication Method Badges */
@@ -2048,6 +2203,10 @@ button:disabled {
   border: 1px solid var(--shell-line);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.28);
+}
+
+.workshop-table-scroll.is-expanded {
+  max-height: 340px;
 }
 
 .workshop-cutlist-table {

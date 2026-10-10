@@ -651,7 +651,7 @@ function WorkshopAndCncTab(): JSX.Element {
     return spec.elements.map((el) => {
       const target = sceneCtrl.getScenicElementTarget(el.id);
       const group = target?.objectGroup ?? sceneCtrl.productionSets.root;
-      return analyzeElementForCncShop(el, spec, group);
+      return analyzeElementForCncShop(el, spec, group, 'all');
     });
   }, [sceneCtrl, spec]);
 
@@ -681,16 +681,14 @@ function WorkshopAndCncTab(): JSX.Element {
             color: '#c7cfd9',
           }}
         >
-          Click any scenic item in the 3D stage or select a unit below to inspect its
-          Multi-Department Fabrication Plan and download 4&apos;×8&apos; CNC Router (.DXF /
-          .SVG), 3D Foam (.STL), and Cut-List (.CSV) files. Note: Main
-          structural/sculpted units use CNC routing, while backdrops/scrims/curtains are
-          built in the Soft Goods &amp; Paint Shop (no CNC required).
+          Click any individual piece on the 3D stage or choose a granular sub-unit below
+          to inspect its focused Fabrication Plan and download 4&apos;×8&apos; CNC Router (.DXF /
+          .SVG), 3D Foam (.STL), and Cut-List (.CSV) files.
         </p>
 
         <div class="shell-chips">
           <span class="shell-pill">
-            {cncUnitCount} CNC / Hybrid Units
+            {cncUnitCount} CNC / Hybrid Groups
           </span>
           <span class="shell-pill">
             {spec.elements.length - cncUnitCount} Soft Goods / Shop Units
@@ -706,6 +704,9 @@ function WorkshopAndCncTab(): JSX.Element {
           element.category
         );
         const badgeStyle = classificationAccentStyle(analysis.fabricationMethod);
+        const granularUnits = analysis.subUnits.filter(
+          (u) => !u.isCombinedMacroUnit
+        );
 
         return (
           <section
@@ -774,6 +775,54 @@ function WorkshopAndCncTab(): JSX.Element {
               {analysis.primaryConstructionNote}
             </p>
 
+            {granularUnits.length > 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '5px',
+                  padding: '7px 8px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: '#9aa3ae',
+                  }}
+                >
+                  Inspect Individual Sub-Units ({granularUnits.length})
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                  {granularUnits.map((sub) => (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      class="shell-chip"
+                      title={sub.description}
+                      onClick={() =>
+                        openWorkshopForElementId(sceneCtrl, element.id, sub.id)
+                      }
+                      style={{
+                        height: '24px',
+                        padding: '0 8px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                      }}
+                    >
+                      <span>{sub.shortLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div
               style={{
                 display: 'flex',
@@ -813,7 +862,11 @@ function WorkshopAndCncTab(): JSX.Element {
                 onClick={() => openWorkshopForElementId(sceneCtrl, element.id)}
               >
                 <Icon name="download" size={13} />
-                <span>Inspect &amp; Download Files</span>
+                <span>
+                  {granularUnits.length > 1
+                    ? `Inspect ${granularUnits[0]?.shortLabel ?? 'Unit'}`
+                    : 'Inspect & Download Files'}
+                </span>
               </button>
             </div>
           </section>

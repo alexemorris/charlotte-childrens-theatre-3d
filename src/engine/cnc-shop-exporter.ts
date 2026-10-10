@@ -56,9 +56,22 @@ export interface CncSubPartRecord {
   readonly unitMaxM: THREE.Vector3;
 }
 
+export interface ScenicSubUnitSpec {
+  readonly id: string;
+  readonly label: string;
+  readonly shortLabel: string;
+  readonly description: string;
+  readonly matchesObject: (obj: THREE.Object3D) => boolean;
+  readonly isCombinedMacroUnit?: boolean;
+}
+
 export interface CncElementAnalysis {
   readonly element: ProductionElementSpec;
   readonly productionTitle: string;
+  readonly displayTitle: string;
+  readonly exportSlug: string;
+  readonly activeSubUnit: ScenicSubUnitSpec | null;
+  readonly subUnits: ReadonlyArray<ScenicSubUnitSpec>;
   readonly fabricationMethod: FabricationMethod;
   readonly fabricationBadgeLabel: string;
   readonly requiresCncRouting: boolean;
@@ -908,31 +921,725 @@ function extractMesh2DContourMm(
   };
 }
 
+function hasAncestorNamed(
+  node: THREE.Object3D,
+  stopRoot: THREE.Object3D,
+  names: ReadonlyArray<string>
+): boolean {
+  let curr: THREE.Object3D | null = node;
+  while (curr && curr !== stopRoot) {
+    if (curr.name && names.includes(curr.name)) {
+      return true;
+    }
+    curr = curr.parent;
+  }
+  return false;
+}
+
+function getObjectWorldCenter(node: THREE.Object3D): THREE.Vector3 {
+  const box = new THREE.Box3().setFromObject(node);
+  if (box.isEmpty()) {
+    const pos = new THREE.Vector3();
+    node.getWorldPosition(pos);
+    return pos;
+  }
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  return center;
+}
+
 /**
- * Analyzes a Three.js scenic element group, separates CNC-routed components from
- * traditional non-CNC shop components (and excludes cast blocking figures), and
- * generates a complete workshop fabrication plan.
+ * Decomposes multi-piece scenic elements into individual, physical stage sub-units
+ * (e.g. Individual Whoville Houses #1/#2/#3, Papa Who's Gable Frame vs Kitchen Wagon vs Daybed,
+ * individual Shopping Booths, Drum Riser vs Amp Backline, Banquet Table vs Wonderland Chairs)
+ * so clicking an object on stage or inspecting it in the Workshop Modal is focused and granular.
+ */
+export function getElementGranularSubUnits(
+  element: ProductionElementSpec,
+  rootGroup: THREE.Object3D
+): ReadonlyArray<ScenicSubUnitSpec> {
+  rootGroup.updateWorldMatrix(true, true);
+
+  let rawUnits: ScenicSubUnitSpec[] = [];
+
+  switch (element.id) {
+    case 'grinch-whoville-houses':
+      rawUnits = [
+        {
+          id: 'house-dsr',
+          label: 'House #1 · DSR Pink Whoville Cottage',
+          shortLabel: 'DSR Pink House #1',
+          description:
+            'Downstage Right bulbous pink stucco Who cottage with S-bent chimney, snow dome, and arched doorway.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_DSR']),
+        },
+        {
+          id: 'house-usr',
+          label: 'House #2 · USR Coral Whoville Cottage',
+          shortLabel: 'USR Coral House #2',
+          description:
+            'Upstage Right coral-rose onion-domed Who cottage with crooked shutters and scalloped snow eaves.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_USR']),
+        },
+        {
+          id: 'house-msl',
+          label: 'House #3 · MSL Rose Whoville Cottage',
+          shortLabel: 'MSL Rose House #3',
+          description:
+            'Midstage Left warm rose Who cottage with side bay alcove, garland swags, and rolling snow plinth.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_MSL']),
+        },
+      ];
+      break;
+
+    case 'grinch-papa-whos-house':
+    case 'grinch-papa-whos-scrim-mode':
+    case 'grinch-papa-whos-house-scrim':
+      rawUnits = [
+        {
+          id: 'papa-gable-hearth',
+          label: 'Line #9 Seussian Gable Wall & Stone Hearth',
+          shortLabel: 'Gable Wall & Hearth',
+          description:
+            'Flown olive-green Seussian timber skeleton, sculpted stone fireplace hearth, mantel stockings, and arched front door.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['PapaWhosHouseFrame_Line9']),
+        },
+        {
+          id: 'papa-kitchen-dsr',
+          label: 'DSR Who Kitchen Wagon & Crooked Fridge',
+          shortLabel: 'DSR Kitchen & Fridge',
+          description:
+            'Rolling Downstage Right kitchen unit with bulbous Seussian refrigerator, spiral coils, and prep counter.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhoKitchenWagon_DSR']),
+        },
+        {
+          id: 'papa-tree',
+          label: 'Interior Potted Who Christmas Trees',
+          shortLabel: 'Interior Who Trees',
+          description:
+            'S-curved potted Who family Christmas tree in bulbous red/gold planter with ornaments and gift boxes.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, [
+              'WhoFamilyChristmasTree_Main',
+              'WhoFamilyChristmasTree_RightBay',
+            ]),
+        },
+        {
+          id: 'papa-daybed-dsl',
+          label: 'DSL Royal-Blue Daybed & Crooked Lamp',
+          shortLabel: 'DSL Blue Daybed',
+          description:
+            'Downstage Left sinuous royal-blue velvet Seussian fainting couch with scrolled bolsters and crooked end-table lamp.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, [
+              'WhoRoyalBlueDaybed_DSL',
+              'WhoEndTable_DSL',
+            ]),
+        },
+      ];
+      break;
+
+    case 'grinch-shopping-counters':
+      rawUnits = [
+        {
+          id: 'booth-1-dsr',
+          label: 'Booth #1 · DSR Who Dept. Store Counter',
+          shortLabel: 'DSR Booth #1',
+          description:
+            'Downstage Right curved turquoise counter wagon with candy-cane posts and "WHO DEPT. STORE" sign.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_1']),
+        },
+        {
+          id: 'booth-2-ctr',
+          label: 'Booth #2 · Center Tinsel & Trimmings Counter',
+          shortLabel: 'Center Booth #2',
+          description:
+            'Center stage curved department booth with Seussian cash register and "TINSEL & TRIMMINGS" sign.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_2']),
+        },
+        {
+          id: 'booth-3-dsl',
+          label: 'Booth #3 · DSL Floo-Floobers & Toys Counter',
+          shortLabel: 'DSL Booth #3',
+          description:
+            'Downstage Left curved toy booth wagon with stacked gift hatboxes and "FLOO-FLOOBERS & TOYS" sign.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_3']),
+        },
+      ];
+      break;
+
+    case 'grinch-snow-portals':
+      rawUnits = [
+        {
+          id: 'portal-sr',
+          label: 'Stage Right Snow-Cliff & Ice-Wave Portal',
+          shortLabel: 'SR Snow Portal',
+          description:
+            'Downstage Right sculpted snow-cliff tormentor tower and S-curved blue ice-wave wing flats.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['SnowPortal_DSR']),
+        },
+        {
+          id: 'portal-sl',
+          label: 'Stage Left Snow-Cliff & Ice-Wave Portal',
+          shortLabel: 'SL Snow Portal',
+          description:
+            'Downstage Left sculpted snow-cliff tormentor tower and S-curved blue ice-wave wing flats.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['SnowPortal_DSL']),
+        },
+        {
+          id: 'portal-arch',
+          label: 'Upper Proscenium Snow Teaser Arch',
+          shortLabel: 'Upper Teaser Arch',
+          description:
+            'Overhead sculpted snow-drift teaser border and translucent hanging icicle valance.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['SnowPortal_UpperTeaserArch']),
+        },
+      ];
+      break;
+
+    case 'grinch-whoville-hills-cyc':
+      rawUnits = [
+        {
+          id: 'hill-line-39',
+          label: 'Line #39 Foreground Snow Hill Groundrow',
+          shortLabel: 'Foreground Hill #1',
+          description:
+            'Downstage rolling snow-hill groundrow profile on Lineset #39 with winding snowy path.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['HillGroundrow_1_Line39']),
+        },
+        {
+          id: 'hill-line-42',
+          label: 'Midground Snow Ridge & Crooked Pines',
+          shortLabel: 'Midground Hill #2',
+          description:
+            'Midstage scalloped snow ridge with miniature crooked streetlamps and forced-perspective pines.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['HillGroundrow_2_Mid']),
+        },
+        {
+          id: 'crumpit-peak',
+          label: 'Mt. Crumpit Horn Summit & Rear Ridge (Line #45)',
+          shortLabel: 'Mt. Crumpit Peak',
+          description:
+            'Towering S-curved EPS foam peak of Mt. Crumpit with glowing cave mouth and overhanging snow cap.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, [
+              'HillGroundrow_3_Line45',
+              'MtCrumpit_PeakUnit',
+            ]),
+        },
+      ];
+      break;
+
+    case 'grinch-mt-crumpit-sleigh':
+      rawUnits = [
+        {
+          id: 'crumpit-cliff',
+          label: 'Mt. Crumpit Precipice Cliff Wagon',
+          shortLabel: 'Crumpit Cliff Wagon',
+          description:
+            'Steep rolling rock-strata cliff wagon with stepped snow ledges and internal structural steel truss.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['MtCrumpitCliffWagon']) &&
+            getObjectWorldCenter(obj).y < 1.55,
+        },
+        {
+          id: 'crumpit-sleigh',
+          label: "Grinch's Crooked Sleigh & Overstuffed Sack",
+          shortLabel: 'Sleigh & Toy Sack',
+          description:
+            'Tilted crimson wooden sleigh on bent steel runners with colossal stuffed gift sack perched on the crest.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['MtCrumpitCliffWagon']) &&
+            getObjectWorldCenter(obj).y >= 1.55,
+        },
+        {
+          id: 'crumpit-dsr-house',
+          label: 'DSR Snow Cottage Anchor (Scene 1F)',
+          shortLabel: 'DSR Snow Cottage',
+          description:
+            'Downstage Right Whoville snow cottage anchoring the opposite side of the stage during Scene 1F.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_DSR_1F']),
+        },
+      ];
+      break;
+
+    case 'grinch-whoville-tree':
+      rawUnits = [
+        {
+          id: 'tree-turntable',
+          label: 'Revolving Snow Turntable Base & Gift Pile',
+          shortLabel: 'Turntable & Gifts',
+          description:
+            '8\'-2" diameter dual-disc Baltic Birch revolving turntable, snow rim, and 18+ wrapped Seussian gift boxes.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).y < 0.75,
+        },
+        {
+          id: 'tree-foliage',
+          label: 'S-Curved Foliage Tiers & 3D Star Topper',
+          shortLabel: 'Tree Tiers & Star',
+          description:
+            '7 stacked tilted foliage tiers on bent steel mast with spiral tinsel garland and CNC-cut gold star.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).y >= 0.75,
+        },
+      ];
+      break;
+
+    case 'grinch-cave-portal':
+      rawUnits = [
+        {
+          id: 'cave-sr',
+          label: 'Stage Right Cavern Wing & Snow Boulders',
+          shortLabel: 'SR Cavern Wing',
+          description:
+            'Stage Right jagged blue-slate cavern wing flats and sculpted snow boulder outcrops.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.z > -4.6 && c.x < -1.15;
+          },
+        },
+        {
+          id: 'cave-arch',
+          label: 'Upper Jagged Cave Mouth & Stalactite Valance',
+          shortLabel: 'Upper Cave Arch',
+          description:
+            'Central overhead cavern arch header and 18+ CNC-turned translucent icicle/stalactite teeth.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.z > -4.6 && c.x >= -1.15 && c.x <= 1.15;
+          },
+        },
+        {
+          id: 'cave-sl',
+          label: 'Stage Left Cavern Wing & Listening Horn',
+          shortLabel: 'SL Wing & Horn Rig',
+          description:
+            'Stage Left jagged cavern wing, rocky perch, and crooked brass Seussian listening horn.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.z > -4.6 && c.x > 1.15;
+          },
+        },
+        {
+          id: 'cave-vista',
+          label: 'Forced-Perspective Miniature Whoville Vista',
+          shortLabel: 'Mini Whoville Vista',
+          description:
+            'Upstage forced-perspective snow hill with 7 miniature Who cottages and town tree seen through the cave mouth.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).z <= -4.6,
+        },
+      ];
+      break;
+
+    case 'grinch-finale-banquet':
+      rawUnits = [
+        {
+          id: 'banquet-table',
+          label: '16\'-0" Curved Banquet Table & Festoon Drapery',
+          shortLabel: 'Curved Banquet Table',
+          description:
+            'Multi-segment CNC-routed curved banquet tabletop arc with scalloped white tablecloth and royal-blue swags.',
+          matchesObject: (obj) =>
+            hasAncestorNamed(obj, rootGroup, ['WhovilleFeastBanquetTableArc']),
+        },
+        {
+          id: 'banquet-feast',
+          label: 'Roast Beast Platter, Puddings & Candelabras',
+          shortLabel: 'Roast Beast & Props',
+          description:
+            'Silver domed Roast Beast carving centerpiece, tiered Who-pudding stands, and golden candelabras.',
+          matchesObject: (obj) =>
+            !hasAncestorNamed(obj, rootGroup, ['WhovilleFeastBanquetTableArc']),
+        },
+      ];
+      break;
+
+    case 'sor-classroom-wing-walls':
+      rawUnits = [
+        {
+          id: 'sor-wing-sr',
+          label: 'Stage Right Walnut Classroom Wall & Trophy Case',
+          shortLabel: 'SR Classroom Wall',
+          description:
+            'Raked Stage Right walnut classroom flat with fluted pilasters, wainscot panels, and glass trophy cabinet.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x < -1.4,
+        },
+        {
+          id: 'sor-arch-header',
+          label: 'Horace Green Crest & Pendant Arch Header',
+          shortLabel: 'Crest & Arch Header',
+          description:
+            'Overhead walnut arch header with V-carved brass Horace Green crest and milk-glass pendant fixtures.',
+          matchesObject: (obj) => {
+            const cx = getObjectWorldCenter(obj).x;
+            return cx >= -1.4 && cx <= 1.4;
+          },
+        },
+        {
+          id: 'sor-wing-sl',
+          label: 'Stage Left Walnut Classroom Wall & Bookcase',
+          shortLabel: 'SL Classroom Wall',
+          description:
+            'Raked Stage Left walnut classroom flat with fluted pilasters, double doors, and encyclopedia cabinet.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x > 1.4,
+        },
+      ];
+      break;
+
+    case 'sor-center-chalkboard-fly':
+      rawUnits = [
+        {
+          id: 'sor-chalkboards',
+          label: 'Flyable Center & Rolling Chalkboard Walls',
+          shortLabel: 'Chalkboard Walls',
+          description:
+            'Lineset #3 flyable Horace Green chalkboard wall with walnut pediment and flanking rolling chalkboards.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).z < -2.6,
+        },
+        {
+          id: 'sor-teacher-desk',
+          label: "Teacher's Oak Pedestal Desk & Gibson SG",
+          shortLabel: "Teacher's Desk",
+          description:
+            'Double-pedestal oak teacher desk with globe, textbooks, apple, and Dewey\'s red Gibson SG on stand.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.z >= -2.6 && c.x > 1.3;
+          },
+        },
+        {
+          id: 'sor-student-desks',
+          label: '6 Horace Green Student Desks & Chairs',
+          shortLabel: '6 Student Desks',
+          description:
+            'Six tubular-steel student desks with book baskets, open notebooks, and molded wood chairs.',
+          matchesObject: (obj) => {
+            if (hasAncestorNamed(obj, rootGroup, ['HoraceGreenStudentDesks'])) {
+              return true;
+            }
+            const c = getObjectWorldCenter(obj);
+            return c.z >= -2.6 && c.x <= 1.3;
+          },
+        },
+      ];
+      break;
+
+    case 'sor-band-risers-and-cast':
+      rawUnits = [
+        {
+          id: 'sor-drum-riser',
+          label: 'Center Rolling Drum Riser & Rock Kit',
+          shortLabel: 'Drum Riser & Kit',
+          description:
+            'Castered steel-framed drum riser decked in 3/4" birch with 5-piece rock drum kit and brass cymbals.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.x >= -1.35 && c.x <= 1.35 && c.z < -1.8;
+          },
+        },
+        {
+          id: 'sor-amp-backline',
+          label: 'SR Marshall / Ampeg Amp Stacks & Road Cases',
+          shortLabel: 'SR Amp Backline',
+          description:
+            'Angled Marshall 4×12 speaker cabinets, Ampeg bass stack, and stenciled ATA flight cases.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x < -1.35,
+        },
+        {
+          id: 'sor-keys-monitors',
+          label: 'SL Keyboard Riser & Downstage Wedge Monitors',
+          shortLabel: 'Keys Riser & Monitors',
+          description:
+            'Stage Left rolling keyboard/Hammond organ riser, boom mic stands, and downstage wedge monitors.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.x > 1.35 || c.z >= -1.8;
+          },
+        },
+      ];
+      break;
+
+    case 'sor-truss-towers':
+      rawUnits = [
+        {
+          id: 'sor-truss-sr',
+          label: 'Stage Right Box-Truss Concert Towers',
+          shortLabel: 'SR Truss Towers',
+          description:
+            'Two 21\'-8" vertical 12"×12" aluminum box-truss towers on steel deck baseplates (Stage Right).',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x < -1.8,
+        },
+        {
+          id: 'sor-marquee-bridge',
+          label: 'Battle of the Bands Marquee & Truss Bridge',
+          shortLabel: 'Marquee & Bridge',
+          description:
+            'Flown concert truss bridge with 8 moving-head beam fixtures and CNC-routed "BATTLE OF THE BANDS" sign.',
+          matchesObject: (obj) => {
+            const cx = getObjectWorldCenter(obj).x;
+            return cx >= -1.8 && cx <= 1.8;
+          },
+        },
+        {
+          id: 'sor-truss-sl',
+          label: 'Stage Left Box-Truss Concert Towers',
+          shortLabel: 'SL Truss Towers',
+          description:
+            'Two 21\'-8" vertical 12"×12" aluminum box-truss towers on steel deck baseplates (Stage Left).',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x > 1.8,
+        },
+      ];
+      break;
+
+    case 'alice-tea-table':
+      rawUnits = [
+        {
+          id: 'alice-table',
+          label: '22\'-0" Cantilevered Banquet Table & Damask Cloth',
+          shortLabel: 'Banquet Table',
+          description:
+            'Rolling steel-framed banquet table wagon with CNC cabriole legs and scalloped white damask cloth.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.y < 1.05 && Math.abs(c.x) < 2.1 && c.z >= -1.1;
+          },
+        },
+        {
+          id: 'alice-chairs',
+          label: 'Mad Hatter Throne & 4 Crooked Wonderland Chairs',
+          shortLabel: 'Wonderland Chairs',
+          description:
+            'Towering purple velvet Mad Hatter armchair and 4 crooked mismatched CNC-routed Wonderland chairs.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return Math.abs(c.x) >= 2.1 || c.z < -1.1;
+          },
+        },
+        {
+          id: 'alice-props',
+          label: 'Crooked Birthday Cakes, Teapots & Lanterns',
+          shortLabel: 'Tea Service & Cakes',
+          description:
+            'Multi-tiered crooked birthday cakes, tilted teapots, stacked teacups, pocket watch, and paper lanterns.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.y >= 1.05 && Math.abs(c.x) < 2.1 && c.z >= -1.1;
+          },
+        },
+      ];
+      break;
+
+    case 'alice-proscenium-frieze':
+      rawUnits = [
+        {
+          id: 'alice-frieze-sr',
+          label: 'Stage Right Geometric Frieze & Target Tower',
+          shortLabel: 'SR Frieze Tower',
+          description:
+            'Stepped non-coplanar Stage Right geometric color-block frieze panels, keyhole cutouts, and target rings.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x < -2.2,
+        },
+        {
+          id: 'alice-frieze-header',
+          label: 'Upper Proscenium Geometric Valance & Flags',
+          shortLabel: 'Upper Frieze Header',
+          description:
+            'Overhead stepped color-block header panels, checkered racing flags, and circular clock medallions.',
+          matchesObject: (obj) => {
+            const cx = getObjectWorldCenter(obj).x;
+            return cx >= -2.2 && cx <= 2.2;
+          },
+        },
+        {
+          id: 'alice-frieze-sl',
+          label: 'Stage Left Geometric Frieze & Clock Tower',
+          shortLabel: 'SL Frieze Tower',
+          description:
+            'Stepped non-coplanar Stage Left geometric color-block frieze panels and oversized pocket-watch face.',
+          matchesObject: (obj) => getObjectWorldCenter(obj).x > 2.2,
+        },
+      ];
+      break;
+
+    case 'alice-window-backdrop':
+      rawUnits = [
+        {
+          id: 'alice-gothic-window',
+          label: 'Forced-Perspective Gothic Lancet Window',
+          shortLabel: 'Gothic Window',
+          description:
+            'CNC-routed pointed gothic arch tracery, trapezoidal forced-perspective mullions, and stained glass.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.x < 0.85 && c.y < 4.5;
+          },
+        },
+        {
+          id: 'alice-crimson-drape',
+          label: 'Sculpted Crimson Velvet Swags & Tassel',
+          shortLabel: 'Crimson Drapery',
+          description:
+            'Multi-swag pleated crimson velvet drapery header, gold bullion fringe, and braided tieback tassel.',
+          matchesObject: (obj) => {
+            const c = getObjectWorldCenter(obj);
+            return c.x >= 0.85 || c.y >= 4.5;
+          },
+        },
+      ];
+      break;
+
+    default: {
+      // Automatic spatial decomposition for wide multi-part elements across Narnia, Charlotte's Web, Mary Poppins, Matilda, etc.
+      const overallBox = new THREE.Box3().setFromObject(rootGroup);
+      const size = new THREE.Vector3();
+      overallBox.getSize(size);
+      let meshCount = 0;
+      rootGroup.traverse((ch) => {
+        if (
+          ch instanceof THREE.Mesh &&
+          !isInsideCharacterBlockingSubtree(ch, rootGroup)
+        ) {
+          meshCount++;
+        }
+      });
+
+      if (
+        element.category !== 'masking' &&
+        element.category !== 'backdrop' &&
+        element.category !== 'blocking' &&
+        !element.id.endsWith('-floor') &&
+        size.x >= 4.2 &&
+        meshCount >= 12
+      ) {
+        rawUnits = [
+          {
+            id: 'sub-sr',
+            label: `${element.name} · Stage Right Unit`,
+            shortLabel: 'Stage Right Unit',
+            description: `Stage Right structural sub-assembly of ${element.name}.`,
+            matchesObject: (obj) => getObjectWorldCenter(obj).x < -1.1,
+          },
+          {
+            id: 'sub-center',
+            label: `${element.name} · Center Stage Unit`,
+            shortLabel: 'Center Stage Unit',
+            description: `Center stage structural sub-assembly of ${element.name}.`,
+            matchesObject: (obj) => {
+              const cx = getObjectWorldCenter(obj).x;
+              return cx >= -1.1 && cx <= 1.1;
+            },
+          },
+          {
+            id: 'sub-sl',
+            label: `${element.name} · Stage Left Unit`,
+            shortLabel: 'Stage Left Unit',
+            description: `Stage Left structural sub-assembly of ${element.name}.`,
+            matchesObject: (obj) => getObjectWorldCenter(obj).x > 1.1,
+          },
+        ];
+      }
+      break;
+    }
+  }
+
+  // Filter out any candidate sub-unit that contains 0 structural meshes
+  const validUnits = rawUnits.filter((u) => {
+    let count = 0;
+    rootGroup.traverse((ch) => {
+      if (
+        ch instanceof THREE.Mesh &&
+        ch.geometry &&
+        !isInsideCharacterBlockingSubtree(ch, rootGroup) &&
+        u.matchesObject(ch)
+      ) {
+        count++;
+      }
+    });
+    return count > 0;
+  });
+
+  if (validUnits.length <= 1) {
+    return [];
+  }
+
+  return [
+    ...validUnits,
+    {
+      id: 'all',
+      label: `All Units Combined (${element.name})`,
+      shortLabel: `All ${validUnits.length} Combined`,
+      description: `Combined workshop package for all ${validUnits.length} sub-units in ${element.name}.`,
+      matchesObject: () => true,
+      isCombinedMacroUnit: true,
+    },
+  ];
+}
+
+/**
+ * Given a raycasted 3D `hitObject` inside an element's `rootGroup`, returns the specific
+ * granular `ScenicSubUnitSpec` that was hovered or clicked (or `null` if the element is a single unit).
+ */
+export function resolveSubUnitForHitObject(
+  element: ProductionElementSpec,
+  rootGroup: THREE.Object3D,
+  hitObject: THREE.Object3D | null | undefined
+): ScenicSubUnitSpec | null {
+  if (!hitObject) return null;
+  const subUnits = getElementGranularSubUnits(element, rootGroup);
+  for (const unit of subUnits) {
+    if (unit.isCombinedMacroUnit) continue;
+    if (unit.matchesObject(hitObject)) {
+      return unit;
+    }
+  }
+  return subUnits.find((u) => !u.isCombinedMacroUnit) ?? null;
+}
+
+/**
+ * Analyzes a Three.js scenic element group (or a specific granular sub-unit within it),
+ * separates CNC-routed components from traditional non-CNC shop components (and excludes
+ * cast blocking figures), and generates a focused workshop fabrication plan.
  */
 export function analyzeElementForCncShop(
   element: ProductionElementSpec,
   production: ProductionSpec,
-  objectGroup: THREE.Object3D
+  objectGroup: THREE.Object3D,
+  requestedSubUnitId?: string | null
 ): CncElementAnalysis {
   const profile = inferElementFabricationProfile(element);
   const requiresCncRouting =
     profile.method === 'cnc-primary' || profile.method === 'hybrid-cnc-carpentry';
 
   objectGroup.updateWorldMatrix(true, true);
-  const overallBox = new THREE.Box3().setFromObject(objectGroup);
-  if (overallBox.isEmpty()) {
-    overallBox.set(new THREE.Vector3(-1, 0, -0.5), new THREE.Vector3(1, 2, 0.5));
-  }
-  const sizeM = new THREE.Vector3();
-  overallBox.getSize(sizeM);
+  const subUnits = getElementGranularSubUnits(element, objectGroup);
 
-  const unitInvMatrix = objectGroup.matrixWorld.clone().invert();
+  // Default to the first granular sub-unit when multiple exist so the modal opens focused and uncluttered
+  const activeSubUnit: ScenicSubUnitSpec | null =
+    subUnits.length > 0
+      ? (subUnits.find((u) => u.id === requestedSubUnitId) ??
+        subUnits.find((u) => !u.isCombinedMacroUnit) ??
+        subUnits[0]!)
+      : null;
+
+  const isScopedSubUnit =
+    activeSubUnit !== null && !activeSubUnit.isCombinedMacroUnit;
+
   const structuralMeshes: THREE.Mesh[] = [];
   let excludedBlockingFiguresCount = 0;
+  const scopedBox = new THREE.Box3();
 
   objectGroup.traverse((child) => {
     if (child.userData?.isCharacterBlocking === true) {
@@ -945,9 +1652,24 @@ export function analyzeElementForCncShop(
       ) {
         return;
       }
+      if (isScopedSubUnit && !activeSubUnit.matchesObject(child)) {
+        return;
+      }
       structuralMeshes.push(child);
+      scopedBox.expandByObject(child);
     }
   });
+
+  if (scopedBox.isEmpty()) {
+    scopedBox.setFromObject(objectGroup);
+  }
+  if (scopedBox.isEmpty()) {
+    scopedBox.set(new THREE.Vector3(-1, 0, -0.5), new THREE.Vector3(1, 2, 0.5));
+  }
+  const sizeM = new THREE.Vector3();
+  scopedBox.getSize(sizeM);
+
+  const unitInvMatrix = objectGroup.matrixWorld.clone().invert();
 
   const candidateItems = structuralMeshes
     .map((mesh, idx) => {
@@ -966,12 +1688,18 @@ export function analyzeElementForCncShop(
     .filter((item) => item.info.widthMm >= 75 && item.info.heightMm >= 75)
     .sort((a, b) => b.area - a.area);
 
+  // Keep per-unit part counts focused and digestible (8 CNC + 4 Shop for individual sub-units)
+  const maxCncParts = isScopedSubUnit ? 8 : 16;
+  const maxShopParts = isScopedSubUnit ? 4 : 8;
+
   const rawCncItems = requiresCncRouting
-    ? candidateItems.filter((item) => item.classification.isCncRouted).slice(0, 22)
+    ? candidateItems
+        .filter((item) => item.classification.isCncRouted)
+        .slice(0, maxCncParts)
     : [];
   const rawNonCncItems = candidateItems
     .filter((item) => !requiresCncRouting || !item.classification.isCncRouted)
-    .slice(0, 12);
+    .slice(0, maxShopParts);
 
   // Shelf-pack ONLY true CNC-routed parts onto 4'x8' (2438.4 x 1219.2 mm) sheets
   let currentSheet = rawCncItems.length > 0 ? 1 : 0;
@@ -979,6 +1707,8 @@ export function analyzeElementForCncShop(
   let cursorY = SHEET_MARGIN_MM;
   let shelfRowHeight = 0;
   let totalPerimeterMm = 0;
+
+  const fallbackLabelBase = (activeSubUnit?.shortLabel || element.name).slice(0, 18);
 
   const cncParts: CncSubPartRecord[] = rawCncItems.map((item, i) => {
     const w = Math.min(SHEET_WIDTH_MM - SHEET_MARGIN_MM * 2, item.info.widthMm);
@@ -1010,7 +1740,7 @@ export function analyzeElementForCncShop(
 
     return {
       partCode,
-      label: `${partCode} · ${cleanLabel || element.name.slice(0, 18)}`,
+      label: `${partCode} · ${cleanLabel || fallbackLabelBase}`,
       fabricationProcess: item.classification.process,
       materialSpec: item.classification.materialSpec,
       widthMm: w,
@@ -1039,7 +1769,7 @@ export function analyzeElementForCncShop(
 
     return {
       partCode,
-      label: `${partCode} · ${cleanLabel || element.name.slice(0, 18)}`,
+      label: `${partCode} · ${cleanLabel || fallbackLabelBase}`,
       fabricationProcess: 'Traditional Shop / Non-CNC',
       materialSpec: item.classification.materialSpec,
       widthMm: w,
@@ -1059,13 +1789,25 @@ export function analyzeElementForCncShop(
 
   const allParts = [...cncParts, ...nonCncParts];
   const estimatedCutLengthM =
-    currentSheet > 0 ? Math.max(3.2, Math.round((totalPerimeterMm / 1000) * 10) / 10) : 0;
+    currentSheet > 0 ? Math.max(2.4, Math.round((totalPerimeterMm / 1000) * 10) / 10) : 0;
   const estimatedRouterMinutes =
-    currentSheet > 0 ? Math.max(8, Math.round(estimatedCutLengthM * 1.45 + currentSheet * 6)) : 0;
+    currentSheet > 0 ? Math.max(6, Math.round(estimatedCutLengthM * 1.45 + currentSheet * 5)) : 0;
+
+  const displayTitle = isScopedSubUnit ? activeSubUnit.label : element.name;
+  const exportSlug = isScopedSubUnit
+    ? `${element.id}_${activeSubUnit.id}`
+    : element.id;
+  const constructionNote = isScopedSubUnit
+    ? `${activeSubUnit.description} — ${profile.primaryConstructionNote}`
+    : profile.primaryConstructionNote;
 
   return {
     element,
     productionTitle: production.title,
+    displayTitle,
+    exportSlug,
+    activeSubUnit,
+    subUnits,
     fabricationMethod: profile.method,
     fabricationBadgeLabel: profile.badgeLabel,
     requiresCncRouting,
@@ -1077,7 +1819,7 @@ export function analyzeElementForCncShop(
     estimatedCutLengthM,
     estimatedRouterMinutes,
     excludedBlockingFiguresCount,
-    primaryConstructionNote: profile.primaryConstructionNote,
+    primaryConstructionNote: constructionNote,
     departmentBreakdown: profile.departments,
     cncParts,
     nonCncParts,
@@ -1086,14 +1828,15 @@ export function analyzeElementForCncShop(
 }
 
 /**
- * Renders the interactive 2D Scenic Shop Blueprint & 4'x8' CNC Sheet Nesting preview canvas.
- * If the unit is manufactured without CNC (e.g. Soft Goods Scrim/Curtain, Box Truss, or Props),
- * the right panel renders a dedicated Department Fabrication Schematic instead of fake CNC sheets.
+ * Renders the interactive 2D Scenic Shop Blueprint OR 4'x8' CNC Sheet Nesting preview canvas.
+ * Renders a single focused diagram at full width (`viewMode === 'sheet'` or `'elevation'`)
+ * so part labels, dimensions, and contours have generous breathing room.
  */
 export function renderCncShopPreviewCanvas(
   canvas: HTMLCanvasElement,
   analysis: CncElementAnalysis,
-  activeSheetFilter = 1
+  activeSheetFilter = 1,
+  viewMode: 'sheet' | 'elevation' = 'sheet'
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -1101,210 +1844,194 @@ export function renderCncShopPreviewCanvas(
   const w = canvas.width;
   const h = canvas.height;
 
-  ctx.fillStyle = '#0e1522';
+  ctx.fillStyle = '#0c121d';
   ctx.fillRect(0, 0, w, h);
 
   // Subtle CAD millimeter grid
-  ctx.strokeStyle = 'rgba(72, 138, 220, 0.11)';
+  ctx.strokeStyle = 'rgba(72, 138, 220, 0.09)';
   ctx.lineWidth = 1;
-  for (let gx = 0; gx < w; gx += 24) {
+  for (let gx = 0; gx < w; gx += 28) {
     ctx.beginPath();
     ctx.moveTo(gx, 0);
     ctx.lineTo(gx, h);
     ctx.stroke();
   }
-  for (let gy = 0; gy < h; gy += 24) {
+  for (let gy = 0; gy < h; gy += 28) {
     ctx.beginPath();
     ctx.moveTo(0, gy);
     ctx.lineTo(w, gy);
     ctx.stroke();
   }
 
-  // Left Half: Front Orthographic Shop Elevation with Color-Coded CNC vs Traditional Parts
-  const leftBox = { x: 18, y: 34, w: w * 0.44 - 24, h: h - 52 };
-  ctx.strokeStyle = 'rgba(110, 175, 255, 0.38)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(leftBox.x, leftBox.y, leftBox.w, leftBox.h);
+  const box = { x: 24, y: 36, w: w - 48, h: h - 54 };
 
-  ctx.fillStyle = '#7ec0ff';
-  ctx.font = '700 11px "JetBrains Mono", monospace';
-  ctx.fillText(
-    'FRONT ORTHOGRAPHIC ELEVATION (GREEN=CNC, BLUE=TRADITIONAL SHOP)',
-    leftBox.x + 8,
-    leftBox.y - 8
-  );
+  // Mode 1: Full-Width Front Orthographic Blueprint Elevation
+  if (
+    viewMode === 'elevation' ||
+    !analysis.requiresCncRouting ||
+    analysis.sheetCount4x8 === 0
+  ) {
+    ctx.strokeStyle = 'rgba(110, 175, 255, 0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
 
-  if (analysis.allParts.length > 0) {
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-    for (const p of analysis.allParts) {
-      minX = Math.min(minX, p.unitMinM.x);
-      maxX = Math.max(maxX, p.unitMaxM.x);
-      minY = Math.min(minY, p.unitMinM.y);
-      maxY = Math.max(maxY, p.unitMaxM.y);
-    }
-    const spanX = Math.max(0.5, maxX - minX);
-    const spanY = Math.max(0.5, maxY - minY);
-    const pad = 26;
-    const scale = Math.min((leftBox.w - pad * 2) / spanX, (leftBox.h - pad * 2) / spanY);
-    const ox = leftBox.x + leftBox.w / 2 - (minX + maxX) * 0.5 * scale;
-    const oy = leftBox.y + leftBox.h - pad + minY * scale;
+    ctx.fillStyle = '#7ec0ff';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      `FRONT ORTHOGRAPHIC ELEVATION · ${analysis.displayTitle.toUpperCase()}`,
+      box.x + 10,
+      box.y - 10
+    );
 
-    for (const p of analysis.allParts) {
-      const rx = ox + p.unitMinM.x * scale;
-      const ry = oy - p.unitMaxM.y * scale;
-      const rw = Math.max(3, (p.unitMaxM.x - p.unitMinM.x) * scale);
-      const rh = Math.max(3, (p.unitMaxM.y - p.unitMinM.y) * scale);
-      const isCnc = p.sheetIndex > 0;
+    ctx.fillStyle = '#9db4d0';
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(
+      'GREEN = CNC ROUTED / FOAM   ·   BLUE = TRADITIONAL SHOP',
+      box.x + box.w - 10,
+      box.y - 10
+    );
+    ctx.textAlign = 'left';
 
-      ctx.fillStyle = isCnc ? 'rgba(46, 216, 136, 0.16)' : 'rgba(88, 180, 255, 0.14)';
-      ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = isCnc ? '#38ef8c' : '#58b4ff';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(rx, ry, rw, rh);
-
-      if (rw > 26 && rh > 14) {
-        ctx.fillStyle = isCnc ? '#b8ffda' : '#d8ecff';
-        ctx.font = '600 9px "JetBrains Mono", monospace';
-        ctx.fillText(p.partCode, rx + 4, ry + 11);
+    if (analysis.allParts.length > 0) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const p of analysis.allParts) {
+        minX = Math.min(minX, p.unitMinM.x);
+        maxX = Math.max(maxX, p.unitMaxM.x);
+        minY = Math.min(minY, p.unitMinM.y);
+        maxY = Math.max(maxY, p.unitMaxM.y);
       }
-    }
+      const spanX = Math.max(0.4, maxX - minX);
+      const spanY = Math.max(0.4, maxY - minY);
+      const pad = 34;
+      const scale = Math.min(
+        (box.w - pad * 2) / spanX,
+        (box.h - pad * 2) / spanY
+      );
+      const ox = box.x + box.w / 2 - (minX + maxX) * 0.5 * scale;
+      const oy = box.y + box.h - pad + minY * scale;
 
-    ctx.fillStyle = '#ffd248';
-    ctx.font = '700 10px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `W: ${formatMetersToImperialShop(analysis.overallWidthM)} (${Math.round(analysis.overallWidthM * 1000)}mm)`,
-      leftBox.x + 12,
-      leftBox.y + leftBox.h - 8
-    );
-    ctx.fillText(
-      `H: ${formatMetersToImperialShop(analysis.overallHeightM)} (${Math.round(analysis.overallHeightM * 1000)}mm)`,
-      leftBox.x + 12,
-      leftBox.y + 18
-    );
+      for (const p of analysis.allParts) {
+        const rx = ox + p.unitMinM.x * scale;
+        const ry = oy - p.unitMaxM.y * scale;
+        const rw = Math.max(4, (p.unitMaxM.x - p.unitMinM.x) * scale);
+        const rh = Math.max(4, (p.unitMaxM.y - p.unitMinM.y) * scale);
+        const isCnc = p.sheetIndex > 0;
+
+        ctx.fillStyle = isCnc
+          ? 'rgba(46, 216, 136, 0.16)'
+          : 'rgba(88, 180, 255, 0.14)';
+        ctx.fillRect(rx, ry, rw, rh);
+        ctx.strokeStyle = isCnc ? '#38ef8c' : '#58b4ff';
+        ctx.lineWidth = 1.4;
+        ctx.strokeRect(rx, ry, rw, rh);
+
+        if (rw > 34 && rh > 16) {
+          ctx.fillStyle = isCnc ? '#c4ffe0' : '#d8ecff';
+          ctx.font = '700 10px "JetBrains Mono", monospace';
+          ctx.fillText(p.partCode, rx + 5, ry + 13);
+        }
+      }
+
+      ctx.fillStyle = '#ffd248';
+      ctx.font = '700 11px "JetBrains Mono", monospace';
+      ctx.fillText(
+        `WIDTH: ${formatMetersToImperialShop(analysis.overallWidthM)} (${Math.round(analysis.overallWidthM * 1000)}mm)   ·   HEIGHT: ${formatMetersToImperialShop(analysis.overallHeightM)} (${Math.round(analysis.overallHeightM * 1000)}mm)`,
+        box.x + 14,
+        box.y + box.h - 10
+      );
+    }
+    return;
   }
 
-  // Right Half: Either 4'x8' CNC Router Sheet Nesting OR Non-CNC Shop Pattern View
-  const rightBox = { x: w * 0.45 + 6, y: 34, w: w * 0.55 - 24, h: h - 52 };
+  // Mode 2: Full-Width 4'x8' (1219x2438mm) CNC Router Sheet Nesting Diagram
+  const sheetParts = analysis.cncParts.filter(
+    (p) => p.sheetIndex === activeSheetFilter
+  );
 
-  if (analysis.requiresCncRouting && analysis.sheetCount4x8 > 0) {
-    ctx.fillStyle = '#38ef8c';
+  ctx.fillStyle = '#38ef8c';
+  ctx.font = '700 11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(
+    `4'×8' (1219×2438mm) CNC ROUTER SHEET #${activeSheetFilter} OF ${analysis.sheetCount4x8} · ${analysis.displayTitle.toUpperCase()}`,
+    box.x + 4,
+    box.y - 10
+  );
+
+  ctx.fillStyle = '#9db4d0';
+  ctx.font = '600 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(
+    `${sheetParts.length} NESTED PART${sheetParts.length === 1 ? '' : 'S'} ON THIS SHEET · 5/8" KERF CLEARANCE`,
+    box.x + box.w - 4,
+    box.y - 10
+  );
+  ctx.textAlign = 'left';
+
+  const sheetScale = Math.min(
+    (box.w - 24) / SHEET_WIDTH_MM,
+    (box.h - 16) / SHEET_HEIGHT_MM
+  );
+  const sheetPxW = SHEET_WIDTH_MM * sheetScale;
+  const sheetPxH = SHEET_HEIGHT_MM * sheetScale;
+  const sx0 = box.x + (box.w - sheetPxW) / 2;
+  const sy0 = box.y + (box.h - sheetPxH) / 2;
+
+  ctx.fillStyle = '#151f2e';
+  ctx.fillRect(sx0, sy0, sheetPxW, sheetPxH);
+  ctx.strokeStyle = '#ff9838';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(sx0, sy0, sheetPxW, sheetPxH);
+
+  // 1" safety margin guide
+  const marginPx = SHEET_MARGIN_MM * sheetScale;
+  ctx.strokeStyle = 'rgba(255, 152, 56, 0.25)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(
+    sx0 + marginPx,
+    sy0 + marginPx,
+    sheetPxW - marginPx * 2,
+    sheetPxH - marginPx * 2
+  );
+  ctx.setLineDash([]);
+
+  for (const part of sheetParts) {
+    const cx = sx0 + part.sheetXMm * sheetScale;
+    const cy = sy0 + part.sheetYMm * sheetScale;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    part.contourPtsMm.forEach((pt, idx) => {
+      const px = pt.x * sheetScale;
+      const py = pt.y * sheetScale;
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fillStyle =
+      part.fabricationProcess === 'CNC EPS Foam Carve'
+        ? 'rgba(138, 104, 255, 0.22)'
+        : 'rgba(46, 216, 136, 0.18)';
+    ctx.fill();
+    ctx.strokeStyle =
+      part.fabricationProcess === 'CNC EPS Foam Carve' ? '#b694ff' : '#38ef8c';
+    ctx.lineWidth = 1.75;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
     ctx.font = '700 11px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `4'×8' (1220×2440mm) CNC ROUTER SHEET #${activeSheetFilter} OF ${analysis.sheetCount4x8}`,
-      rightBox.x + 4,
-      rightBox.y - 8
-    );
-
-    const sheetScale = Math.min(
-      (rightBox.w - 20) / SHEET_WIDTH_MM,
-      (rightBox.h - 20) / SHEET_HEIGHT_MM
-    );
-    const sheetPxW = SHEET_WIDTH_MM * sheetScale;
-    const sheetPxH = SHEET_HEIGHT_MM * sheetScale;
-    const sx0 = rightBox.x + (rightBox.w - sheetPxW) / 2;
-    const sy0 = rightBox.y + (rightBox.h - sheetPxH) / 2;
-
-    ctx.fillStyle = '#192334';
-    ctx.fillRect(sx0, sy0, sheetPxW, sheetPxH);
-    ctx.strokeStyle = '#ff9838';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(sx0, sy0, sheetPxW, sheetPxH);
-
-    const sheetParts = analysis.cncParts.filter((p) => p.sheetIndex === activeSheetFilter);
-    for (const part of sheetParts) {
-      const cx = sx0 + part.sheetXMm * sheetScale;
-      const cy = sy0 + part.sheetYMm * sheetScale;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.beginPath();
-      part.contourPtsMm.forEach((pt, idx) => {
-        const px = pt.x * sheetScale;
-        const py = pt.y * sheetScale;
-        if (idx === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.closePath();
-      ctx.fillStyle =
-        part.fabricationProcess === 'CNC EPS Foam Carve'
-          ? 'rgba(138, 104, 255, 0.22)'
-          : 'rgba(46, 216, 136, 0.18)';
-      ctx.fill();
-      ctx.strokeStyle =
-        part.fabricationProcess === 'CNC EPS Foam Carve' ? '#b694ff' : '#38ef8c';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 10px "JetBrains Mono", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(part.partCode, 0, -2);
-      ctx.fillStyle = '#9ed8ff';
-      ctx.font = '500 8px "JetBrains Mono", monospace';
-      ctx.fillText(`${part.widthInches}"×${part.heightInches}"`, 0, 9);
-      ctx.restore();
-    }
-  } else {
-    // Non-CNC Element (Soft Goods / Paint Shop, Box Truss Rigging, or Props/Blocking)
-    ctx.fillStyle = '#ffd248';
-    ctx.font = '700 11px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `NON-CNC SHOP SPECIFICATION · ${analysis.fabricationBadgeLabel}`,
-      rightBox.x + 4,
-      rightBox.y - 8
-    );
-
-    ctx.fillStyle = '#141e2e';
-    ctx.fillRect(rightBox.x, rightBox.y, rightBox.w, rightBox.h);
-    ctx.strokeStyle = 'rgba(255, 210, 72, 0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(rightBox.x, rightBox.y, rightBox.w, rightBox.h);
-
-    ctx.fillStyle = '#ffd248';
-    ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(
-      'NO 4\'×8\' CNC ROUTING REQUIRED FOR THIS SCENIC UNIT',
-      rightBox.x + 18,
-      rightBox.y + 30
-    );
-
-    ctx.fillStyle = '#c8daf0';
-    ctx.font = '500 11px "JetBrains Mono", monospace';
-    const noteWords = analysis.primaryConstructionNote.split(' ');
-    let line = '';
-    let ly = rightBox.y + 54;
-    for (const word of noteWords) {
-      if ((line + word).length > 56) {
-        ctx.fillText(line.trim(), rightBox.x + 18, ly);
-        line = word + ' ';
-        ly += 16;
-      } else {
-        line += word + ' ';
-      }
-    }
-    if (line.trim()) {
-      ctx.fillText(line.trim(), rightBox.x + 18, ly);
-      ly += 24;
-    }
-
-    for (const dept of analysis.departmentBreakdown) {
-      ctx.fillStyle = 'rgba(88, 180, 255, 0.14)';
-      ctx.fillRect(rightBox.x + 18, ly - 4, rightBox.w - 36, 44);
-      ctx.strokeStyle = 'rgba(88, 180, 255, 0.4)';
-      ctx.strokeRect(rightBox.x + 18, ly - 4, rightBox.w - 36, 44);
-
-      ctx.fillStyle = '#7ec0ff';
-      ctx.font = '700 11px "JetBrains Mono", monospace';
-      ctx.fillText(`${dept.department} [${dept.roleBadge}]`, rightBox.x + 26, ly + 12);
-
-      ctx.fillStyle = '#d8e6f8';
-      ctx.font = '500 10px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText(dept.scopeSummary.slice(0, 74), rightBox.x + 26, ly + 28);
-      ly += 52;
-    }
+    ctx.textAlign = 'center';
+    ctx.fillText(part.partCode, 0, -3);
+    ctx.fillStyle = '#a8deff';
+    ctx.font = '600 9.5px "JetBrains Mono", monospace';
+    ctx.fillText(`${part.widthInches}" × ${part.heightInches}"`, 0, 10);
+    ctx.restore();
   }
 }
 
@@ -1381,7 +2108,7 @@ export function generateCncDxfFileContent(analysis: CncElementAnalysis): string 
       sheetOffsetX + 20,
       SHEET_HEIGHT_MM + 35,
       28,
-      `${analysis.element.id.toUpperCase()} - 4x8 CNC SHEET #${s} (2438x1219mm)`
+      `${analysis.exportSlug.toUpperCase()} - 4x8 CNC SHEET #${s} (2438x1219mm)`
     );
 
     const sheetParts = analysis.cncParts.filter((p) => p.sheetIndex === s);
@@ -1440,7 +2167,7 @@ export function generateCncSvgFileContent(analysis: CncElementAnalysis): string 
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Math.round(totalWidthMm)} ${Math.round(totalHeightMm)}" width="${Math.round(totalWidthMm)}mm" height="${Math.round(totalHeightMm)}mm">`,
     `<rect width="100%" height="100%" fill="#0c121d"/>`,
-    `<text x="80" y="68" fill="#58b4ff" font-family="monospace" font-size="38" font-weight="bold">CHILDREN'S THEATRE OF CHARLOTTE · SCENIC WORKSHOP (${analysis.element.name.replace(/&/g, 'AND')})</text>`,
+    `<text x="80" y="68" fill="#58b4ff" font-family="monospace" font-size="38" font-weight="bold">CHILDREN'S THEATRE OF CHARLOTTE · SCENIC WORKSHOP (${analysis.displayTitle.replace(/&/g, 'AND')})</text>`,
     `<text x="80" y="112" fill="#ffd248" font-family="monospace" font-size="26">METHOD: ${analysis.fabricationBadgeLabel.replace(/&/g, 'AND')} | OVERALL: ${analysis.overallImperialLabel} | 4'x8' CNC SHEETS: ${analysis.sheetCount4x8}</text>`,
   ];
 
@@ -1480,13 +2207,20 @@ export function generateCncSvgFileContent(analysis: CncElementAnalysis): string 
 }
 
 /**
- * Generates a Binary `.STL` 3D mesh buffer of the selected scenic unit (in millimeters),
- * excluding any non-fabricated character blocking figures, for 3-axis/5-axis CNC EPS
- * foam carving or 1:24 scale model 3D printing.
+ * Generates a Binary `.STL` 3D mesh buffer of the selected scenic unit or granular sub-unit
+ * (in millimeters), excluding any non-fabricated character blocking figures, for 3-axis/5-axis
+ * CNC EPS foam carving or 1:24 scale model 3D printing.
  */
-export function generateCncBinaryStlBuffer(objectGroup: THREE.Object3D): ArrayBuffer {
+export function generateCncBinaryStlBuffer(
+  objectGroup: THREE.Object3D,
+  activeSubUnit?: ScenicSubUnitSpec | null
+): ArrayBuffer {
   objectGroup.updateWorldMatrix(true, true);
   const invRoot = objectGroup.matrixWorld.clone().invert();
+  const isScoped =
+    activeSubUnit !== null &&
+    activeSubUnit !== undefined &&
+    !activeSubUnit.isCombinedMacroUnit;
 
   const triangles: { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3 }[] = [];
   const va = new THREE.Vector3();
@@ -1496,6 +2230,7 @@ export function generateCncBinaryStlBuffer(objectGroup: THREE.Object3D): ArrayBu
   objectGroup.traverse((child) => {
     if (!(child instanceof THREE.Mesh) || !child.geometry) return;
     if (isInsideCharacterBlockingSubtree(child, objectGroup)) return;
+    if (isScoped && !activeSubUnit.matchesObject(child)) return;
     const geom = child.geometry;
     const pos = geom.attributes.position;
     if (!pos) return;
@@ -1570,7 +2305,7 @@ export function generateCncCutListCsvContent(analysis: CncElementAnalysis): stri
       [
         p.partCode,
         `"${p.label.replace(/"/g, '""')}"`,
-        `"${analysis.element.name.replace(/"/g, '""')}"`,
+        `"${analysis.displayTitle.replace(/"/g, '""')}"`,
         `"${p.fabricationProcess}"`,
         p.sheetIndex > 0 ? String(p.sheetIndex) : 'N/A (Non-CNC)',
         p.widthInches,

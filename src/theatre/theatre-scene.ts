@@ -43,12 +43,15 @@ export interface TheatreSceneCallbacks {
   onSeatHovered?: (seat: SeatRecord | null, clientX: number, clientY: number) => void;
   onScenicElementClicked?: (
     element: ProductionElementSpec,
-    objectGroup: THREE.Object3D
+    objectGroup: THREE.Object3D,
+    hitObject?: THREE.Object3D
   ) => void;
   onScenicElementHovered?: (
     element: ProductionElementSpec | null,
     clientX: number,
-    clientY: number
+    clientY: number,
+    hitObject?: THREE.Object3D,
+    objectGroup?: THREE.Object3D
   ) => void;
   onProductionChanged?: (spec: ProductionSpec) => void;
   onSceneChanged?: (scene: ProductionSceneCue, spec: ProductionSpec) => void;
@@ -1168,10 +1171,17 @@ export class TheatreSceneController {
     }
     this.callbacks.onSeatHovered?.(null, e.clientX, e.clientY);
 
-    const scenicHover = this.productionSets.pickScenicElementAtRay(this.raycaster);
+    const scenicHover = this.productionSets.pickScenicTargetAtRay(this.raycaster);
     if (scenicHover) {
       this.canvas.style.cursor = 'pointer';
-      this.callbacks.onScenicElementHovered?.(scenicHover, e.clientX, e.clientY);
+      const target = this.getScenicElementTarget(scenicHover.element.id);
+      this.callbacks.onScenicElementHovered?.(
+        scenicHover.element,
+        e.clientX,
+        e.clientY,
+        scenicHover.hitObject,
+        target?.objectGroup
+      );
     } else {
       this.canvas.style.cursor = 'grab';
       this.callbacks.onScenicElementHovered?.(null, e.clientX, e.clientY);
@@ -1216,11 +1226,15 @@ export class TheatreSceneController {
     }
 
     // 3. Check if user clicked a Scenic Set Element on stage -> Open Scenic Workshop & CNC Inspector
-    const pickedElement = this.productionSets.pickScenicElementAtRay(this.raycaster);
-    if (pickedElement) {
-      const target = this.getScenicElementTarget(pickedElement.id);
+    const pickedTarget = this.productionSets.pickScenicTargetAtRay(this.raycaster);
+    if (pickedTarget) {
+      const target = this.getScenicElementTarget(pickedTarget.element.id);
       if (target) {
-        this.callbacks.onScenicElementClicked?.(target.element, target.objectGroup);
+        this.callbacks.onScenicElementClicked?.(
+          target.element,
+          target.objectGroup,
+          pickedTarget.hitObject
+        );
       }
     }
   }

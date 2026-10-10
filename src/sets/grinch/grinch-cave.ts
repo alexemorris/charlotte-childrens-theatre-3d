@@ -835,16 +835,16 @@ function buildGrinchCaveSideDetails(
     heightM: 1.84,
     spyglassPose: true,
   });
-  grinch.position.set(-2.15, 0.0, -3.05);
-  grinch.rotation.y = 0.58;
+  grinch.position.set(-2.05, 0.0, -3.08);
+  grinch.rotation.y = 0.56;
   detailsGroup.add(grinch);
 
   // -------------------------------------------------------------------------
-  // A2. Crooked Seussian Telescope / Whoville Listening Horn (`x = -1.76m, z = -2.82m`)
-  //     Positioned directly in front of the Grinch along his sightline (`0.45m` clear)
+  // A2. Crooked Seussian Telescope / Whoville Listening Horn (`x = -1.35m, z = -2.62m`)
+  //     Positioned directly in front of the Grinch along his sightline with full clearance
   // -------------------------------------------------------------------------
   const hornRig = new THREE.Group();
-  hornRig.position.set(-1.76, 0.0, -2.82);
+  hornRig.position.set(-1.35, 0.0, -2.62);
   hornRig.rotation.y = 0.54;
 
   // Tripod legs
@@ -1440,12 +1440,13 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
 
   for (const bSpec of floorBoulderSpecs) {
     const hw = bSpec.w * 0.5;
+    const tilt = bSpec.rotZ * 0.4;
     const boulderPts: ReadonlyArray<readonly [number, number]> = [
       [bSpec.x - hw, 0.0],
-      [bSpec.x - hw * 0.82, bSpec.h * 0.78],
-      [bSpec.x - hw * 0.28, bSpec.h],
-      [bSpec.x + hw * 0.34, bSpec.h * 0.94],
-      [bSpec.x + hw * 0.84, bSpec.h * 0.72],
+      [bSpec.x - hw * 0.82, bSpec.h * (0.78 - tilt)],
+      [bSpec.x - hw * 0.28, bSpec.h * (1.0 - tilt * 0.5)],
+      [bSpec.x + hw * 0.34, bSpec.h * (0.94 + tilt * 0.5)],
+      [bSpec.x + hw * 0.84, bSpec.h * (0.72 + tilt)],
       [bSpec.x + hw, 0.0],
     ];
     const boulder = createExtrudedRockSlab(
@@ -1455,7 +1456,6 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
       bSpec.z,
       0.025
     );
-    boulder.rotation.z = bSpec.rotZ;
     caveGroup.add(boulder);
 
     caveGroup.add(

@@ -1119,11 +1119,11 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       true,
       -0.14
     );
-    hatterThrone.position.set(2.14, 0, 0.08);
+    hatterThrone.position.set(2.48, 0, 0.08);
     hatterThrone.rotation.y = -1.25;
     teaTableGroup.add(hatterThrone);
 
-    // Alice's royal-blue crooked armchair at Stage-Right head of table (behind Alice at x = -1.72)
+    // Alice's royal-blue crooked armchair at Stage-Right head of table (behind Alice)
     const aliceChair = buildWonderlandChair(
       0.86,
       0x246eb8,
@@ -1132,15 +1132,15 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       false,
       0.12
     );
-    aliceChair.position.set(-2.12, 0, 0.08);
+    aliceChair.position.set(-2.42, 0, 0.08);
     aliceChair.rotation.y = 1.25;
     teaTableGroup.add(aliceChair);
 
-    // 3 Crooked Upstage Chairs pushed back to z = -0.94m (behind March Hare, Dormouse & White Rabbit at z = -0.58m)
+    // 3 Crooked Upstage Chairs pushed back to z = -1.34m (behind March Hare, Dormouse & White Rabbit at z = -0.90m)
     const upstageChairs = [
-      { x: -0.82, z: -0.94, rotY: 0.14, h: 1.08, uph: 0x1e8278, frm: 0x5c3422, tilt: 0.16 },
-      { x: -0.12, z: -0.94, rotY: -0.08, h: 0.74, uph: 0xc83248, frm: 0xd8a428, tilt: -0.11 },
-      { x: 0.58, z: -0.94, rotY: -0.18, h: 1.02, uph: 0x8ea824, frm: 0x4a2c1d, tilt: 0.15 },
+      { x: -0.96, z: -1.34, rotY: 0.14, h: 1.08, uph: 0x1e8278, frm: 0x5c3422, tilt: 0.16 },
+      { x: 0.0, z: -1.34, rotY: -0.08, h: 0.74, uph: 0xc83248, frm: 0xd8a428, tilt: -0.11 },
+      { x: 0.96, z: -1.34, rotY: -0.18, h: 1.02, uph: 0x8ea824, frm: 0x4a2c1d, tilt: 0.15 },
     ] as const;
     for (const uc of upstageChairs) {
       const ch = buildWonderlandChair(
@@ -1370,7 +1370,7 @@ export const aliceInWonderlandSet: ProductionSetModule = {
     aliceGroup.add(aliceCastGroup);
     registerElement('alice-characters', aliceCastGroup);
 
-    // 1. Alice (Stage-Right table end at x = -1.72, z = 0.08, between table x = -1.49 and chair x = -2.12)
+    // 1. Alice (Stage-Right table end at x = -1.92, z = 0.24, between table x = -1.49 and chair x = -2.42)
     const aliceFig = createHumanScaleFigure(1.38, 0x4aa8f0, 0, 0, false, {
       hasApron: true,
       hairColorHex: 0xf4d048,
@@ -1378,51 +1378,51 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       pantsColorHex: 0xf5f5fa,
       armPose: 'presenting',
     });
-    aliceFig.position.set(-1.72, 0, 0.08);
-    aliceFig.rotation.y = 0.55;
+    aliceFig.position.set(-1.92, 0, 0.24);
+    aliceFig.rotation.y = 0.36;
     aliceCastGroup.add(aliceFig);
 
-    // 2. March Hare (Upstage Right at x = -0.82, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    // 2. March Hare (Upstage Right at x = -0.96, z = -0.90, between table z = -0.50 and chair z = -1.34)
     const hareFig = createHumanScaleFigure(1.68, 0x9c4252, 0, 0, true, {
       hairColorHex: 0x8c4a28,
       pantsColorHex: 0x3b2328,
       trimColorHex: 0xf5d468,
       armPose: 'cheering',
     });
-    hareFig.position.set(-0.82, 0, -0.60);
-    hareFig.rotation.y = 0.12;
+    hareFig.position.set(-0.96, 0, -0.90);
+    hareFig.rotation.y = 0.10;
     aliceCastGroup.add(hareFig);
 
-    // 3. Dormouse (Upstage Center at x = -0.12, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    // 3. Dormouse (Upstage Center at x = 0.0, z = -0.90, between table z = -0.50 and chair z = -1.34)
     const dormouseFig = createHumanScaleFigure(1.42, 0xd85c2a, 0.18, 0xc43c24, false, {
       hairColorHex: 0x6e3b1e,
       pantsColorHex: 0x422618,
       trimColorHex: 0xf5e6c8,
       armPose: 'relaxed',
     });
-    dormouseFig.position.set(-0.12, 0, -0.60);
+    dormouseFig.position.set(0.0, 0, -0.90);
     aliceCastGroup.add(dormouseFig);
 
-    // 4. White Rabbit (Upstage Left at x = 0.58, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    // 4. White Rabbit (Upstage Left at x = 0.96, z = -0.90, between table z = -0.50 and chair z = -1.34)
     const rabbitFig = createHumanScaleFigure(1.62, 0xc81e2e, 0, 0, true, {
       hairColorHex: 0xf5f2eb,
       pantsColorHex: 0xded8ce,
       trimColorHex: 0xf5c842,
       armPose: 'presenting',
     });
-    rabbitFig.position.set(0.58, 0, -0.60);
-    rabbitFig.rotation.y = -0.14;
+    rabbitFig.position.set(0.96, 0, -0.90);
+    rabbitFig.rotation.y = -0.10;
     aliceCastGroup.add(rabbitFig);
 
-    // 5. Mad Hatter (Stage-Left table head at x = 1.72, z = 0.08, between table x = +1.49 and throne x = +2.14)
+    // 5. Mad Hatter (Stage-Left table head at x = 1.94, z = 0.24, between table x = +1.49 and throne x = +2.48)
     const hatterFig = createHumanScaleFigure(1.78, 0xd88a28, 0.46, 0xe8b928, false, {
       hairColorHex: 0xe85c24,
       pantsColorHex: 0x48245c,
       trimColorHex: 0xff4081,
       armPose: 'presenting',
     });
-    hatterFig.position.set(1.72, 0, 0.08);
-    hatterFig.rotation.y = -0.55;
+    hatterFig.position.set(1.94, 0, 0.24);
+    hatterFig.rotation.y = -0.36;
 
     // Custom hand-lettered "10/6" price card tucked into the Hatter's top hat band
     const hatPriceCardTex = createHatterPriceCardTexture();
@@ -1430,8 +1430,8 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       new THREE.BoxGeometry(0.12, 0.14, 0.016),
       new THREE.MeshBasicMaterial({ map: hatPriceCardTex })
     );
-    hatPriceCard.position.set(0.15, 1.92, 0.09);
-    hatPriceCard.rotation.z = -0.22;
+    hatPriceCard.position.set(0.15, 1.98, 0.09);
+    hatPriceCard.rotation.z = -0.16;
     hatterFig.add(hatPriceCard);
 
     aliceCastGroup.add(hatterFig);

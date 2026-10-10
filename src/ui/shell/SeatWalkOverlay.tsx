@@ -62,10 +62,12 @@ function PointerHoverTooltip(): JSX.Element | null {
         </>
       ) : scenicHover ? (
         <>
-          <strong>{scenicHover.element.name}</strong> ·{' '}
-          {scenicHover.element.dimensionsLabel}{' '}
+          <strong>{scenicHover.subUnitLabel ?? scenicHover.element.name}</strong> ·{' '}
+          {scenicHover.subUnitLabel
+            ? scenicHover.element.name
+            : scenicHover.element.dimensionsLabel}{' '}
           <span style={{ color: '#38ef8c', fontWeight: 600 }}>
-            (Click for Workshop &amp; CNC Plan)
+            (Click to Inspect Unit &amp; CNC)
           </span>
         </>
       ) : null}

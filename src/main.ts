@@ -1,3 +1,4 @@
+import { resolveSubUnitForHitObject } from './engine/cnc-shop-exporter.ts';
 import {
   activeCameraPreset,
   activeProduction,
@@ -61,13 +62,29 @@ async function bootstrap(): Promise<void> {
     onSeatHovered: (seat, clientX, clientY) => {
       hoveredSeat.value = seat ? { seat, x: clientX, y: clientY } : null;
     },
-    onScenicElementClicked: (element, objectGroup) => {
-      workshopTarget.value = { element, objectGroup };
+    onScenicElementClicked: (element, objectGroup, hitObject) => {
+      const subUnit = resolveSubUnitForHitObject(element, objectGroup, hitObject);
+      workshopTarget.value = {
+        element,
+        objectGroup,
+        subUnitId: subUnit?.id,
+      };
     },
-    onScenicElementHovered: (element, clientX, clientY) => {
-      hoveredScenicElement.value = element
-        ? { element, x: clientX, y: clientY }
-        : null;
+    onScenicElementHovered: (element, clientX, clientY, hitObject, objectGroup) => {
+      if (!element) {
+        hoveredScenicElement.value = null;
+        return;
+      }
+      const subUnit =
+        objectGroup && hitObject
+          ? resolveSubUnitForHitObject(element, objectGroup, hitObject)
+          : null;
+      hoveredScenicElement.value = {
+        element,
+        subUnitLabel: subUnit?.label,
+        x: clientX,
+        y: clientY,
+      };
     },
     onProductionChanged: (spec) => {
       activeProduction.value = spec;

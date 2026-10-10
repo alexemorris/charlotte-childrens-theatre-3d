@@ -183,7 +183,7 @@ export const narniaWardrobeSet: ProductionSetModule = {
 
     // 3. Carved Oak Wardrobe Wagon (Downstage Right)
     const wardrobeGroup = new THREE.Group();
-    wardrobeGroup.position.set(-3.8, 0, -1.35);
+    wardrobeGroup.position.set(-3.15, 0, -0.92);
     wardrobeGroup.rotation.y = 0.38;
     narniaGroup.add(wardrobeGroup);
     registerElement('narnia-wardrobe-unit', wardrobeGroup);

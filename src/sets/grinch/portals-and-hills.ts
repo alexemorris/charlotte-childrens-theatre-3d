@@ -448,7 +448,7 @@ export function buildGrinchSnowPortals(
     //    cleanly upstage of the Line #1 Pre-Show Scrim at z = -0.35m!
     // ------------------------------------------------------------------------
     const midFlatGroup = new THREE.Group();
-    midFlatGroup.position.set(side * 4.65, 0, -0.92);
+    midFlatGroup.position.set(side * 4.95, 0, -0.92);
     midFlatGroup.rotation.y = side * -0.11;
 
     const midFlatBody = new THREE.Mesh(
@@ -501,13 +501,13 @@ export function buildGrinchSnowPortals(
     const midIceWave = createSeussianIceWaveWing(
       side,
       4.15,
-      1.65,
+      1.18,
       midSnowFlatMat,
       iceWaveRibMat,
       snowCapMat,
       contourInkMat
     );
-    midIceWave.position.set(side * 5.35, 0, -1.68);
+    midIceWave.position.set(side * 5.75, 0, -1.68);
     midIceWave.rotation.y = side * -0.06;
     sideGroup.add(midIceWave);
 
@@ -518,13 +518,13 @@ export function buildGrinchSnowPortals(
     const tallIceWave = createSeussianIceWaveWing(
       side,
       4.85,
-      2.15,
+      1.22,
       iceWaveFaceMat,
       iceWaveRibMat,
       snowCapMat,
       contourInkMat
     );
-    tallIceWave.position.set(side * 5.25, 0, -2.62);
+    tallIceWave.position.set(side * 6.32, 0, -2.62);
     tallIceWave.rotation.y = side * -0.04;
     sideGroup.add(tallIceWave);
 

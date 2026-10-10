@@ -121,6 +121,7 @@ export interface HoveredSeatInfo {
 
 export interface HoveredScenicElementInfo {
   readonly element: ProductionElementSpec;
+  readonly subUnitLabel?: string;
   readonly x: number;
   readonly y: number;
 }
@@ -128,6 +129,7 @@ export interface HoveredScenicElementInfo {
 export interface WorkshopTargetInfo {
   readonly element: ProductionElementSpec;
   readonly objectGroup: THREE.Object3D;
+  readonly subUnitId?: string;
 }
 
 export interface LightboxMediaInfo {
@@ -158,9 +160,15 @@ export const hoveredSeat: Signal<{ seat: SeatRecord; x: number; y: number } | nu
 
 export const hoveredScenicElement: Signal<{
   element: ProductionElementSpec;
+  subUnitLabel?: string;
   x: number;
   y: number;
-} | null> = signal<{ element: ProductionElementSpec; x: number; y: number } | null>(null);
+} | null> = signal<{
+  element: ProductionElementSpec;
+  subUnitLabel?: string;
+  x: number;
+  y: number;
+} | null>(null);
 
 export const inSeatView: Signal<boolean> = signal<boolean>(false);
 
@@ -205,9 +213,11 @@ export const selectedCustomPiece: Signal<CustomSetPiece | null> =
 export const workshopTarget: Signal<{
   element: ProductionElementSpec;
   objectGroup: THREE.Object3D;
+  subUnitId?: string;
 } | null> = signal<{
   element: ProductionElementSpec;
   objectGroup: THREE.Object3D;
+  subUnitId?: string;
 } | null>(null);
 
 export const lightboxMedia: Signal<{
@@ -288,13 +298,15 @@ export function closeTopOverlay(): boolean {
 
 export function openWorkshopForElementId(
   sceneCtrl: TheatreSceneController,
-  elementId: string
+  elementId: string,
+  subUnitId?: string
 ): void {
   const target = sceneCtrl.getScenicElementTarget(elementId);
   if (target) {
     workshopTarget.value = {
       element: target.element,
       objectGroup: target.objectGroup,
+      subUnitId,
     };
   }
 }

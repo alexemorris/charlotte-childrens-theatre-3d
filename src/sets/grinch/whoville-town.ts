@@ -1094,10 +1094,10 @@ export function buildGrinchWhovilleHouses(
     ],
   };
 
-  // USR House (-1.75, 0, -4.95): Completely upstage of Center Tree Turntable back edge (z = -4.70m)
+  // USR House (-2.12, 0, -5.02): Cleanly between the Center Tree Turntable (z = -3.55m) and Upstage Hills (z = -5.69m)
   const usrConfig: WhovilleHouseConfig = {
     label: 'USR',
-    position: new THREE.Vector3(-1.75, 0, -4.95),
+    position: new THREE.Vector3(-2.12, 0, -5.02),
     rotationY: 0.06,
     widthM: 2.04,
     heightM: 2.5,
@@ -1173,7 +1173,8 @@ export function buildGrinchWhovilleHouses(
   housesGroup.add(buildSingleWhovilleHouse(usrConfig, sharedMats));
   housesGroup.add(buildSingleWhovilleHouse(mslConfig, sharedMats));
 
-  // 3 Expressive Whoville Carolers / Townspeople standing in the open town-square lanes
+  // 3 Expressive Whoville Carolers / Townspeople standing in open town-square lanes
+  // (clear of the Center Tree Turntable, Papa Who's House in Scene 1E, Shopping Booths in 1D, and Finale Banquet in 1G)
   const carolerSR = createWhoCharacter({
     heightM: 1.66,
     coatColorHex: 0x2268d8,
@@ -1182,7 +1183,7 @@ export function buildGrinchWhovilleHouses(
     hatColorHex: 0xd82868,
     holdingGift: true,
   });
-  carolerSR.position.set(-1.65, 0, -2.55);
+  carolerSR.position.set(-1.82, 0, -2.58);
   carolerSR.rotation.y = 0.28;
   housesGroup.add(carolerSR);
 
@@ -1193,7 +1194,7 @@ export function buildGrinchWhovilleHouses(
     hairColorHex: 0xf0c248,
     hasBraids: true,
   });
-  carolerSL.position.set(1.62, 0, -2.65);
+  carolerSL.position.set(1.75, 0, -2.68);
   carolerSL.rotation.y = -0.32;
   housesGroup.add(carolerSL);
 
@@ -1205,8 +1206,8 @@ export function buildGrinchWhovilleHouses(
     hasBraids: true,
     holdingGift: true,
   });
-  carolerChild.position.set(-0.85, 0, -2.25);
-  carolerChild.rotation.y = 0.16;
+  carolerChild.position.set(-3.12, 0, -4.18);
+  carolerChild.rotation.y = 0.24;
   housesGroup.add(carolerChild);
 
   return housesGroup;

@@ -689,14 +689,14 @@ export function buildGrinchShoppingCounters(
       unit.add(displayStand);
     }
 
-    // 7. Expressive Who Store Clerk behind counter (`z = -0.52m` local) & Who Shopper in front (`z = +0.58m` local)
+    // 7. Expressive Who Store Clerk behind counter (`z = -0.58m` local) & Who Shopper in front (`z = +0.88m` local)
     const clerk = createWhoCharacter({
       heightM: 1.54,
       coatColorHex: spec.clerkColor,
       hatColorHex: 0x2e9448,
       trimColorHex: 0xd4d8de,
     });
-    clerk.position.set(0.1, 0, -0.52);
+    clerk.position.set(0.0, 0, -0.58);
     unit.add(clerk);
 
     const shopper = createWhoCharacter({
@@ -706,8 +706,8 @@ export function buildGrinchShoppingCounters(
       hasBraids: bIdx === 1,
       holdingGift: true,
     });
-    shopper.position.set(bIdx === 2 ? -0.68 : 0.68, 0, 0.58);
-    shopper.rotation.y = bIdx === 2 ? 2.55 : -2.55;
+    shopper.position.set(bIdx === 2 ? -0.32 : 0.32, 0, 0.88);
+    shopper.rotation.y = bIdx === 2 ? 2.85 : -2.85;
     unit.add(shopper);
 
     shoppingGroup.add(unit);
@@ -927,17 +927,19 @@ export function buildGrinchMtCrumpitSleigh(
 
   // Rolling steel wagon base frame
   const wagonFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(2.75, 0.12, 1.24, 2, 0.02),
+    new RoundedBoxGeometry(2.85, 0.12, 1.48, 2, 0.02),
     new THREE.MeshStandardMaterial({ color: 0x202838, roughness: 0.7 })
   );
   wagonFrame.position.set(0, 0.06, 0);
   cliffWagon.add(wagonFrame);
 
-  // Stepped jagged rock strata ascending toward the DSL precipice crest
+  // Stepped jagged rock strata ascending toward the DSL precipice crest:
+  // Strata #0 and #1 sit directly underneath the downstage snow steps (top Y < step top Y),
+  // while Strata #2 sits in the upstage plane (z = -0.32m) supporting the summit sleigh ramp!
   const strataSpecs = [
-    { x: -0.95, y: 0.36, z: -0.06, w: 0.96, h: 0.52, d: 0.84, rotZ: 0.0, mat: iceRockLowerMat },
-    { x: -0.36, y: 0.58, z: -0.02, w: 1.02, h: 0.92, d: 0.82, rotZ: 0.0, mat: iceRockUpperMat },
-    { x: 0.38, y: 0.96, z: -0.04, w: 1.48, h: 1.48, d: 0.88, rotZ: 0.24, mat: iceRockLowerMat },
+    { x: -1.16, y: 0.34, z: 0.38, w: 0.72, h: 0.48, d: 0.58, rotZ: 0.0, mat: iceRockLowerMat },
+    { x: -0.52, y: 0.50, z: 0.44, w: 0.72, h: 0.76, d: 0.58, rotZ: 0.0, mat: iceRockUpperMat },
+    { x: 0.56, y: 0.96, z: -0.32, w: 1.48, h: 1.48, d: 0.72, rotZ: 0.24, mat: iceRockLowerMat },
   ] as const;
 
   for (let sIdx = 0; sIdx < strataSpecs.length; sIdx++) {
@@ -945,7 +947,7 @@ export function buildGrinchMtCrumpitSleigh(
     if (!st) continue;
 
     const rockBlock = new THREE.Mesh(
-      new RoundedBoxGeometry(st.w, st.h, st.d, 3, 0.12),
+      new RoundedBoxGeometry(st.w, st.h, st.d, 3, 0.08),
       st.mat
     );
     rockBlock.position.set(st.x, st.y, st.z);
@@ -956,65 +958,62 @@ export function buildGrinchMtCrumpitSleigh(
   }
 
   // Horizontal Snow-Ledge Step #1 (Lower Left Terrace for Max the Dog):
-  // Centered at (x = -0.98, y = 0.62, z = 0.16), height = 0.12m -> exact top surface Y = 0.68m!
+  // Centered at (x = -1.16, y = 0.62, z = 0.40), height = 0.12m -> exact top surface Y = 0.68m!
   const lowerSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.84, 0.12, 0.76, 2, 0.04),
+    new RoundedBoxGeometry(0.76, 0.12, 0.64, 2, 0.04),
     snowLedgeMat
   );
-  lowerSnowStep.position.set(-0.98, 0.62, 0.16);
+  lowerSnowStep.position.set(-1.16, 0.62, 0.40);
   lowerSnowStep.castShadow = true;
   lowerSnowStep.receiveShadow = true;
   cliffWagon.add(lowerSnowStep);
 
   const lowerValance = createSeussianIcicleValance(
-    0.76,
-    0.22,
+    0.68,
+    0.20,
     6,
     snowLedgeMat,
     icicleMat,
-    0.045,
+    0.04,
     31
   );
-  lowerValance.position.set(-0.98, 0.62, 0.57);
+  lowerValance.position.set(-1.16, 0.56, 0.74);
   cliffWagon.add(lowerValance);
 
   // Horizontal Snow-Ledge Step #2 (Mid Terrace for the Grinch):
-  // Centered at (x = -0.38, y = 1.04, z = 0.22), height = 0.12m -> exact top surface Y = 1.10m!
+  // Centered at (x = -0.52, y = 0.94, z = 0.46), height = 0.12m -> exact top surface Y = 1.00m!
   const midSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.82, 0.12, 0.78, 2, 0.04),
+    new RoundedBoxGeometry(0.74, 0.12, 0.64, 2, 0.04),
     snowLedgeMat
   );
-  midSnowStep.position.set(-0.38, 1.04, 0.22);
+  midSnowStep.position.set(-0.52, 0.94, 0.46);
   midSnowStep.castShadow = true;
   midSnowStep.receiveShadow = true;
   cliffWagon.add(midSnowStep);
 
   const midValance = createSeussianIcicleValance(
-    0.74,
-    0.26,
+    0.66,
+    0.22,
     6,
     snowLedgeMat,
     icicleMat,
-    0.045,
+    0.04,
     37
   );
-  midValance.position.set(-0.38, 1.04, 0.64);
+  midValance.position.set(-0.52, 0.88, 0.80);
   cliffWagon.add(midValance);
 
   // Upper Tilted Summit Snow Ramp Ledge (for the Grinch's Sleigh):
-  // Tilted at `sleighTiltRad = 0.24` rad so it slopes up to the right (`+X`).
-  // Ledge center at `(0.48, 1.68, -0.04)`, thickness `0.16m` (half-thickness `0.08m`).
-  // Its exact upper surface plane in `cliffWagon` coordinates passes through:
-  //   `x_surf = 0.48 - 0.08 * sin(0.24) = 0.4475`
-  //   `y_surf = 1.68 + 0.08 * cos(0.24) = 1.7577`
+  // Positioned in the upstage plane (z = -0.32m, depth = 0.76m -> z ∈ [-0.70m, +0.06m])
+  // so it sits cleanly behind the Grinch & Max on the downstage ledges (z >= +0.22m)!
   const sleighTiltRad = 0.24;
-  const upperLedgeCenterX = 0.48;
-  const upperLedgeCenterY = 1.68;
-  const upperLedgeCenterZ = -0.04;
+  const upperLedgeCenterX = 0.58;
+  const upperLedgeCenterY = 1.72;
+  const upperLedgeCenterZ = -0.32;
   const upperLedgeHalfThick = 0.08;
 
   const upperSummitLedge = new THREE.Mesh(
-    new RoundedBoxGeometry(1.62, upperLedgeHalfThick * 2, 0.92, 2, 0.04),
+    new RoundedBoxGeometry(1.56, upperLedgeHalfThick * 2, 0.76, 2, 0.04),
     snowLedgeMat
   );
   upperSummitLedge.position.set(
@@ -1029,26 +1028,26 @@ export function buildGrinchMtCrumpitSleigh(
 
   // Sculpted Seussian icicle valance + organic fluted icicle drips hanging under the summit ledge
   const summitValance = createSeussianIcicleValance(
-    1.52,
-    0.34,
+    1.46,
+    0.32,
     9,
     snowLedgeMat,
     icicleMat,
-    0.05,
+    0.045,
     43
   );
   summitValance.position.set(
     upperLedgeCenterX,
     upperLedgeCenterY - 0.04,
-    upperLedgeCenterZ + 0.49
+    upperLedgeCenterZ + 0.41
   );
   summitValance.rotation.z = sleighTiltRad;
   cliffWagon.add(summitValance);
 
   for (let dIdx = -2; dIdx <= 2; dIdx++) {
     const drip = createSculptedIcicleDrip(
-      0.32 + (Math.abs(dIdx) % 2) * 0.08,
-      0.046,
+      0.30 + (Math.abs(dIdx) % 2) * 0.08,
+      0.044,
       icicleMat,
       dIdx * 0.015
     );
@@ -1056,7 +1055,7 @@ export function buildGrinchMtCrumpitSleigh(
     drip.position.set(
       upperLedgeCenterX + localX * Math.cos(sleighTiltRad),
       upperLedgeCenterY + localX * Math.sin(sleighTiltRad) - 0.08,
-      upperLedgeCenterZ + 0.44
+      upperLedgeCenterZ + 0.38
     );
     cliffWagon.add(drip);
   }
@@ -1067,13 +1066,11 @@ export function buildGrinchMtCrumpitSleigh(
       new THREE.BoxGeometry(0.45, 0.05, 0.48),
       new THREE.MeshStandardMaterial({ color: 0x2c3446, roughness: 0.72 })
     );
-    tread.position.set(-0.65 + step * 0.38, 0.28 + step * 0.28, -0.68);
+    tread.position.set(-0.65 + step * 0.38, 0.28 + step * 0.28, -0.82);
     cliffWagon.add(tread);
   }
 
   // 3. The Grinch's Crooked Sleigh & Colossal Overstuffed Sack Resting Flush on the Summit Ledge!
-  // Runner tube radius is `0.028m`, and runner bottom centerline is at `y = 0.028m` in `sleighGroup`
-  // local coordinates so `y = 0` in `sleighGroup` is the exact bottom contact plane of the steel runners!
   const sleighSurfaceX =
     upperLedgeCenterX - Math.sin(sleighTiltRad) * upperLedgeHalfThick;
   const sleighSurfaceY =
@@ -1343,16 +1340,16 @@ export function buildGrinchMtCrumpitSleigh(
     heightM: 1.82,
     santaDisguise: true,
   });
-  // Mid snow step top surface is at `y = 1.10m` (`x = -0.38, z = 0.24`)
-  grinch.position.set(-0.38, 1.1, 0.24);
+  // Mid snow step top surface is at `y = 1.00m` (`x = -0.52, z = 0.46`)
+  grinch.position.set(-0.52, 1.0, 0.46);
   grinch.rotation.y = 0.32;
   cliffWagon.add(grinch);
 
   const maxDog = createMaxDogCharacter({
     withAntler: true,
   });
-  // Lower snow step top surface is at `y = 0.68m` (`x = -0.98, z = 0.18`)
-  maxDog.position.set(-0.98, 0.68, 0.18);
+  // Lower snow step top surface is at `y = 0.68m` (`x = -1.16, z = 0.40`)
+  maxDog.position.set(-1.16, 0.68, 0.4);
   maxDog.rotation.y = -0.35;
   cliffWagon.add(maxDog);
 
@@ -1643,15 +1640,6 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
   });
   redeemedGrinch.position.set(0, 0, -1.78);
   finaleBanquetGroup.add(redeemedGrinch);
-
-  // Gleaming Roast Beast carving knife & fork in the Grinch's raised right/left hands
-  const carvingKnifeMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.018, 0.28, 0.036),
-    silverPlatterMat
-  );
-  carvingKnifeMesh.position.set(0.24, 1.12, -1.56);
-  carvingKnifeMesh.rotation.x = 0.48;
-  finaleBanquetGroup.add(carvingKnifeMesh);
 
   // Cindy-Lou Who, Papa Who, Mama Who, and Grandpa Who standing behind/beside the banquet table
   // with zero clipping into the tablecloth (`z <= -1.60m` or `|x| >= 2.35m`) and well clear of the tree (`z = -2.40m`)

@@ -1152,7 +1152,7 @@ export const schoolOfRockSet: ProductionSetModule = {
           'sor-plaid-crest-floor',
           'black-velour-masking',
         ],
-        battenTrimHeightsM: { 1: 0.0, 2: 0.0, 3: 3.4, 4: 0.0, 5: 0.0 },
+        battenTrimHeightsM: { 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0 },
         grandDrapeOpenFraction: 1.0,
         stageWashColor: 0xd8b8ff,
         stageSpotColor: 0x88e8ff,
@@ -1362,13 +1362,13 @@ export const schoolOfRockSet: ProductionSetModule = {
     marqueeGroup.add(marqueeFace);
     trussGroup.add(marqueeGroup);
 
-    // Glowing Magenta & Cyan Rock Concert Haze Clouds & Volumetric Beam Cones
+    // Glowing Magenta & Cyan Rock Concert Haze Clouds & Volumetric Beam Cones (above y = 4.65m)
     const hazePalette = [
-      { x: -2.4, y: 5.5, z: -2.8, r: 1.15, col: 0xff1e56 },
-      { x: -0.9, y: 5.8, z: -3.4, r: 1.25, col: 0x2979ff },
-      { x: 0.2, y: 5.4, z: -3.0, r: 1.1, col: 0xff1e68 },
-      { x: 1.8, y: 5.6, z: -2.9, r: 1.2, col: 0xd500f9 },
-      { x: 3.1, y: 5.2, z: -2.4, r: 1.05, col: 0xff1744 },
+      { x: -2.4, y: 5.5, z: -4.15, r: 0.55, col: 0xff1e56 },
+      { x: -0.9, y: 5.7, z: -4.18, r: 0.58, col: 0x2979ff },
+      { x: 0.2, y: 5.45, z: -4.15, r: 0.55, col: 0xff1e68 },
+      { x: 1.8, y: 5.6, z: -4.18, r: 0.56, col: 0xd500f9 },
+      { x: 2.6, y: 5.4, z: -4.12, r: 0.52, col: 0xff1744 },
     ];
     for (const h of hazePalette) {
       const puff = new THREE.Mesh(
@@ -1392,7 +1392,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       [1.85, 0xd500f9, 0.18],
     ] as const) {
       const beamCone = new THREE.Mesh(
-        new THREE.ConeGeometry(0.48, 1.55, 14, 1, true),
+        new THREE.ConeGeometry(0.38, 1.05, 14, 1, true),
         new THREE.MeshBasicMaterial({
           color: col,
           transparent: true,
@@ -1402,7 +1402,7 @@ export const schoolOfRockSet: ProductionSetModule = {
           toneMapped: false,
         })
       );
-      beamCone.position.set(bx, 4.95, -4.25);
+      beamCone.position.set(bx, 5.12, -4.18);
       beamCone.rotation.z = tilt;
       trussGroup.add(beamCone);
     }
@@ -1419,12 +1419,12 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     for (const side of [-1, 1]) {
       const wallUnit = new THREE.Group();
-      wallUnit.position.set(side * 4.15, 0, -2.35);
+      wallUnit.position.set(side * 4.02, 0, -2.28);
       wallUnit.rotation.y = side * -0.58; // Raked between outer & inner truss towers
 
       // Slate-green chalkboard wall face (z ∈ [-0.07, +0.07])
       const boardPanel = new THREE.Mesh(
-        new THREE.BoxGeometry(3.2, 3.35, 0.14),
+        new THREE.BoxGeometry(2.06, 3.35, 0.14),
         chalkboardMat
       );
       boardPanel.position.set(0, 2.60, 0);
@@ -1434,16 +1434,16 @@ export const schoolOfRockSet: ProductionSetModule = {
 
       // Lower carved walnut wainscot base panel (y ∈ [0, 0.92], z ∈ [-0.08, +0.08])
       const wainscotBase = new THREE.Mesh(
-        new THREE.BoxGeometry(3.26, 0.92, 0.16),
+        new THREE.BoxGeometry(2.10, 0.92, 0.16),
         cherryTrimMat
       );
       wainscotBase.position.set(0, 0.46, 0);
       wallUnit.add(wainscotBase);
 
       // Raised wainscot panels on left and right of doorway (stepped at z = +0.115m)
-      for (const wx of [-1.12, 1.12]) {
+      for (const wx of [-0.80, 0.80]) {
         const raisedWainscot = new THREE.Mesh(
-          new THREE.BoxGeometry(0.68, 0.56, 0.04),
+          new THREE.BoxGeometry(0.32, 0.56, 0.04),
           darkWalnutMat
         );
         raisedWainscot.position.set(wx, 0.46, 0.115);
@@ -1452,21 +1452,21 @@ export const schoolOfRockSet: ProductionSetModule = {
 
       // Top moulded walnut cornice & bottom chalk tray with erasers
       const topCornice = new THREE.Mesh(
-        new THREE.BoxGeometry(3.52, 0.26, 0.28),
+        new THREE.BoxGeometry(2.16, 0.26, 0.28),
         cherryTrimMat
       );
       topCornice.position.set(0, 4.35, 0.04);
       wallUnit.add(topCornice);
 
       const chalkTray = new THREE.Mesh(
-        new THREE.BoxGeometry(3.38, 0.12, 0.24),
+        new THREE.BoxGeometry(2.12, 0.12, 0.24),
         cherryTrimMat
       );
       chalkTray.position.set(0, 0.96, 0.06);
       wallUnit.add(chalkTray);
 
       // Fluted walnut pilasters at outer edges of the classroom portal walls
-      for (const px of [-1.62, 1.62]) {
+      for (const px of [-0.98, 0.98]) {
         const pilaster = buildFlutedWalnutPilaster(
           4.25,
           cherryTrimMat,
@@ -1479,13 +1479,13 @@ export const schoolOfRockSet: ProductionSetModule = {
 
       // Central Wood-Trimmed Classroom Doorway Opening (matching both photos)
       const doorVoid = new THREE.Mesh(
-        new THREE.BoxGeometry(1.12, 2.35, 0.20),
+        new THREE.BoxGeometry(1.04, 2.35, 0.20),
         darkDoorwayMat
       );
       doorVoid.position.set(0, 1.18, 0.02); // Front face at +0.12, proud of boardPanel (+0.07)
       wallUnit.add(doorVoid);
 
-      for (const dx of [-0.61, 0.61]) {
+      for (const dx of [-0.56, 0.56]) {
         const jamb = new THREE.Mesh(
           new THREE.BoxGeometry(0.14, 2.48, 0.26),
           cherryTrimMat
@@ -1494,7 +1494,7 @@ export const schoolOfRockSet: ProductionSetModule = {
         wallUnit.add(jamb);
       }
       const doorHeader = new THREE.Mesh(
-        new THREE.BoxGeometry(1.46, 0.22, 0.30),
+        new THREE.BoxGeometry(1.36, 0.22, 0.30),
         darkWalnutMat
       );
       doorHeader.position.set(0, 2.52, 0.07); // Front face at +0.22
@@ -1517,7 +1517,7 @@ export const schoolOfRockSet: ProductionSetModule = {
         darkWalnutMat,
         brassMat
       );
-      trophyCabinet.position.set(side * -1.12, 0, 0.28);
+      trophyCabinet.position.set(side * -0.78, 0, 0.38);
       wallUnit.add(trophyCabinet);
 
       wingWallsGroup.add(wallUnit);
@@ -1528,7 +1528,7 @@ export const schoolOfRockSet: ProductionSetModule = {
     prepArchHeader.position.set(0, 6.25, -3.25);
 
     const archBeam = new THREE.Mesh(
-      new THREE.BoxGeometry(6.1, 0.36, 0.32),
+      new THREE.BoxGeometry(4.5, 0.36, 0.32),
       cherryTrimMat
     );
     prepArchHeader.add(archBeam);
@@ -1768,10 +1768,10 @@ export const schoolOfRockSet: ProductionSetModule = {
     }
 
     // 4b. Teacher's Oak Pedestal Desk with Globe, Stack of Textbooks, Apple & Dewey's Red Gibson SG
-    //     Attached to centerChalkboardGroup at clean Stage-Left classroom coordinates (x = 2.65, z = -2.35)
+    //     Attached to centerChalkboardGroup at clean Stage-Left classroom coordinates (x = 2.08, z = -1.92)
     const teacherDeskGroup = new THREE.Group();
-    teacherDeskGroup.position.set(2.65, 0, -2.35);
-    teacherDeskGroup.rotation.y = -0.36;
+    teacherDeskGroup.position.set(2.08, 0, -1.92);
+    teacherDeskGroup.rotation.y = -0.32;
     centerChalkboardGroup.add(teacherDeskGroup);
 
     const teacherDesktop = new THREE.Mesh(
@@ -1889,11 +1889,11 @@ export const schoolOfRockSet: ProductionSetModule = {
       readonly bookCol: number;
     }> = [
       { x: -2.05, z: -1.25, rotY: 0.16, bookCol: 0x8e1b26 },
-      { x: -0.78, z: -1.25, rotY: 0.08, bookCol: 0x1d446b },
-      { x: 0.82, z: -1.25, rotY: -0.08, bookCol: 0x265c3e },
+      { x: -0.85, z: -1.25, rotY: 0.08, bookCol: 0x1d446b },
+      { x: 0.32, z: -1.25, rotY: -0.06, bookCol: 0x265c3e },
       { x: -2.05, z: -2.25, rotY: 0.16, bookCol: 0x6e2a54 },
-      { x: -0.78, z: -2.25, rotY: 0.08, bookCol: 0xb87624 },
-      { x: 0.82, z: -2.25, rotY: -0.08, bookCol: 0x8e1b26 },
+      { x: -0.85, z: -2.25, rotY: 0.08, bookCol: 0xb87624 },
+      { x: 0.32, z: -2.25, rotY: -0.06, bookCol: 0x8e1b26 },
     ];
     for (const dp of deskPlacements) {
       const deskUnit = buildStudentDeskAndChair(oakMat, tubularSteelMat, dp.bookCol);
@@ -2268,15 +2268,15 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     // 3 Vocal Microphone Stands with Boom Arms in front of Dewey, Zack & Katie
     for (const [mx, mz, baseCol] of [
-      [0.08, -0.35, 0xc82432],
-      [1.78, -0.46, 0x22262e],
-      [-1.28, -0.46, 0x22262e],
+      [0.08, -0.22, 0xc82432],
+      [1.76, -0.32, 0x22262e],
+      [-1.26, -0.32, 0x22262e],
     ] as const) {
       const micStand = new THREE.Group();
       micStand.position.set(mx, 0, mz);
 
       const micBase = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.16, 0.18, 0.04, 14),
+        new THREE.CylinderGeometry(0.15, 0.17, 0.04, 14),
         new THREE.MeshStandardMaterial({ color: baseCol, roughness: 0.4 })
       );
       micBase.position.y = 0.02;
@@ -2290,18 +2290,18 @@ export const schoolOfRockSet: ProductionSetModule = {
       micStand.add(micPole);
 
       const boomArm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.009, 0.009, 0.56, 8),
+        new THREE.CylinderGeometry(0.009, 0.009, 0.34, 8),
         aluEdgeMat
       );
-      boomArm.position.set(0, 1.38, -0.10);
+      boomArm.position.set(0, 1.38, -0.06);
       boomArm.rotation.x = 1.15;
       micStand.add(boomArm);
 
       const micCapsule = new THREE.Mesh(
-        new THREE.SphereGeometry(0.026, 10, 8),
+        new THREE.SphereGeometry(0.024, 10, 8),
         aluEdgeMat
       );
-      micCapsule.position.set(0, 1.48, -0.26);
+      micCapsule.position.set(0, 1.45, -0.21);
       micStand.add(micCapsule);
 
       bandAndCastGroup.add(micStand);

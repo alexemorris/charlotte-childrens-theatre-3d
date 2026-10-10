@@ -63,6 +63,9 @@ export interface ProductionSetsController {
   isElementVisible(elementId: string): boolean;
   getElementNodes(elementId: string): ReadonlyArray<THREE.Object3D>;
   pickScenicElementAtRay(raycaster: THREE.Raycaster): ProductionElementSpec | null;
+  pickScenicTargetAtRay(
+    raycaster: THREE.Raycaster
+  ): { readonly element: ProductionElementSpec; readonly hitObject: THREE.Object3D } | null;
   setBattenTrimHeight(lineNumber: number, trimHeightM: number): void;
   getBattenTrimHeight(lineNumber: number): number;
   rebuildCustomSetPieces(
@@ -290,14 +293,19 @@ export function buildProductionSetsController(): ProductionSetsController {
       return elementNodes.get(elementId) ?? [];
     },
 
-    pickScenicElementAtRay(raycaster: THREE.Raycaster): ProductionElementSpec | null {
+    pickScenicTargetAtRay(
+      raycaster: THREE.Raycaster
+    ): { readonly element: ProductionElementSpec; readonly hitObject: THREE.Object3D } | null {
       const activeGroup = productionGroups.get(activeProductionId);
       if (!activeGroup || !activeGroup.visible) return null;
 
       const hits = raycaster.intersectObjects([activeGroup, maskingGroup], true);
       const spec = getActiveSpec();
 
-      let fallbackFloorOrMasking: ProductionElementSpec | null = null;
+      let fallbackFloorOrMasking: {
+        readonly element: ProductionElementSpec;
+        readonly hitObject: THREE.Object3D;
+      } | null = null;
 
       for (const hit of hits) {
         // Verify full ancestor chain is visible
@@ -326,15 +334,19 @@ export function buildProductionSetsController(): ProductionSetsController {
           foundSpec.id.endsWith('-floor') || foundSpec.category === 'masking';
         if (isFloorOrMasking) {
           if (!fallbackFloorOrMasking) {
-            fallbackFloorOrMasking = foundSpec;
+            fallbackFloorOrMasking = { element: foundSpec, hitObject: hit.object };
           }
           continue;
         }
 
-        return foundSpec;
+        return { element: foundSpec, hitObject: hit.object };
       }
 
       return fallbackFloorOrMasking;
+    },
+
+    pickScenicElementAtRay(raycaster: THREE.Raycaster): ProductionElementSpec | null {
+      return this.pickScenicTargetAtRay(raycaster)?.element ?? null;
     },
 
     setBattenTrimHeight(lineNumber: number, trimHeightM: number): void {

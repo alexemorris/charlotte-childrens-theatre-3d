@@ -118,7 +118,7 @@ export const matildaSet: ProductionSetModule = {
 
     // 2. Library Bookcase Towers
     const libraryTowers = new THREE.Group();
-    libraryTowers.position.set(0, 0, -5.8);
+    libraryTowers.position.set(0, 0, -6.45);
     matildaGroup.add(libraryTowers);
     registerElement('matilda-library-towers', libraryTowers, 4);
 

@@ -166,62 +166,96 @@ export function createHumanScaleFigure(
   base.position.y = 0.012;
   g.add(base);
 
-  // Shoes & Articulated Legs
+  // Shoes & Articulated Legs (supports both standing and seated postures)
   const hipSpacing = 0.074 * scale;
+  const seatDropY = options.isSeated ? legH * 0.38 : 0;
   for (const side of [-1, 1]) {
     const lx = side * hipSpacing;
-    const shoe = new THREE.Mesh(
-      new RoundedBoxGeometry(0.072 * scale, 0.048 * scale, 0.135 * scale, 2, 0.018),
-      shoeMat
-    );
-    shoe.position.set(lx, 0.024 + 0.022 * scale, 0.025 * scale);
-    shoe.castShadow = true;
-    g.add(shoe);
+    if (options.isSeated) {
+      // Seated posture: thighs extend forward (+Z) at hip height, lower legs drop vertically at knees
+      const hipY = 0.04 + legH * 0.62;
+      const thighLen = legH * 0.48;
+      const shinLen = legH * 0.54;
+      const kneeZ = thighLen * 0.88;
 
-    const lowerLeg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.044 * scale, 0.036 * scale, legH * 0.52, 10),
-      pantsMat
-    );
-    lowerLeg.position.set(lx, 0.04 + legH * 0.26, 0);
-    lowerLeg.castShadow = true;
-    g.add(lowerLeg);
+      const upperLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.052 * scale, 0.045 * scale, thighLen, 10),
+        pantsMat
+      );
+      upperLeg.rotation.x = Math.PI / 2 - 0.12;
+      upperLeg.position.set(lx, hipY, kneeZ * 0.5);
+      upperLeg.castShadow = true;
+      g.add(upperLeg);
 
-    const upperLeg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.054 * scale, 0.045 * scale, legH * 0.52, 10),
-      pantsMat
-    );
-    upperLeg.position.set(lx, 0.04 + legH * 0.74, 0);
-    upperLeg.castShadow = true;
-    g.add(upperLeg);
+      const lowerLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.044 * scale, 0.036 * scale, shinLen, 10),
+        pantsMat
+      );
+      lowerLeg.position.set(lx, 0.048 * scale + shinLen * 0.5, kneeZ);
+      lowerLeg.castShadow = true;
+      g.add(lowerLeg);
+
+      const shoe = new THREE.Mesh(
+        new RoundedBoxGeometry(0.072 * scale, 0.046 * scale, 0.132 * scale, 2, 0.018),
+        shoeMat
+      );
+      shoe.position.set(lx, 0.024 + 0.022 * scale, kneeZ + 0.026 * scale);
+      shoe.castShadow = true;
+      g.add(shoe);
+    } else {
+      const shoe = new THREE.Mesh(
+        new RoundedBoxGeometry(0.072 * scale, 0.048 * scale, 0.135 * scale, 2, 0.018),
+        shoeMat
+      );
+      shoe.position.set(lx, 0.024 + 0.022 * scale, 0.025 * scale);
+      shoe.castShadow = true;
+      g.add(shoe);
+
+      const lowerLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.044 * scale, 0.036 * scale, legH * 0.50, 10),
+        pantsMat
+      );
+      lowerLeg.position.set(lx, 0.044 + legH * 0.25, 0);
+      lowerLeg.castShadow = true;
+      g.add(lowerLeg);
+
+      const upperLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.054 * scale, 0.045 * scale, legH * 0.50, 10),
+        pantsMat
+      );
+      upperLeg.position.set(lx, 0.044 + legH * 0.75, 0);
+      upperLeg.castShadow = true;
+      g.add(upperLeg);
+    }
   }
 
   // Flared Coat Skirt / Peplum Hem
   const skirtHem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.115 * scale, 0.152 * scale, torsoH * 0.36, 16),
+    new THREE.CylinderGeometry(0.115 * scale, 0.148 * scale, torsoH * 0.34, 16),
     coatMat
   );
   skirtHem.scale.set(1.0, 1.0, 0.74);
-  skirtHem.position.y = 0.04 + legH + torsoH * 0.14;
+  skirtHem.position.y = 0.04 + legH - seatDropY + torsoH * 0.15;
   skirtHem.castShadow = true;
   g.add(skirtHem);
 
   // Sculpted Upper Torso & Chest
   const torso = new THREE.Mesh(
-    new RoundedBoxGeometry(0.245 * scale, torsoH * 0.76, 0.148 * scale, 3, 0.045 * scale),
+    new RoundedBoxGeometry(0.242 * scale, torsoH * 0.74, 0.146 * scale, 3, 0.042 * scale),
     coatMat
   );
-  const torsoCenterY = 0.04 + legH + torsoH * 0.56;
+  const torsoCenterY = 0.04 + legH - seatDropY + torsoH * 0.56;
   torso.position.y = torsoCenterY;
   torso.castShadow = true;
   g.add(torso);
 
-  // Collar / Lapel V-Trim + 3 Coat Buttons (offset in +Z so zero coplanar faces)
+  // Collar / Lapel V-Trim + 3 Coat Buttons (positioned cleanly on top/front of torso)
   const collar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.068 * scale, 0.018 * scale, 8, 16),
+    new THREE.TorusGeometry(0.064 * scale, 0.016 * scale, 8, 16),
     trimMat
   );
-  collar.rotation.x = Math.PI / 2 + 0.22;
-  collar.position.set(0, torsoCenterY + torsoH * 0.34, 0.012 * scale);
+  collar.rotation.x = Math.PI / 2 + 0.18;
+  collar.position.set(0, torsoCenterY + torsoH * 0.385, 0.008 * scale);
   g.add(collar);
 
   for (let b = 0; b < 3; b++) {
@@ -232,24 +266,24 @@ export function createHumanScaleFigure(
     btn.position.set(
       0,
       torsoCenterY + (1 - b) * 0.075 * scale,
-      0.082 * scale
+      0.086 * scale
     );
     g.add(btn);
   }
 
   if (options.hasApron) {
     const apron = new THREE.Mesh(
-      new RoundedBoxGeometry(0.18 * scale, torsoH * 0.82, 0.025 * scale, 2, 0.01),
+      new RoundedBoxGeometry(0.178 * scale, torsoH * 0.80, 0.022 * scale, 2, 0.01),
       trimMat
     );
-    apron.position.set(0, torsoCenterY - 0.04 * scale, 0.078 * scale);
+    apron.position.set(0, torsoCenterY - 0.04 * scale, 0.086 * scale);
     g.add(apron);
   }
 
-  // Articulated Arms, Cuffs & Hands
+  // Articulated Arms, Cuffs & Hands (shoulders placed cleanly outside torso/belly width)
   const shoulderY = torsoCenterY + torsoH * 0.28;
-  const shoulderX = 0.148 * scale;
-  const armLen = torsoH * 0.72;
+  const shoulderX = 0.158 * scale;
+  const armLen = torsoH * 0.68;
   const armPose = options.armPose ?? 'relaxed';
 
   for (const side of [-1, 1]) {
@@ -257,21 +291,21 @@ export function createHumanScaleFigure(
     armPivot.position.set(side * shoulderX, shoulderY, 0);
 
     if (armPose === 'cheering') {
-      armPivot.rotation.z = side * 2.35;
-      armPivot.rotation.x = 0.35;
+      armPivot.rotation.z = side * 2.62;
+      armPivot.rotation.x = -0.24;
     } else if (armPose === 'presenting') {
-      armPivot.rotation.z = side * 0.48;
-      armPivot.rotation.x = -0.62;
+      armPivot.rotation.z = side * -0.14;
+      armPivot.rotation.x = -0.68;
     } else if (armPose === 'playing') {
-      armPivot.rotation.z = side * 0.26;
-      armPivot.rotation.x = -0.78;
-    } else {
       armPivot.rotation.z = side * 0.18;
-      armPivot.rotation.x = side > 0 ? -0.22 : -0.08;
+      armPivot.rotation.x = -0.64;
+    } else {
+      armPivot.rotation.z = side * 0.20;
+      armPivot.rotation.x = side > 0 ? -0.18 : -0.06;
     }
 
     const sleeve = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.036 * scale, 0.030 * scale, armLen, 10),
+      new THREE.CylinderGeometry(0.035 * scale, 0.029 * scale, armLen, 10),
       coatMat
     );
     sleeve.position.y = -armLen / 2;
@@ -279,37 +313,37 @@ export function createHumanScaleFigure(
     armPivot.add(sleeve);
 
     const cuff = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.034 * scale, 0.034 * scale, 0.032 * scale, 10),
+      new THREE.CylinderGeometry(0.033 * scale, 0.033 * scale, 0.030 * scale, 10),
       trimMat
     );
     cuff.position.y = -armLen + 0.015 * scale;
     armPivot.add(cuff);
 
     const hand = new THREE.Mesh(
-      new THREE.SphereGeometry(0.028 * scale, 10, 10),
+      new THREE.SphereGeometry(0.027 * scale, 10, 10),
       skinMat
     );
-    hand.position.set(0, -armLen - 0.018 * scale, 0.008 * scale);
+    hand.position.set(0, -armLen - 0.022 * scale, 0.008 * scale);
     armPivot.add(hand);
 
     g.add(armPivot);
   }
 
-  // Optional Electric Guitar strapped across chest
+  // Optional Electric Guitar strapped cleanly across front of chest
   if (options.hasGuitarHex !== undefined) {
     const guitarGroup = new THREE.Group();
-    guitarGroup.position.set(0.02 * scale, torsoCenterY - 0.04 * scale, 0.105 * scale);
-    guitarGroup.rotation.z = -0.38;
+    guitarGroup.position.set(0.01 * scale, torsoCenterY - 0.03 * scale, 0.122 * scale);
+    guitarGroup.rotation.z = -0.46;
     const gBody = new THREE.Mesh(
-      new RoundedBoxGeometry(0.22 * scale, 0.16 * scale, 0.032 * scale, 2, 0.02),
+      new RoundedBoxGeometry(0.20 * scale, 0.15 * scale, 0.030 * scale, 2, 0.02),
       new THREE.MeshStandardMaterial({ color: options.hasGuitarHex, roughness: 0.32, metalness: 0.25 })
     );
     guitarGroup.add(gBody);
     const gNeck = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32 * scale, 0.028 * scale, 0.02 * scale),
+      new THREE.BoxGeometry(0.24 * scale, 0.026 * scale, 0.018 * scale),
       new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.55 })
     );
-    gNeck.position.set(0.22 * scale, 0.02 * scale, 0.008 * scale);
+    gNeck.position.set(0.19 * scale, 0.015 * scale, 0.008 * scale);
     guitarGroup.add(gNeck);
     g.add(guitarGroup);
   }
@@ -323,20 +357,20 @@ export function createHumanScaleFigure(
   neck.position.y = neckY;
   g.add(neck);
 
-  const headY = neckY + headR + 0.018 * scale;
+  const headY = neckY + headR + 0.022 * scale;
   const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 16, 14), skinMat);
-  head.scale.set(0.95, 1.06, 0.96);
+  head.scale.set(0.95, 1.05, 0.96);
   head.position.y = headY;
   head.castShadow = true;
   g.add(head);
 
   // Sculpted Nose, Eyes & Smile
   const nose = new THREE.Mesh(
-    new THREE.ConeGeometry(headR * 0.16, headR * 0.34, 8),
+    new THREE.ConeGeometry(headR * 0.16, headR * 0.32, 8),
     skinMat
   );
   nose.rotation.x = Math.PI / 2 - 0.18;
-  nose.position.set(0, headY, headR * 0.98);
+  nose.position.set(0, headY, headR * 1.02);
   g.add(nose);
 
   for (const side of [-1, 1]) {
@@ -344,51 +378,51 @@ export function createHumanScaleFigure(
       new THREE.SphereGeometry(headR * 0.11, 8, 8),
       eyeDarkMat
     );
-    eye.position.set(side * headR * 0.34, headY + headR * 0.14, headR * 0.88);
+    eye.position.set(side * headR * 0.34, headY + headR * 0.14, headR * 0.92);
     g.add(eye);
 
     const brow = new THREE.Mesh(
       new THREE.BoxGeometry(headR * 0.24, headR * 0.05, headR * 0.06),
       hairMat
     );
-    brow.position.set(side * headR * 0.34, headY + headR * 0.32, headR * 0.88);
+    brow.position.set(side * headR * 0.34, headY + headR * 0.32, headR * 0.92);
     brow.rotation.z = side * -0.14;
     g.add(brow);
   }
 
   // Sculpted Hair Cap
   const hairCap = new THREE.Mesh(
-    new THREE.SphereGeometry(headR * 1.04, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.62),
+    new THREE.SphereGeometry(headR * 1.03, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
     hairMat
   );
-  hairCap.position.set(0, headY + headR * 0.06, -headR * 0.06);
-  hairCap.rotation.x = -0.22;
+  hairCap.position.set(0, headY + headR * 0.06, -headR * 0.04);
+  hairCap.rotation.x = -0.18;
   g.add(hairCap);
 
-  // Optional Top Hat / Headwear
+  // Optional Top Hat / Headwear resting cleanly on top of hairCap
   if (hatHeightM > 0.01) {
     const hatMat = new THREE.MeshStandardMaterial({ color: hatColorHex, roughness: 0.45 });
     const brim = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 1.65, headR * 1.65, 0.026 * scale, 18),
+      new THREE.CylinderGeometry(headR * 1.58, headR * 1.58, 0.024 * scale, 18),
       hatMat
     );
-    brim.position.y = headY + headR * 0.72;
+    brim.position.y = headY + headR * 0.96;
     g.add(brim);
 
     const crown = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 1.18, headR * 0.96, hatHeightM, 18),
+      new THREE.CylinderGeometry(headR * 1.14, headR * 0.94, hatHeightM, 18),
       hatMat
     );
-    crown.position.y = brim.position.y + hatHeightM / 2;
-    crown.rotation.z = -0.1;
+    crown.position.y = brim.position.y + 0.012 * scale + hatHeightM / 2;
+    crown.rotation.z = -0.08;
     g.add(crown);
 
     const ribbon = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 1.02, headR * 1.0, Math.min(0.055, hatHeightM * 0.22), 18),
+      new THREE.CylinderGeometry(headR * 0.99, headR * 0.97, Math.min(0.052, hatHeightM * 0.22), 18),
       trimMat
     );
     ribbon.position.y = brim.position.y + 0.032;
-    ribbon.rotation.z = -0.1;
+    ribbon.rotation.z = -0.08;
     g.add(ribbon);
   }
 
@@ -398,7 +432,7 @@ export function createHumanScaleFigure(
     const earInnerMat = new THREE.MeshStandardMaterial({ color: 0xf0a8bc, roughness: 0.55 });
     for (const side of [-1, 1]) {
       const earGroup = new THREE.Group();
-      earGroup.position.set(side * headR * 0.48, headY + headR * 0.85, 0);
+      earGroup.position.set(side * headR * 0.52, headY + headR * 0.98, 0);
       earGroup.rotation.z = side * -0.22;
       earGroup.rotation.x = 0.12;
 
@@ -406,14 +440,14 @@ export function createHumanScaleFigure(
         new RoundedBoxGeometry(0.052 * scale, 0.34 * scale, 0.028 * scale, 2, 0.014),
         earOuterMat
       );
-      outerEar.position.y = 0.16 * scale;
+      outerEar.position.y = 0.17 * scale;
       earGroup.add(outerEar);
 
       const innerEar = new THREE.Mesh(
         new THREE.BoxGeometry(0.028 * scale, 0.26 * scale, 0.016 * scale),
         earInnerMat
       );
-      innerEar.position.set(0, 0.16 * scale, 0.014 * scale);
+      innerEar.position.set(0, 0.17 * scale, 0.016 * scale);
       earGroup.add(innerEar);
 
       g.add(earGroup);
@@ -532,78 +566,98 @@ export function createGrinchCharacter(
   if (options.santaDisguise) {
     // White fur coat hem, vertical front placket, collar & black belt
     const furHem = new THREE.Mesh(
-      new THREE.TorusGeometry(0.195 * scale, 0.038 * scale, 10, 20),
+      new THREE.TorusGeometry(0.198 * scale, 0.036 * scale, 10, 20),
       whiteFurMat
     );
     furHem.rotation.x = Math.PI / 2;
     furHem.scale.set(1.0, 0.88, 1.0);
-    furHem.position.set(0, 0.60 * scale, 0.02 * scale);
+    furHem.position.set(0, 0.60 * scale, 0.025 * scale);
     g.add(furHem);
 
     const belt = new THREE.Mesh(
-      new THREE.TorusGeometry(0.198 * scale, 0.024 * scale, 8, 20),
+      new THREE.TorusGeometry(0.206 * scale, 0.024 * scale, 8, 20),
       new THREE.MeshStandardMaterial({ color: 0x18181e, roughness: 0.4 })
     );
     belt.rotation.x = Math.PI / 2;
     belt.scale.set(1.0, 0.88, 1.0);
-    belt.position.set(0, 0.82 * scale, 0.025 * scale);
+    belt.position.set(0, 0.82 * scale, 0.03 * scale);
     g.add(belt);
 
     const buckle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.065 * scale, 0.058 * scale, 0.024 * scale),
+      new THREE.BoxGeometry(0.065 * scale, 0.058 * scale, 0.022 * scale),
       new THREE.MeshStandardMaterial({ color: 0xf0c438, roughness: 0.3, metalness: 0.7 })
     );
-    buckle.position.set(0, 0.82 * scale, 0.205 * scale);
+    buckle.position.set(0, 0.82 * scale, 0.222 * scale);
     g.add(buckle);
 
     const furCollar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.135 * scale, 0.035 * scale, 10, 18),
+      new THREE.TorusGeometry(0.138 * scale, 0.034 * scale, 10, 18),
       whiteFurMat
     );
     furCollar.rotation.x = Math.PI / 2 + 0.18;
-    furCollar.position.set(0, 1.29 * scale, 0.01 * scale);
+    furCollar.position.set(0, 1.30 * scale, 0.01 * scale);
     g.add(furCollar);
   }
 
-  // Long Lanky Grinch Arms & Curved Green Fingers
+  // Long Lanky Grinch Arms & Curved Green Fingers (placed cleanly outside chest radius)
   for (const side of [-1, 1]) {
     const armGroup = new THREE.Group();
-    armGroup.position.set(side * 0.175 * scale, 1.24 * scale, 0);
+    armGroup.position.set(side * 0.215 * scale, 1.24 * scale, 0);
     if (options.spyglassPose && side === 1) {
-      armGroup.rotation.x = -1.15;
-      armGroup.rotation.z = -0.25;
+      armGroup.rotation.x = -0.92;
+      armGroup.rotation.z = -0.18;
+    } else if (options.carvingKnife && side === 1) {
+      armGroup.rotation.x = -1.18;
+      armGroup.rotation.z = 0.24;
     } else if (options.holdingSack && side === -1) {
-      armGroup.rotation.x = -0.85;
-      armGroup.rotation.z = -0.35;
+      armGroup.rotation.x = 0.42;
+      armGroup.rotation.z = -0.32;
     } else {
       armGroup.rotation.z = side * 0.24;
-      armGroup.rotation.x = -0.36;
+      armGroup.rotation.x = -0.32;
     }
 
     const sleeve = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.042 * scale, 0.034 * scale, 0.48 * scale, 10),
+      new THREE.CylinderGeometry(0.040 * scale, 0.033 * scale, 0.46 * scale, 10),
       options.santaDisguise ? santaRedMat : grinchFurMat
     );
-    sleeve.position.y = -0.24 * scale;
+    sleeve.position.y = -0.23 * scale;
     armGroup.add(sleeve);
 
     if (options.santaDisguise) {
       const cuff = new THREE.Mesh(
-        new THREE.TorusGeometry(0.038 * scale, 0.018 * scale, 8, 12),
+        new THREE.TorusGeometry(0.037 * scale, 0.017 * scale, 8, 12),
         whiteFurMat
       );
       cuff.rotation.x = Math.PI / 2;
-      cuff.position.y = -0.46 * scale;
+      cuff.position.y = -0.45 * scale;
       armGroup.add(cuff);
     }
 
     const hand = new THREE.Mesh(
-      new THREE.SphereGeometry(0.036 * scale, 10, 10),
+      new THREE.SphereGeometry(0.035 * scale, 10, 10),
       grinchFurMat
     );
-    hand.scale.set(0.85, 1.35, 0.75);
-    hand.position.set(0, -0.52 * scale, 0.02 * scale);
+    hand.scale.set(0.85, 1.32, 0.75);
+    hand.position.set(0, -0.50 * scale, 0.02 * scale);
     armGroup.add(hand);
+
+    if (options.carvingKnife && side === 1) {
+      const knifeHandle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012 * scale, 0.014 * scale, 0.09 * scale, 8),
+        new THREE.MeshStandardMaterial({ color: 0x4e2e1a, roughness: 0.55 })
+      );
+      knifeHandle.rotation.x = Math.PI / 2;
+      knifeHandle.position.set(0, -0.51 * scale, 0.05 * scale);
+      armGroup.add(knifeHandle);
+
+      const knifeBlade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.010 * scale, 0.032 * scale, 0.22 * scale),
+        new THREE.MeshStandardMaterial({ color: 0xd8e0ec, roughness: 0.22, metalness: 0.85 })
+      );
+      knifeBlade.position.set(0, -0.51 * scale, 0.19 * scale);
+      armGroup.add(knifeBlade);
+    }
 
     g.add(armGroup);
   }
@@ -698,12 +752,13 @@ export function createGrinchCharacter(
   g.add(headGroup);
 
   if (options.holdingSack) {
+    // Slung cleanly beside/behind left hip at x = -0.36 * scale, z = -0.18 * scale (zero torso or mantel overlap)
     const sack = new THREE.Mesh(
-      new THREE.SphereGeometry(0.24 * scale, 14, 12),
+      new THREE.SphereGeometry(0.175 * scale, 14, 12),
       santaRedMat
     );
-    sack.scale.set(1.0, 1.22, 0.92);
-    sack.position.set(-0.26 * scale, 1.02 * scale, -0.14 * scale);
+    sack.scale.set(0.95, 1.18, 0.88);
+    sack.position.set(-0.36 * scale, 0.82 * scale, -0.18 * scale);
     sack.castShadow = true;
     g.add(sack);
   }
@@ -888,13 +943,13 @@ export function createWhoCharacter(options: WhoCharacterOptions): THREE.Group {
   );
 
   const scale = options.heightM / 1.7;
-  // Add signature round Seussian Who belly coat puff
+  // Add signature round Seussian Who belly coat puff (cleanly inside arm clearance)
   const bellyPuff = new THREE.Mesh(
-    new THREE.SphereGeometry(0.155 * scale, 14, 12),
+    new THREE.SphereGeometry(0.145 * scale, 14, 12),
     new THREE.MeshStandardMaterial({ color: options.coatColorHex, roughness: 0.54 })
   );
-  bellyPuff.scale.set(1.06, 0.95, 0.92);
-  bellyPuff.position.set(0, options.heightM * 0.48, 0.02 * scale);
+  bellyPuff.scale.set(1.0, 0.92, 0.86);
+  bellyPuff.position.set(0, options.heightM * 0.48, 0.015 * scale);
   g.add(bellyPuff);
 
   if (options.hasBraids) {
@@ -904,21 +959,29 @@ export function createWhoCharacter(options: WhoCharacterOptions): THREE.Group {
     });
     for (const side of [-1, 1]) {
       const loopBraid = new THREE.Mesh(
-        new THREE.TorusGeometry(0.058 * scale, 0.016 * scale, 8, 14),
+        new THREE.TorusGeometry(0.052 * scale, 0.015 * scale, 8, 14),
         hairMat
       );
-      loopBraid.position.set(side * 0.11 * scale, options.heightM * 0.88, 0);
+      loopBraid.position.set(side * 0.155 * scale, options.heightM * 0.88, 0);
       g.add(loopBraid);
     }
   }
 
   if (options.holdingGift) {
+    // Held cleanly in front of bellyPuff (z = 0.22 * scale, depth = 0.14 * scale -> back face at 0.15 * scale)
     const gift = new THREE.Mesh(
-      new RoundedBoxGeometry(0.18 * scale, 0.16 * scale, 0.18 * scale, 2, 0.02),
+      new RoundedBoxGeometry(0.15 * scale, 0.13 * scale, 0.14 * scale, 2, 0.02),
       new THREE.MeshStandardMaterial({ color: 0xe62e48, roughness: 0.45 })
     );
-    gift.position.set(0, options.heightM * 0.54, 0.19 * scale);
+    gift.position.set(0, options.heightM * 0.55, 0.22 * scale);
     g.add(gift);
+
+    const ribbonBow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.026 * scale, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf4c838, roughness: 0.35, metalness: 0.3 })
+    );
+    ribbonBow.position.set(0, options.heightM * 0.55 + 0.075 * scale, 0.22 * scale);
+    g.add(ribbonBow);
   }
 
   return g;

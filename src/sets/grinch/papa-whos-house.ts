@@ -1720,8 +1720,8 @@ export function buildPapaWhosHouseUnit(
       holdingSack: true,
     });
     grinchFigure.name = 'Figure_Grinch_SantaDisguise_1E';
-    grinchFigure.position.set(0.55, 0, -1.12);
-    grinchFigure.rotation.y = -0.32;
+    grinchFigure.position.set(0.46, 0, -0.84);
+    grinchFigure.rotation.y = -0.28;
     group.add(grinchFigure);
 
     const maxDog = createMaxDogCharacter({
@@ -1729,7 +1729,7 @@ export function buildPapaWhosHouseUnit(
       sitting: false,
     });
     maxDog.name = 'Figure_MaxDog_1E';
-    maxDog.position.set(-0.55, 0, -1.08);
+    maxDog.position.set(-0.55, 0, -0.92);
     maxDog.rotation.y = 1.38;
     group.add(maxDog);
 
@@ -1741,7 +1741,7 @@ export function buildPapaWhosHouseUnit(
       hasBraids: true,
     });
     cindyLou1E.name = 'Figure_CindyLouWho_1E';
-    cindyLou1E.position.set(2.05, 0, -1.08);
+    cindyLou1E.position.set(1.28, 0, -0.88);
     cindyLou1E.rotation.y = -0.42;
     group.add(cindyLou1E);
   } else {
@@ -1752,7 +1752,7 @@ export function buildPapaWhosHouseUnit(
       hairColorHex: 0x8c5828,
     });
     papaWho.name = 'Figure_PapaWho_1H';
-    papaWho.position.set(-1.15, 0, -1.05);
+    papaWho.position.set(-0.82, 0, -0.92);
     papaWho.rotation.y = 0.24;
     group.add(papaWho);
 
@@ -1764,7 +1764,7 @@ export function buildPapaWhosHouseUnit(
       hasBraids: true,
     });
     mamaWho.name = 'Figure_MamaWho_1H';
-    mamaWho.position.set(0.65, 0, -1.05);
+    mamaWho.position.set(0.68, 0, -0.95);
     mamaWho.rotation.y = -0.22;
     group.add(mamaWho);
 
@@ -1777,7 +1777,7 @@ export function buildPapaWhosHouseUnit(
       holdingGift: true,
     });
     cindyLou1H.name = 'Figure_CindyLouWho_1H';
-    cindyLou1H.position.set(-0.22, 0, -0.92);
+    cindyLou1H.position.set(-0.08, 0, -0.82);
     cindyLou1H.rotation.y = 0.08;
     group.add(cindyLou1H);
   }
