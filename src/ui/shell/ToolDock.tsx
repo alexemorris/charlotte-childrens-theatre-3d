@@ -5,6 +5,7 @@ import {
   inSeatView,
   isMobile,
   openWorkshopForActiveScene,
+  selectedSeatMetrics,
   sightlineLaserEnabled,
   syncStoreFromSceneController,
   workshopTarget,
@@ -31,7 +32,13 @@ const QUICK_CAMERAS: readonly QuickCameraOption[] = [
     id: 'stage-front',
     label: 'Proscenium',
     icon: 'stage',
-    hint: 'Center orchestra proscenium elevation',
+    hint: 'Direct front proscenium elevation view',
+  },
+  {
+    id: 'ortho-ground-plan',
+    label: 'Top Plan',
+    icon: 'plan',
+    hint: 'Top-down architectural ground plan view',
   },
   {
     id: 'from-stage-to-house',
@@ -64,6 +71,11 @@ export function ToolDock(): JSX.Element | null {
   const lasersOn = sightlineLaserEnabled.value;
   const gridOn = cadGridEnabled.value;
   const workshopOpen = workshopTarget.value !== null;
+  const selectedSeat = selectedSeatMetrics.value?.seat;
+  const sitSeatId = selectedSeat?.id ?? 'MF-C-G-108';
+  const sitLabel = selectedSeat
+    ? `Sit (${selectedSeat.rowLabel}-${selectedSeat.seatNumber})`
+    : 'Sit (G-108)';
 
   const hintText = isMobile.value
     ? '1-finger orbit · Tap any seat to sit · Tap any scenic unit for Workshop & CNC files'
@@ -90,11 +102,28 @@ export function ToolDock(): JSX.Element | null {
                 syncStoreFromSceneController(sceneCtrl);
               }}
             >
-              <Icon name={c.icon} size={18} />
+              <Icon name={c.icon} size={17} />
               <span>{c.label}</span>
             </button>
           );
         })}
+
+        <button
+          type="button"
+          class="shell-dock-btn"
+          title={`Enter 1st-person seated sightline at ${
+            selectedSeat
+              ? `${selectedSeat.sectionTitle} Row ${selectedSeat.rowLabel} Seat ${selectedSeat.seatNumber}`
+              : "Director's Chair (Row G Seat 108)"
+          }`}
+          onClick={() => {
+            sceneCtrl.selectSeatById(sitSeatId, true);
+            syncStoreFromSceneController(sceneCtrl);
+          }}
+        >
+          <Icon name="seat" size={17} />
+          <span>{sitLabel}</span>
+        </button>
 
         <span class="shell-dock-sep" aria-hidden="true" />
 
@@ -108,7 +137,7 @@ export function ToolDock(): JSX.Element | null {
             syncStoreFromSceneController(sceneCtrl);
           }}
         >
-          <Icon name="laser" size={18} />
+          <Icon name="laser" size={17} />
           <span>3D Lasers</span>
         </button>
 
@@ -116,13 +145,13 @@ export function ToolDock(): JSX.Element | null {
           type="button"
           class={`shell-dock-btn${gridOn ? ' is-active' : ''}`}
           aria-pressed={gridOn}
-          title="Toggle 1m × 1m CAD coordinate grid on stage floor"
+          title="Toggle 1m × 1m CAD coordinate grid on stage floor (G)"
           onClick={() => {
             sceneCtrl.setCadGridEnabled(!gridOn);
             syncStoreFromSceneController(sceneCtrl);
           }}
         >
-          <Icon name="grid" size={18} />
+          <Icon name="grid" size={17} />
           <span>CAD Grid</span>
         </button>
 
@@ -135,7 +164,7 @@ export function ToolDock(): JSX.Element | null {
             openWorkshopForActiveScene(sceneCtrl);
           }}
         >
-          <Icon name="cnc" size={18} />
+          <Icon name="cnc" size={17} />
           <span>Workshop / CNC</span>
         </button>
       </nav>

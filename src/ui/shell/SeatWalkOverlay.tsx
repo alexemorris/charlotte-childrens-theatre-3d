@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import {
   activeScene,
   eyeMode,
+  hasAnyModalOpen,
   hoveredScenicElement,
   hoveredSeat,
   inSeatView,
@@ -28,6 +29,10 @@ function formatSightlineGrade(grade: SightlineGrade): string {
 }
 
 function PointerHoverTooltip(): JSX.Element | null {
+  if (hasAnyModalOpen.value) {
+    return null;
+  }
+
   const seatHover = hoveredSeat.value;
   const scenicHover = hoveredScenicElement.value;
 
@@ -56,9 +61,7 @@ function PointerHoverTooltip(): JSX.Element | null {
         <>
           <strong>{seatHover.seat.sectionTitle}</strong> · Row{' '}
           {seatHover.seat.rowLabel} · Seat {seatHover.seat.seatNumber}{' '}
-          <span style={{ color: '#48d6ff', fontWeight: 600 }}>
-            (Click to Sit)
-          </span>
+          <span class="hover-tooltip-cta-seat">(Click to Sit)</span>
         </>
       ) : scenicHover ? (
         <>
@@ -66,7 +69,7 @@ function PointerHoverTooltip(): JSX.Element | null {
           {scenicHover.subUnitLabel
             ? scenicHover.element.name
             : scenicHover.element.dimensionsLabel}{' '}
-          <span style={{ color: '#38ef8c', fontWeight: 600 }}>
+          <span class="hover-tooltip-cta-scenic">
             (Click to Inspect Unit &amp; CNC)
           </span>
         </>
@@ -227,6 +230,18 @@ export function SeatWalkOverlay(): JSX.Element | null {
 
             <button
               type="button"
+              class="shell-btn shell-btn-sm"
+              title="Recenter 1st-Person Seated Gaze to Center Stage (Shortcut: R)"
+              onClick={() => {
+                sceneCtrl.resetSeatedLook();
+              }}
+            >
+              <Icon name="target" size={14} />
+              <span>Recenter</span>
+            </button>
+
+            <button
+              type="button"
               class={`shell-btn shell-btn-sm${lasersOn ? ' is-active' : ''}`}
               aria-pressed={lasersOn}
               title="Toggle 3D Sightline Laser Rays to Stage Targets (Shortcut: L)"
@@ -241,7 +256,7 @@ export function SeatWalkOverlay(): JSX.Element | null {
 
             <button
               type="button"
-              class="shell-btn shell-btn-sm walkthrough-exit-btn"
+              class="shell-btn shell-btn-sm shell-walk-exit"
               title="Exit 1st-Person Seat View back to 3D Orbit Camera (Esc)"
               onClick={() => {
                 sceneCtrl.exitSeatViewToOrbit();
@@ -261,9 +276,10 @@ export function SeatWalkOverlay(): JSX.Element | null {
           </span>
           {!isMobile.value && (
             <span>
-              · <kbd>[</kbd> <kbd>]</kbd> Scene · <kbd>←</kbd> <kbd>→</kbd> Seat
-              · <kbd>↑</kbd> <kbd>↓</kbd> Row · <kbd>C</kbd> Child/Adult Eye ·{' '}
-              <kbd>L</kbd> Lasers · <kbd>Esc</kbd> Orbit
+              · <kbd>R</kbd> Recenter · <kbd>[</kbd> <kbd>]</kbd> Scene ·{' '}
+              <kbd>←</kbd> <kbd>→</kbd> Seat · <kbd>↑</kbd> <kbd>↓</kbd> Row ·{' '}
+              <kbd>C</kbd> Child/Adult Eye · <kbd>L</kbd> Lasers ·{' '}
+              <kbd>Esc</kbd> Orbit
             </span>
           )}
         </div>

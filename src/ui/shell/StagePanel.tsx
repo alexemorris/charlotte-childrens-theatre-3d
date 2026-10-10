@@ -5,14 +5,13 @@ import {
   type CncElementAnalysis,
   type FabricationMethod,
 } from '../../engine/cnc-shop-exporter.ts';
-import { DEFAULT_RIGGING_BATTENS, PRODUCTION_CATALOG } from '../../sets/index.ts';
 import {
   activeProduction,
   activeScene,
   activeSceneIndex,
   balconyOverhangGuidesVisible,
   cadGridEnabled,
-  customPieces,
+  clearHoverTooltips,
   elementVisibilityRevision,
   grandDrapeOpenFraction,
   graphicsQuality,
@@ -21,17 +20,14 @@ import {
   lightingState,
   openWorkshopForElementId,
   orchestraPitOpen,
-  selectedCustomPiece,
   showToast,
   stagePanelOpen,
   stageTrapsOpen,
   syncStoreFromSceneController,
 } from '../../state/shell-store.ts';
 import type {
-  CustomSetPieceKind,
   LightingPresetId,
   ProductionElementSpec,
-  ProductionId,
 } from '../../types/theatre.ts';
 import { Icon, type IconName } from './icons.tsx';
 import { useShell } from './shell-context.ts';
@@ -58,8 +54,15 @@ const LIGHTING_PRESETS: ReadonlyArray<{
   { id: 'dramatic-cue', label: 'Dramatic' },
 ];
 
+type LightingChannelKey =
+  | 'houseLevel'
+  | 'fohRailLevel'
+  | 'stageElectricsLevel'
+  | 'apronFootlightsLevel'
+  | 'cycWashLevel';
+
 const LIGHTING_CHANNELS: ReadonlyArray<{
-  readonly key: 'houseLevel' | 'fohRailLevel' | 'stageElectricsLevel' | 'cycWashLevel';
+  readonly key: LightingChannelKey;
   readonly label: string;
   readonly subtitle: string;
 }> = [
@@ -79,24 +82,15 @@ const LIGHTING_CHANNELS: ReadonlyArray<{
     subtitle: 'Overhead #1–#3 electrics & warm stage fill',
   },
   {
+    key: 'apronFootlightsLevel',
+    label: 'Apron Footlights',
+    subtitle: 'Downstage apron & proscenium footlight fill',
+  },
+  {
     key: 'cycWashLevel',
     label: 'Upstage Cyclorama',
     subtitle: 'Sky cyc & groundrow LED color wash',
   },
-];
-
-const CUSTOM_SPAWNER_ITEMS: ReadonlyArray<{
-  readonly kind: CustomSetPieceKind;
-  readonly label: string;
-}> = [
-  { kind: 'platform-4x8', label: '+ 4×8 Riser' },
-  { kind: 'flat-12ft', label: '+ 12ft Flat' },
-  { kind: 'arch-portal', label: '+ Arch Portal' },
-  { kind: 'stairs-3step', label: '+ 3-Step Stair' },
-  { kind: 'periaktos', label: '+ Periaktos' },
-  { kind: 'prop-table', label: '+ Prop Table' },
-  { kind: 'actor-child', label: '+ Child (1.35m)' },
-  { kind: 'actor-adult', label: '+ Adult (1.75m)' },
 ];
 
 function formatClassificationLabel(
@@ -105,54 +99,15 @@ function formatClassificationLabel(
 ): string {
   switch (method) {
     case 'cnc-primary':
-      return 'CNC Router + Foam';
+      return '4\'×8\' CNC + Carpentry';
     case 'hybrid-cnc-carpentry':
       return 'Hybrid CNC + Carpentry';
     case 'soft-goods-paint':
-      return 'Soft Goods / Paint Shop — No CNC';
+      return 'Soft Goods / Paint Shop';
     case 'steel-rigging-carpentry':
-      return 'Steel Rigging & Carpentry — No CNC';
+      return 'Steel Rigging & Carpentry';
     case 'props-or-blocking':
-      return category === 'blocking' ? 'Cast Blocking' : 'Props Shop — No CNC';
-  }
-}
-
-function classificationAccentStyle(method: FabricationMethod): {
-  readonly background: string;
-  readonly color: string;
-  readonly border: string;
-} {
-  switch (method) {
-    case 'cnc-primary':
-      return {
-        background: 'rgba(56, 226, 152, 0.14)',
-        color: '#5ce898',
-        border: '1px solid rgba(56, 226, 152, 0.36)',
-      };
-    case 'hybrid-cnc-carpentry':
-      return {
-        background: 'rgba(242, 196, 109, 0.16)',
-        color: '#f2c46d',
-        border: '1px solid rgba(242, 196, 109, 0.38)',
-      };
-    case 'soft-goods-paint':
-      return {
-        background: 'rgba(98, 200, 255, 0.14)',
-        color: '#7fd0ff',
-        border: '1px solid rgba(98, 200, 255, 0.34)',
-      };
-    case 'steel-rigging-carpentry':
-      return {
-        background: 'rgba(180, 160, 255, 0.14)',
-        color: '#c4b5fd',
-        border: '1px solid rgba(180, 160, 255, 0.34)',
-      };
-    case 'props-or-blocking':
-      return {
-        background: 'rgba(255, 255, 255, 0.08)',
-        color: '#b8c0cc',
-        border: '1px solid rgba(255, 255, 255, 0.16)',
-      };
+      return category === 'blocking' ? 'Cast Blocking' : 'Props & Dressing Shop';
   }
 }
 
@@ -172,11 +127,6 @@ function ScenesAndSetsTab(): JSX.Element {
     sceneCtrl.isElementVisible(el.id)
   ).length;
 
-  const handleSelectProduction = (prodId: ProductionId): void => {
-    sceneCtrl.setProduction(prodId);
-    syncStoreFromSceneController(sceneCtrl);
-  };
-
   const handleStepScene = (delta: -1 | 1): void => {
     sceneCtrl.stepSceneCue(delta);
     syncStoreFromSceneController(sceneCtrl);
@@ -195,33 +145,31 @@ function ScenesAndSetsTab(): JSX.Element {
 
   return (
     <>
-      {/* 1. Active Production & Scene Sequencer */}
-      <section class="shell-card" aria-label="Active Production and Scene Sequencer">
+      {/* 1. Scene Sequencer & Reference Plans */}
+      <section class="shell-card" aria-label="Scene Sequencer">
         <div class="shell-card-head">
           <span class="shell-card-title">
             <Icon name="sparkles" size={15} />
             Scene Sequencer
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div class="shell-card-actions">
             <button
               type="button"
-              class="shell-chip"
+              class="shell-chip shell-chip-xs"
               title="Previous Scene Cue (Shortcut: [)"
               onClick={() => handleStepScene(-1)}
-              style={{ height: '24px', padding: '0 8px' }}
             >
               <Icon name="prev" size={12} />
               <span>Prev</span>
             </button>
-            <span class="shell-badge" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span class="shell-badge shell-tabular">
               {sceneIdx + 1}/{scenes.length} · {sceneCode}
             </span>
             <button
               type="button"
-              class="shell-chip"
+              class="shell-chip shell-chip-xs"
               title="Next Scene Cue (Shortcut: ])"
               onClick={() => handleStepScene(1)}
-              style={{ height: '24px', padding: '0 8px' }}
             >
               <span>Next</span>
               <Icon name="next" size={12} />
@@ -229,43 +177,11 @@ function ScenesAndSetsTab(): JSX.Element {
           </div>
         </div>
 
-        {/* Production Selector & Quick Note */}
-        <div class="shell-row" style={{ gap: '8px' }}>
-          <label
-            htmlFor="stage-panel-prod-select"
-            class="shell-muted"
-            style={{ whiteSpace: 'nowrap', fontSize: '12px' }}
-          >
-            Production
-          </label>
-          <select
-            id="stage-panel-prod-select"
-            class="shell-select shell-select-sm"
-            style={{ flex: 1, minWidth: 0 }}
-            value={spec.id}
-            aria-label="Select Production Set"
-            onChange={(e) =>
-              handleSelectProduction(e.currentTarget.value as ProductionId)
-            }
-          >
-            {PRODUCTION_CATALOG.map((prod) => (
-              <option key={prod.id} value={prod.id}>
-                {prod.title} ({prod.scenes.length} Scenes)
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Scene Cue Pill Grid (1A, 1B, 1C·1, 1C·2, 1D, 1E, 1F, 1G, 1H, etc.) */}
+        {/* Scene Cue Pill Grid (1A, 1B, 1C, etc.) */}
         <div
           class="scene-pills-grid"
           role="group"
           aria-label="Scene Cue Selector"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '5px',
-          }}
         >
           {scenes.map((sc, idx) => {
             const code = sc.sceneNumber ?? sc.sceneLabel ?? `${idx + 1}`;
@@ -278,130 +194,43 @@ function ScenesAndSetsTab(): JSX.Element {
                 aria-pressed={isActive}
                 title={`Cue ${code}: ${sc.title}`}
                 onClick={() => handleSelectScene(sc.id)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '2px',
-                  padding: '6px 7px',
-                  borderRadius: '8px',
-                  border: isActive
-                    ? '1px solid rgba(242, 196, 109, 0.65)'
-                    : '1px solid rgba(255, 255, 255, 0.08)',
-                  background: isActive
-                    ? 'rgba(242, 196, 109, 0.16)'
-                    : 'rgba(255, 255, 255, 0.04)',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  minWidth: 0,
-                }}
               >
-                <span
-                  class="scene-pill-code"
-                  style={{
-                    fontSize: '10.5px',
-                    fontWeight: 700,
-                    color: isActive ? '#f2c46d' : '#62c8ff',
-                  }}
-                >
-                  {code}
-                </span>
-                <span
-                  class="scene-pill-name"
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    color: isActive ? '#ffffff' : '#d0d5df',
-                    width: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {sc.title}
-                </span>
+                <span class="scene-pill-code">{code}</span>
+                <span class="scene-pill-name">{sc.title}</span>
               </button>
             );
           })}
         </div>
 
         {/* Active Scene Synopsis Card */}
-        <div
-          class="scene-synopsis-box"
-          style={{
-            padding: '10px 11px',
-            borderRadius: '10px',
-            background: 'rgba(0, 0, 0, 0.24)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '5px',
-          }}
-        >
-          <div
-            class="scene-synopsis-header"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '6px',
-            }}
-          >
+        <div class="scene-synopsis-box">
+          <div class="scene-synopsis-header">
             <span class="shell-badge">SCENE {sceneCode}</span>
-            <strong
-              class="scene-synopsis-title"
-              style={{ fontSize: '13px', color: '#f2f4f8' }}
-            >
-              {currentScene.title}
-            </strong>
+            <strong class="scene-synopsis-title">{currentScene.title}</strong>
             {currentScene.actLabel && (
-              <span
-                class="scene-act-tag shell-muted"
-                style={{ marginLeft: 'auto', fontSize: '11px' }}
-              >
+              <span class="scene-act-tag shell-muted">
                 {currentScene.actLabel}
               </span>
             )}
           </div>
-          <p
-            class="scene-synopsis-text"
-            style={{
-              fontSize: '12px',
-              lineHeight: 1.45,
-              color: '#b8c0cc',
-              margin: 0,
-            }}
-          >
-            {currentScene.synopsis}
-          </p>
+          <p class="scene-synopsis-text">{currentScene.synopsis}</p>
         </div>
 
         {/* Reference Thumbnails (Model Box & 1/4" CAD Plan) */}
         {(currentScene.modelPhotoUrl || currentScene.groundPlanUrl) && (
           <div
-            class="scene-reference-media"
-            style={{
-              display: 'grid',
-              gridTemplateColumns:
-                currentScene.modelPhotoUrl && currentScene.groundPlanUrl
-                  ? '1fr 1fr'
-                  : '1fr',
-              gap: '8px',
-            }}
+            class={`scene-reference-media${
+              currentScene.modelPhotoUrl && currentScene.groundPlanUrl
+                ? ''
+                : ' is-single'
+            }`}
           >
             {currentScene.modelPhotoUrl && (
               <figure
                 class="scene-ref-card"
-                title="Click to enlarge physical 1/4&quot; Model Box Photo"
-                style={{
-                  margin: 0,
-                  borderRadius: '9px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255, 255, 255, 0.14)',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  cursor: 'pointer',
-                }}
+                title='Click to enlarge physical 1/4" Model Box Photo'
                 onClick={() => {
+                  clearHoverTooltips();
                   lightboxMedia.value = {
                     badge: `SCENE ${sceneCode} · MODEL BOX`,
                     title: `${currentScene.title} — Scenic Designer Model Box (Andrew Gibbon)`,
@@ -413,25 +242,10 @@ function ScenesAndSetsTab(): JSX.Element {
                   src={currentScene.modelPhotoUrl}
                   alt={`Scene ${sceneCode} Model Box Photo`}
                   loading="lazy"
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '78px',
-                    objectFit: 'cover',
-                  }}
                 />
-                <figcaption
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '5px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                  }}
-                >
+                <figcaption>
                   <span>📷 Model Box</span>
-                  <span style={{ color: '#f2c46d', fontSize: '10.5px' }}>Enlarge ⤢</span>
+                  <span class="ref-zoom-hint">Enlarge ⤢</span>
                 </figcaption>
               </figure>
             )}
@@ -439,16 +253,9 @@ function ScenesAndSetsTab(): JSX.Element {
             {currentScene.groundPlanUrl && (
               <figure
                 class="scene-ref-card"
-                title="Click to enlarge 1/4&quot; = 1'-0&quot; CAD Ground Plan"
-                style={{
-                  margin: 0,
-                  borderRadius: '9px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255, 255, 255, 0.14)',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  cursor: 'pointer',
-                }}
+                title='Click to enlarge 1/4" = 1&#39;-0" CAD Ground Plan'
                 onClick={() => {
+                  clearHoverTooltips();
                   lightboxMedia.value = {
                     badge: `SCENE ${sceneCode} · 1/4" = 1'-0" CAD`,
                     title: `${currentScene.title} — McColl Family Theatre CAD Ground Plan`,
@@ -460,25 +267,10 @@ function ScenesAndSetsTab(): JSX.Element {
                   src={currentScene.groundPlanUrl}
                   alt={`Scene ${sceneCode} CAD Ground Plan`}
                   loading="lazy"
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '78px',
-                    objectFit: 'cover',
-                  }}
                 />
-                <figcaption
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '5px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                  }}
-                >
+                <figcaption>
                   <span>📐 1/4&quot; CAD Plan</span>
-                  <span style={{ color: '#f2c46d', fontSize: '10.5px' }}>Enlarge ⤢</span>
+                  <span class="ref-zoom-hint">Enlarge ⤢</span>
                 </figcaption>
               </figure>
             )}
@@ -498,40 +290,16 @@ function ScenesAndSetsTab(): JSX.Element {
           </span>
         </div>
 
-        <div
-          class="scenic-elements-list"
-          role="list"
-          style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}
-        >
+        <div class="scenic-elements-list" role="list">
           {spec.elements.map((el) => {
             const isVis = sceneCtrl.isElementVisible(el.id);
             return (
               <div
                 key={el.id}
                 role="listitem"
-                class="scenic-element-row"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  padding: '8px 10px',
-                  borderRadius: '10px',
-                  background: isVis
-                    ? 'rgba(255, 255, 255, 0.05)'
-                    : 'rgba(0, 0, 0, 0.2)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
+                class={`scenic-element-row${isVis ? ' is-visible' : ' is-hidden-el'}`}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '9px',
-                    minWidth: 0,
-                    flex: 1,
-                  }}
-                >
+                <div class="scenic-element-left">
                   <button
                     type="button"
                     class={`shell-switch${isVis ? ' is-on' : ''}`}
@@ -543,56 +311,17 @@ function ScenesAndSetsTab(): JSX.Element {
                     <span class="shell-switch-knob" />
                   </button>
                   <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      minWidth: 0,
-                      flex: 1,
-                      cursor: 'pointer',
-                    }}
+                    class="scenic-element-meta"
                     onClick={() => handleToggleElement(el.id)}
                   >
-                    <span
-                      style={{
-                        fontSize: '12.5px',
-                        fontWeight: 600,
-                        color: isVis ? '#f0f2f6' : '#8d96a5',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {el.name}
-                    </span>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginTop: '2px',
-                      }}
-                    >
-                      <span
-                        class="scenic-element-dim"
-                        style={{
-                          fontSize: '11px',
-                          color: '#9aa3ae',
-                          fontFamily:
-                            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                        }}
-                      >
+                    <span class="scenic-element-name">{el.name}</span>
+                    <div class="scenic-element-subrow">
+                      <span class="scenic-element-dim">
                         {el.dimensionsLabel}
                       </span>
                       {el.battenLine !== undefined && (
-                        <span
-                          class="shell-pill"
-                          style={{
-                            height: '16px',
-                            fontSize: '10px',
-                            padding: '0 5px',
-                          }}
-                        >
-                          Lineset #{el.battenLine}
+                        <span class="shell-pill shell-pill-xs">
+                          Fly Channel #{el.battenLine}
                         </span>
                       )}
                     </div>
@@ -604,17 +333,6 @@ function ScenesAndSetsTab(): JSX.Element {
                   class="shell-chip scenic-shop-btn"
                   title={`Open Scenic Workshop & CNC Fabrication Plan for ${el.name}`}
                   onClick={() => openWorkshopForElementId(sceneCtrl, el.id)}
-                  style={{
-                    flexShrink: 0,
-                    height: '28px',
-                    padding: '0 10px',
-                    borderRadius: '8px',
-                    background: 'rgba(242, 196, 109, 0.14)',
-                    borderColor: 'rgba(242, 196, 109, 0.38)',
-                    color: '#f2c46d',
-                    fontWeight: 600,
-                    fontSize: '11.5px',
-                  }}
                 >
                   <span>⚙ Shop / CNC</span>
                 </button>
@@ -624,19 +342,8 @@ function ScenesAndSetsTab(): JSX.Element {
         </div>
 
         {/* Sightline / Scenic Designer Note */}
-        <div
-          style={{
-            padding: '8px 10px',
-            borderRadius: '9px',
-            background: 'rgba(242, 196, 109, 0.07)',
-            border: '1px solid rgba(242, 196, 109, 0.2)',
-            fontSize: '11.5px',
-            color: '#d8dee8',
-            lineHeight: 1.4,
-          }}
-        >
-          <strong style={{ color: '#f2c46d' }}>Sightline Focus:</strong>{' '}
-          {spec.scenicNotes}
+        <div class="scenic-sightline-callout">
+          <strong>Sightline Focus:</strong> {spec.scenicNotes}
         </div>
       </section>
     </>
@@ -673,17 +380,11 @@ function WorkshopAndCncTab(): JSX.Element {
           <span class="shell-badge">{totalCncSheets} × 4&apos;×8&apos; Sheets</span>
         </div>
 
-        <p
-          style={{
-            margin: 0,
-            fontSize: '12px',
-            lineHeight: 1.48,
-            color: '#c7cfd9',
-          }}
-        >
+        <p class="workshop-tab-lead">
           Click any individual piece on the 3D stage or choose a granular sub-unit below
-          to inspect its focused Fabrication Plan and download 4&apos;×8&apos; CNC Router (.DXF /
-          .SVG), 3D Foam (.STL), and Cut-List (.CSV) files.
+          to inspect its Timber Carpentry, 3-Axis 4&apos;×8&apos; Plywood CNC, and Scenic Paint
+          plan, and download AutoCAD (.DXF), Blueprint (.SVG), 3D Scale Mesh (.STL), and
+          Cut-List (.CSV) files.
         </p>
 
         <div class="shell-chips">
@@ -703,7 +404,6 @@ function WorkshopAndCncTab(): JSX.Element {
           analysis.fabricationMethod,
           element.category
         );
-        const badgeStyle = classificationAccentStyle(analysis.fabricationMethod);
         const granularUnits = analysis.subUnits.filter(
           (u) => !u.isCombinedMacroUnit
         );
@@ -711,110 +411,44 @@ function WorkshopAndCncTab(): JSX.Element {
         return (
           <section
             key={element.id}
-            class="shell-card"
+            class="shell-card workshop-unit-card"
             aria-label={`${element.name} Workshop Fabrication Card`}
-            style={{ gap: '8px' }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: '8px',
-              }}
-            >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: '13.5px',
-                    fontWeight: 650,
-                    color: '#f2f4f8',
-                    marginBottom: '3px',
-                  }}
-                >
-                  {element.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: '11.5px',
-                    color: '#9aa3ae',
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                  }}
-                >
+            <div class="workshop-unit-head">
+              <div class="workshop-unit-title-col">
+                <div class="workshop-unit-title">{element.name}</div>
+                <div class="scenic-element-dim">
                   {element.dimensionsLabel}
                   {element.battenLine !== undefined
-                    ? ` · Lineset #${element.battenLine}`
+                    ? ` · Fly Channel #${element.battenLine}`
                     : ''}
                 </div>
               </div>
 
               <span
-                style={{
-                  ...badgeStyle,
-                  padding: '3px 8px',
-                  borderRadius: '999px',
-                  fontSize: '11px',
-                  fontWeight: 650,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
+                class={`workshop-method-badge ref-lightbox-badge method-${analysis.fabricationMethod}`}
               >
                 {classification}
               </span>
             </div>
 
-            <p
-              style={{
-                margin: 0,
-                fontSize: '12px',
-                lineHeight: 1.42,
-                color: '#b8c0cc',
-              }}
-            >
-              {analysis.primaryConstructionNote}
-            </p>
+            <p class="workshop-unit-note">{analysis.primaryConstructionNote}</p>
 
             {granularUnits.length > 1 && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '5px',
-                  padding: '7px 8px',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    color: '#9aa3ae',
-                  }}
-                >
+              <div class="workshop-subunits-inline">
+                <span class="workshop-subunits-inline-title">
                   Inspect Individual Sub-Units ({granularUnits.length})
                 </span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                <div class="shell-chips">
                   {granularUnits.map((sub) => (
                     <button
                       key={sub.id}
                       type="button"
-                      class="shell-chip"
+                      class="shell-chip shell-chip-xs"
                       title={sub.description}
                       onClick={() =>
                         openWorkshopForElementId(sceneCtrl, element.id, sub.id)
                       }
-                      style={{
-                        height: '24px',
-                        padding: '0 8px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        borderRadius: '6px',
-                      }}
                     >
                       <span>{sub.shortLabel}</span>
                     </button>
@@ -823,20 +457,11 @@ function WorkshopAndCncTab(): JSX.Element {
               </div>
             )}
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '8px',
-                marginTop: '2px',
-              }}
-            >
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            <div class="workshop-unit-footer">
+              <div class="shell-chips">
                 {analysis.requiresCncRouting && analysis.sheetCount4x8 > 0 ? (
                   <>
-                    <span class="shell-pill" style={{ color: '#5ce898' }}>
+                    <span class="shell-pill is-cnc-pill">
                       {analysis.sheetCount4x8} × 4&apos;×8&apos; CNC Sheets
                     </span>
                     <span class="shell-pill">
@@ -853,12 +478,7 @@ function WorkshopAndCncTab(): JSX.Element {
 
               <button
                 type="button"
-                class="shell-btn shell-btn-primary"
-                style={{
-                  height: '30px',
-                  padding: '0 12px',
-                  fontSize: '12px',
-                }}
+                class="shell-btn shell-btn-primary shell-btn-sm"
                 onClick={() => openWorkshopForElementId(sceneCtrl, element.id)}
               >
                 <Icon name="download" size={13} />
@@ -876,10 +496,18 @@ function WorkshopAndCncTab(): JSX.Element {
   );
 }
 
+interface ProductionBattenChannel {
+  readonly lineNumber: number;
+  readonly label: string;
+  readonly elements: ReadonlyArray<ProductionElementSpec>;
+}
+
 function RiggingAndLightsTab(): JSX.Element {
   const sceneCtrl = useShell();
   // Subscribe to reactive signals
   void elementVisibilityRevision.value;
+  const spec = activeProduction.value;
+  const currentScene = activeScene.value;
   const drapeFraction = grandDrapeOpenFraction.value;
   const drapePct = Math.round(drapeFraction * 100);
   const cadGrid = cadGridEnabled.value;
@@ -888,8 +516,25 @@ function RiggingAndLightsTab(): JSX.Element {
   const overhangGuides = balconyOverhangGuidesVisible.value;
   const gfxMode = graphicsQuality.value;
   const lights = lightingState.value;
-  const spawnedPieces = customPieces.value;
-  const selectedPiece = selectedCustomPiece.value;
+
+  // Derive active production's flown battens from spec.elements
+  const productionBattens = useMemo<ReadonlyArray<ProductionBattenChannel>>(() => {
+    const byLine = new Map<number, ProductionElementSpec[]>();
+    for (const el of spec.elements) {
+      if (el.battenLine !== undefined) {
+        const list = byLine.get(el.battenLine) ?? [];
+        list.push(el);
+        byLine.set(el.battenLine, list);
+      }
+    }
+    return Array.from(byLine.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([lineNumber, elements]) => ({
+        lineNumber,
+        label: elements[0]!.name,
+        elements,
+      }));
+  }, [spec]);
 
   const handleGrandDrapeInput = (pct: number): void => {
     sceneCtrl.setGrandDrapeOpenFraction(pct / 100);
@@ -901,12 +546,30 @@ function RiggingAndLightsTab(): JSX.Element {
     syncStoreFromSceneController(sceneCtrl);
   };
 
-  const handleResetAllBattens = (): void => {
-    for (const b of DEFAULT_RIGGING_BATTENS) {
-      sceneCtrl.setBattenTrimHeight(b.lineNumber, 0);
+  const handleToggleBattenElements = (batten: ProductionBattenChannel): void => {
+    const anyVis = batten.elements.some((el) => sceneCtrl.isElementVisible(el.id));
+    if (anyVis) {
+      for (const el of batten.elements) {
+        sceneCtrl.setElementVisibility(el.id, false);
+      }
+    } else {
+      const preferred =
+        batten.elements.find((el) => currentScene.visibleElementIds.includes(el.id)) ??
+        batten.elements[0];
+      if (preferred) {
+        sceneCtrl.setElementVisibility(preferred.id, true);
+        if (sceneCtrl.getBattenTrimHeight(batten.lineNumber) >= 6.5) {
+          sceneCtrl.setBattenTrimHeight(batten.lineNumber, 0);
+        }
+      }
     }
     syncStoreFromSceneController(sceneCtrl);
-    showToast('All counterweight fly battens reset to 0.0m Show In-Trim');
+  };
+
+  const handleResetToSceneCue = (): void => {
+    sceneCtrl.setSceneCue(currentScene.id);
+    syncStoreFromSceneController(sceneCtrl);
+    showToast(`Restored fly trims & lighting for Scene ${currentScene.sceneNumber ?? currentScene.sceneLabel ?? '1'}`);
   };
 
   const handleLightingPreset = (preset: LightingPresetId): void => {
@@ -915,7 +578,7 @@ function RiggingAndLightsTab(): JSX.Element {
   };
 
   const handleLightingChannel = (
-    channel: 'houseLevel' | 'fohRailLevel' | 'stageElectricsLevel' | 'cycWashLevel',
+    channel: LightingChannelKey,
     pct: number
   ): void => {
     sceneCtrl.updateLightingChannel(channel, pct / 100);
@@ -939,15 +602,15 @@ function RiggingAndLightsTab(): JSX.Element {
         <div class="shell-card-head">
           <span class="shell-card-title">
             <Icon name="stage" size={15} />
-            52-Lineset Counterweight Fly Rig
+            Counterweight Fly Rigging
           </span>
           <button
             type="button"
-            class="shell-chip"
-            title="Reset all counterweight fly battens to 0.0m Show In-Trim"
-            onClick={handleResetAllBattens}
+            class="shell-chip shell-chip-xs"
+            title="Restore batten trims and onstage elements to the active scene cue"
+            onClick={handleResetToSceneCue}
           >
-            Reset In-Trim
+            Reset to Cue
           </button>
         </div>
 
@@ -955,7 +618,7 @@ function RiggingAndLightsTab(): JSX.Element {
         <div class="shell-light is-on">
           <div class="shell-light-body">
             <div class="shell-light-label">
-              <span style={{ fontWeight: 600 }}>Grand Velour Curtain (Proscenium)</span>
+              <span class="shell-font-semibold">Grand Velour Curtain (Proscenium)</span>
               <span class="shell-light-pct">
                 {drapePct === 0 ? 'Closed (0%)' : `${drapePct}% Open`}
               </span>
@@ -976,20 +639,34 @@ function RiggingAndLightsTab(): JSX.Element {
           </div>
         </div>
 
-        {/* Counterweight Battens List */}
+        {/* Active Production's Counterweight Battens List */}
         <ul class="shell-lights" role="list">
-          {DEFAULT_RIGGING_BATTENS.map((b) => {
+          {productionBattens.map((b) => {
             const curTrim = sceneCtrl.getBattenTrimHeight(b.lineNumber);
+            const anyVis = b.elements.some((el) => sceneCtrl.isElementVisible(el.id));
             const fillPct = Math.min(100, Math.max(0, (curTrim / 6.8) * 100));
             return (
-              <li key={b.id} class="shell-light is-on">
+              <li key={b.lineNumber} class={`shell-light${anyVis ? ' is-on' : ''}`}>
+                <button
+                  type="button"
+                  class={`shell-switch${anyVis ? ' is-on' : ''}`}
+                  role="switch"
+                  aria-checked={anyVis}
+                  aria-label={`Toggle ${b.label} visibility`}
+                  title={anyVis ? 'Fly unit is active on stage (click to hide)' : 'Click to fly unit in on stage'}
+                  onClick={() => handleToggleBattenElements(b)}
+                >
+                  <span class="shell-switch-knob" />
+                </button>
                 <div class="shell-light-body">
                   <div class="shell-light-label">
-                    <span>{b.name}</span>
+                    <span title={b.label}>{b.label}</span>
                     <span class="shell-light-pct">
-                      {curTrim === 0
-                        ? 'In-Trim (0.0m)'
-                        : `+${curTrim.toFixed(1)}m Out`}
+                      {!anyVis
+                        ? 'Stowed'
+                        : curTrim === 0
+                          ? 'In-Trim (0.0m)'
+                          : `+${curTrim.toFixed(1)}m Out`}
                     </span>
                   </div>
                   <input
@@ -999,7 +676,7 @@ function RiggingAndLightsTab(): JSX.Element {
                     max={6.8}
                     step={0.1}
                     value={curTrim}
-                    aria-label={`${b.name} trim height`}
+                    aria-label={`${b.label} trim height`}
                     style={{ '--fill': `${fillPct}%` }}
                     onInput={(e) =>
                       handleBattenInput(b.lineNumber, Number(e.currentTarget.value))
@@ -1012,24 +689,11 @@ function RiggingAndLightsTab(): JSX.Element {
         </ul>
 
         {/* Stage Mechanics Toggles */}
-        <div
-          class="shell-card-head"
-          style={{
-            marginTop: '4px',
-            paddingTop: '8px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          }}
-        >
+        <div class="shell-card-head shell-card-subhead">
           <span class="shell-panel-eyebrow">Stage Mechanics &amp; Viewport Overlays</span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: '6px',
-          }}
-        >
+        <div class="stage-mechanics-grid">
           <button
             type="button"
             class={`shell-action${cadGrid ? ' is-active' : ''}`}
@@ -1083,7 +747,7 @@ function RiggingAndLightsTab(): JSX.Element {
           </button>
         </div>
 
-        <div class="shell-row" style={{ marginTop: '2px' }}>
+        <div class="shell-row">
           <span class="shell-muted">Post-Processing &amp; Shadows</span>
           <button
             type="button"
@@ -1117,14 +781,9 @@ function RiggingAndLightsTab(): JSX.Element {
         </div>
 
         <div
-          class="shell-seg shell-seg-sm"
+          class="shell-seg shell-seg-sm shell-seg-grid-4"
           role="group"
           aria-label="Lighting Cue Presets"
-          style={{
-            width: '100%',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          }}
         >
           {LIGHTING_PRESETS.map((p) => {
             const active = lights.preset === p.id;
@@ -1135,7 +794,6 @@ function RiggingAndLightsTab(): JSX.Element {
                 class={`shell-seg-btn${active ? ' is-active' : ''}`}
                 aria-pressed={active}
                 onClick={() => handleLightingPreset(p.id)}
-                style={{ justifyContent: 'center', padding: '0 6px' }}
               >
                 {p.label}
               </button>
@@ -1163,7 +821,7 @@ function RiggingAndLightsTab(): JSX.Element {
                 </button>
                 <div class="shell-light-body">
                   <div class="shell-light-label">
-                    <span>{ch.label}</span>
+                    <span title={ch.subtitle}>{ch.label}</span>
                     <span class="shell-light-pct">{pct}%</span>
                   </div>
                   <input
@@ -1184,185 +842,6 @@ function RiggingAndLightsTab(): JSX.Element {
             );
           })}
         </ul>
-      </section>
-
-      {/* 3. Custom Blocking & Set Piece Spawner */}
-      <section class="shell-card" aria-label="Custom Blocking and Set Piece Spawner">
-        <div class="shell-card-head">
-          <span class="shell-card-title">
-            <Icon name="cube" size={15} />
-            Custom Blocking &amp; Set Piece Spawner
-          </span>
-          {spawnedPieces.length > 0 && (
-            <button
-              type="button"
-              class="shell-chip"
-              onClick={() => {
-                sceneCtrl.clearCustomSetPieces();
-                syncStoreFromSceneController(sceneCtrl);
-              }}
-            >
-              Clear All ({spawnedPieces.length})
-            </button>
-          )}
-        </div>
-
-        <div
-          class="spawner-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: '6px',
-          }}
-        >
-          {CUSTOM_SPAWNER_ITEMS.map((item) => (
-            <button
-              key={item.kind}
-              type="button"
-              class="shell-chip spawn-piece-btn"
-              style={{
-                justifyContent: 'center',
-                height: '30px',
-                borderRadius: '8px',
-                fontWeight: 600,
-              }}
-              onClick={() => {
-                sceneCtrl.addCustomSetPiece(item.kind);
-                syncStoreFromSceneController(sceneCtrl);
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {spawnedPieces.length > 0 && (
-          <div class="shell-chips" style={{ marginTop: '2px' }}>
-            {spawnedPieces.map((piece) => {
-              const isSelected = selectedPiece?.id === piece.id;
-              return (
-                <button
-                  key={piece.id}
-                  type="button"
-                  class={`shell-chip${isSelected ? ' is-active active' : ''}`}
-                  onClick={() => {
-                    sceneCtrl.selectCustomSetPiece(piece.id);
-                    syncStoreFromSceneController(sceneCtrl);
-                  }}
-                >
-                  {piece.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {selectedPiece && (
-          <div
-            class="custom-piece-inspector"
-            style={{
-              padding: '10px',
-              borderRadius: '10px',
-              background: 'rgba(0, 0, 0, 0.25)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            <div class="shell-row">
-              <strong style={{ fontSize: '12.5px', color: '#62c8ff' }}>
-                {selectedPiece.label}
-              </strong>
-              <button
-                type="button"
-                class="shell-chip btn-danger"
-                onClick={() => {
-                  sceneCtrl.deleteSelectedCustomPiece();
-                  syncStoreFromSceneController(sceneCtrl);
-                }}
-              >
-                <Icon name="trash" size={12} />
-                <span>Delete</span>
-              </button>
-            </div>
-
-            <div class="shell-light-body">
-              <div class="shell-light-label">
-                <span>Stage X (Stage Right / Left)</span>
-                <span class="shell-light-pct">{selectedPiece.x.toFixed(1)}m</span>
-              </div>
-              <input
-                class="shell-range"
-                type="range"
-                min={-6.0}
-                max={6.0}
-                step={0.1}
-                value={selectedPiece.x}
-                aria-label="Selected piece Stage X position"
-                style={{
-                  '--fill': `${((selectedPiece.x + 6) / 12) * 100}%`,
-                }}
-                onInput={(e) => {
-                  sceneCtrl.updateSelectedCustomPiece({
-                    x: Number(e.currentTarget.value),
-                  });
-                  syncStoreFromSceneController(sceneCtrl);
-                }}
-              />
-            </div>
-
-            <div class="shell-light-body">
-              <div class="shell-light-label">
-                <span>Stage Z (Upstage / Downstage)</span>
-                <span class="shell-light-pct">{selectedPiece.z.toFixed(1)}m</span>
-              </div>
-              <input
-                class="shell-range"
-                type="range"
-                min={-8.2}
-                max={1.2}
-                step={0.1}
-                value={selectedPiece.z}
-                aria-label="Selected piece Stage Z position"
-                style={{
-                  '--fill': `${((selectedPiece.z + 8.2) / 9.4) * 100}%`,
-                }}
-                onInput={(e) => {
-                  sceneCtrl.updateSelectedCustomPiece({
-                    z: Number(e.currentTarget.value),
-                  });
-                  syncStoreFromSceneController(sceneCtrl);
-                }}
-              />
-            </div>
-
-            <div class="shell-light-body">
-              <div class="shell-light-label">
-                <span>Rotation Y (°)</span>
-                <span class="shell-light-pct">{selectedPiece.rotationYDeg}°</span>
-              </div>
-              <input
-                class="shell-range"
-                type="range"
-                min={-180}
-                max={180}
-                step={5}
-                value={selectedPiece.rotationYDeg}
-                aria-label="Selected piece Y rotation degrees"
-                style={{
-                  '--fill': `${((selectedPiece.rotationYDeg + 180) / 360) * 100}%`,
-                }}
-                onInput={(e) => {
-                  sceneCtrl.updateSelectedCustomPiece({
-                    rotationYDeg: Number(e.currentTarget.value),
-                  });
-                  syncStoreFromSceneController(sceneCtrl);
-                }}
-              />
-            </div>
-          </div>
-        )}
       </section>
     </>
   );
@@ -1388,7 +867,7 @@ export function StagePanel(): JSX.Element {
           <span class="shell-panel-eyebrow">
             McColl Stage · {spec.scenes.length} Scenes · {spec.ageRecommendation}
           </span>
-          <span class="shell-panel-title shell-panel-title-lg">
+          <span class="shell-panel-title shell-panel-title-lg" title={spec.title}>
             {spec.title}
           </span>
         </div>
@@ -1406,16 +885,11 @@ export function StagePanel(): JSX.Element {
       </div>
 
       {/* 3-Tab Segmented Switcher (Scenes & Sets | Workshop & CNC | Rigging & Lights) */}
-      <div style={{ padding: '0 12px 8px' }}>
+      <div class="shell-panel-tabs-wrap">
         <div
-          class="shell-seg shell-seg-sm"
+          class="shell-seg shell-seg-sm shell-seg-grid-3"
           role="tablist"
           aria-label="Stage Inspector Sections"
-          style={{
-            width: '100%',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          }}
         >
           {PANEL_TABS.map((tab) => {
             const isSelected = activeTab === tab.id;
@@ -1427,7 +901,6 @@ export function StagePanel(): JSX.Element {
                 aria-selected={isSelected}
                 class={`shell-seg-btn${isSelected ? ' is-active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
-                style={{ justifyContent: 'center', padding: '0 6px' }}
               >
                 <Icon name={tab.icon} size={13} />
                 <span class="shell-seg-label">{tab.label}</span>

@@ -591,6 +591,7 @@ export class TheatreSceneController {
 
   // Seat selection & 1st-person sightline camera
   public selectSeatByIndex(index: number | null, enterSeatView = true): void {
+    this.clearPointerHover();
     if (index === null || index < 0 || index >= this.seats.length) {
       this.selectedSeatIndex = null;
       this.inSeatView = false;
@@ -643,6 +644,19 @@ export class TheatreSceneController {
 
   public isInSeatView(): boolean {
     return this.inSeatView;
+  }
+
+  public resetSeatedLook(): void {
+    this.seatLookYawOffset = 0;
+    this.seatLookPitchOffset = 0;
+    this.applySeatedFreeLook();
+  }
+
+  public hasSeatedLookOffset(): boolean {
+    return (
+      Math.abs(this.seatLookYawOffset) > 0.01 ||
+      Math.abs(this.seatLookPitchOffset) > 0.01
+    );
   }
 
   public exitSeatViewToOrbit(): void {
@@ -1052,8 +1066,29 @@ export class TheatreSceneController {
     return this.graphicsQuality;
   }
 
+  private clearPointerHover(): void {
+    if (this.hoveredSeatIndex !== null) {
+      this.hoveredSeatIndex = null;
+      this.refreshSeatColorsAndMetrics();
+    }
+    this.canvas.style.cursor = this.inSeatView ? 'grab' : 'grab';
+    this.callbacks.onSeatHovered?.(null, 0, 0);
+    this.callbacks.onScenicElementHovered?.(null, 0, 0);
+  }
+
   private bindEvents(): void {
     window.addEventListener('resize', () => this.handleResize());
+
+    this.controls.addEventListener('start', () => {
+      if (!this.inSeatView && !this.cameraTween && this.activeCameraPreset !== null) {
+        this.activeCameraPreset = null;
+        this.callbacks.onCameraModeChanged?.(false, null);
+      }
+    });
+
+    this.canvas.addEventListener('pointerleave', () => {
+      this.clearPointerHover();
+    });
 
     this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
       this.pointerDownClientX = e.clientX;
@@ -1083,6 +1118,8 @@ export class TheatreSceneController {
 
       if (e.target === this.canvas && e.pointerType !== 'touch') {
         this.handlePointerHover(e);
+      } else if (e.target !== this.canvas) {
+        this.clearPointerHover();
       }
     });
 
@@ -1109,6 +1146,8 @@ export class TheatreSceneController {
 
       if (e.key === 'Escape' && this.inSeatView) {
         this.exitSeatViewToOrbit();
+      } else if ((e.key === 'r' || e.key === 'R') && this.inSeatView) {
+        this.resetSeatedLook();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         this.stepSelectedSeatInRow(-1);
@@ -1230,6 +1269,7 @@ export class TheatreSceneController {
     if (pickedTarget) {
       const target = this.getScenicElementTarget(pickedTarget.element.id);
       if (target) {
+        this.clearPointerHover();
         this.callbacks.onScenicElementClicked?.(
           target.element,
           target.objectGroup,

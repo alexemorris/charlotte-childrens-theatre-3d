@@ -3,11 +3,13 @@ import {
   activeCameraPreset,
   activeProduction,
   activeScene,
+  activeSceneIndex,
   eyeMode,
   helpOpen,
   inSeatView,
   lightingState,
   navigatorOpen,
+  openHelp,
   selectedSeatMetrics,
   showToast,
   stagePanelOpen,
@@ -16,50 +18,11 @@ import {
   toggleStagePanel,
 } from '../../state/shell-store.ts';
 import type {
-  CameraPresetId,
   LightingPresetId,
   ProductionId,
 } from '../../types/theatre.ts';
 import { Icon, type IconName } from './icons.tsx';
 import { useShell } from './shell-context.ts';
-
-interface ViewOption {
-  readonly id: 'house-overview' | 'stage-front' | 'ortho-ground-plan' | 'sit-g108';
-  readonly label: string;
-  readonly icon: IconName;
-  readonly hint: string;
-  readonly cameraPreset?: CameraPresetId;
-}
-
-const VIEW_OPTIONS: readonly ViewOption[] = [
-  {
-    id: 'house-overview',
-    label: '3D Stage',
-    icon: 'cube',
-    hint: 'Perspective 3D auditorium & stage overview',
-    cameraPreset: 'house-overview',
-  },
-  {
-    id: 'stage-front',
-    label: 'Front',
-    icon: 'stage',
-    hint: 'Direct front proscenium elevation view',
-    cameraPreset: 'stage-front',
-  },
-  {
-    id: 'ortho-ground-plan',
-    label: 'Top Plan',
-    icon: 'plan',
-    hint: 'Top-down architectural ground plan view',
-    cameraPreset: 'ortho-ground-plan',
-  },
-  {
-    id: 'sit-g108',
-    label: 'Sit (G-108)',
-    icon: 'seat',
-    hint: "Enter 1st-person seated sightline at Director's Chair (Row G Seat 108)",
-  },
-];
 
 interface LightingOption {
   readonly id: LightingPresetId;
@@ -103,7 +66,6 @@ const PRODUCTION_IDS: readonly ProductionId[] = [
   'charlottes-web',
   'mary-poppins',
   'matilda',
-  'tech-grid-sandbox',
 ];
 
 function isProductionId(value: string): value is ProductionId {
@@ -115,12 +77,13 @@ export function TopBar(): JSX.Element {
   const catalog = sceneCtrl.getProductionCatalog();
   const prod = activeProduction.value;
   const scene = activeScene.value;
+  const sceneIdx = activeSceneIndex.value;
   const seated = inSeatView.value;
   const camPreset = activeCameraPreset.value;
   const lightPreset = lightingState.value.preset;
   const currentEye = eyeMode.value;
 
-  const sceneCode = scene.sceneNumber ?? scene.sceneLabel ?? '1';
+  const sceneCode = scene.sceneNumber ?? scene.sceneLabel ?? `${sceneIdx + 1}`;
   const sceneBadgeText = `${sceneCode} · ${scene.title}`;
 
   const handleShare = async (): Promise<void> => {
@@ -203,7 +166,7 @@ export function TopBar(): JSX.Element {
           </button>
           <span
             class="shell-scene-badge"
-            title={`Scene ${sceneBadgeText} — ${scene.synopsis}`}
+            title={`Scene ${sceneIdx + 1} of ${prod.scenes.length}: ${sceneBadgeText} — ${scene.synopsis}`}
           >
             {sceneBadgeText}
           </span>
@@ -219,35 +182,6 @@ export function TopBar(): JSX.Element {
           >
             ▶
           </button>
-        </div>
-
-        <div class="shell-seg" role="group" aria-label="View mode">
-          {VIEW_OPTIONS.map((v) => {
-            const isActive =
-              v.id === 'sit-g108'
-                ? seated
-                : !seated && camPreset === v.cameraPreset;
-            return (
-              <button
-                key={v.id}
-                type="button"
-                class={`shell-seg-btn${isActive ? ' is-active' : ''}`}
-                aria-pressed={isActive}
-                title={v.hint}
-                onClick={() => {
-                  if (v.id === 'sit-g108') {
-                    sceneCtrl.selectSeatById('MF-C-G-108', true);
-                  } else if (v.cameraPreset) {
-                    sceneCtrl.setCameraPreset(v.cameraPreset);
-                  }
-                  syncStoreFromSceneController(sceneCtrl);
-                }}
-              >
-                <Icon name={v.icon} size={15} />
-                <span class="shell-seg-label">{v.label}</span>
-              </button>
-            );
-          })}
         </div>
 
         <div
@@ -314,7 +248,7 @@ export function TopBar(): JSX.Element {
           aria-label="Help"
           aria-pressed={helpOpen.value}
           onClick={() => {
-            helpOpen.value = true;
+            openHelp(0);
           }}
         >
           <Icon name="help" />

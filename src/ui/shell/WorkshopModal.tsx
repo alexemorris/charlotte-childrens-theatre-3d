@@ -93,7 +93,7 @@ export function WorkshopModal(): JSX.Element | null {
 
   const handleDownloadStl = (): void => {
     const stl = generateCncBinaryStlBuffer(target.objectGroup, analysis.activeSubUnit);
-    const filename = `${analysis.exportSlug}_3d_foam_mesh.stl`;
+    const filename = `${analysis.exportSlug}_3d_scale_mesh.stl`;
     triggerBrowserDownload(filename, stl, 'model/stl');
     showToast(`Downloaded ${filename}`);
   };
@@ -212,7 +212,7 @@ export function WorkshopModal(): JSX.Element | null {
               </strong>
               <span class="workshop-stat-sub">
                 {analysis.requiresCncRouting
-                  ? '1219 × 2438 mm Baltic Birch / Foam'
+                  ? '1219 × 2438 mm 3/4" & 1/2" Plywood / MDF'
                   : 'Built in Traditional Shop'}
               </span>
             </div>
@@ -461,7 +461,7 @@ export function WorkshopModal(): JSX.Element | null {
                 id="workshop-dl-stl-btn"
                 type="button"
                 class="workshop-dl-btn"
-                title="Download binary 3D .STL mesh for 3-axis/5-axis EPS foam carving or 1:24 model 3D printing"
+                title="Download binary 3D .STL mesh for 1:24 model-box 3D printing or CAD reference"
                 onClick={handleDownloadStl}
               >
                 <Icon name="download" size={14} />

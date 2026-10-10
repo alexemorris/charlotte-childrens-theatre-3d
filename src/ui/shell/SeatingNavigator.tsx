@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   activeProduction,
   chartColorMode,
+  clearHoverTooltips,
   eyeMode,
   inSeatView,
   isMobile,
@@ -263,10 +264,9 @@ export function SeatingNavigator(): JSX.Element {
           </div>
 
           <div
-            class="shell-seg shell-seg-sm"
+            class="shell-seg shell-seg-sm shell-seg-2col"
             role="group"
             aria-label="Audience Seated Eye Height"
-            style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr' }}
           >
             <button
               type="button"
@@ -274,7 +274,6 @@ export function SeatingNavigator(): JSX.Element {
               aria-pressed={currentEyeMode === 'child'}
               title="Child Seated Eye Height (0.96m above stadium riser — Ages 5–10)"
               onClick={() => handleEyeModeChange('child')}
-              style={{ justifyContent: 'center' }}
             >
               Child Eye (0.96m)
             </button>
@@ -284,17 +283,15 @@ export function SeatingNavigator(): JSX.Element {
               aria-pressed={currentEyeMode === 'adult'}
               title="Adult Seated Eye Height (1.18m above stadium riser)"
               onClick={() => handleEyeModeChange('adult')}
-              style={{ justifyContent: 'center' }}
             >
               Adult Eye (1.18m)
             </button>
           </div>
 
           <div
-            class="shell-seg shell-seg-sm"
+            class="shell-seg shell-seg-sm shell-seg-2col"
             role="group"
             aria-label="Seating Chart Color Mode"
-            style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr' }}
           >
             <button
               type="button"
@@ -302,7 +299,6 @@ export function SeatingNavigator(): JSX.Element {
               aria-pressed={currentColorMode === 'section'}
               title="Color seats by Main Floor, Lower Balcony, and Upper Balcony sections"
               onClick={() => handleColorModeChange('section')}
-              style={{ justifyContent: 'center' }}
             >
               Venue Sections
             </button>
@@ -312,7 +308,6 @@ export function SeatingNavigator(): JSX.Element {
               aria-pressed={currentColorMode === 'sightline-heatmap'}
               title="Color all seats in 2D and 3D by real-time Sightline Score & Balcony Overhang Clearance"
               onClick={() => handleColorModeChange('sightline-heatmap')}
-              style={{ justifyContent: 'center' }}
             >
               Sightline Heatmap
             </button>
@@ -336,17 +331,10 @@ export function SeatingNavigator(): JSX.Element {
           />
 
           {/* 4. Quick Sightline Test Seats (2x3 chip grid) */}
-          <div class="shell-card-head" style={{ marginTop: '4px' }}>
+          <div class="shell-card-head quick-seat-head">
             <span class="shell-panel-eyebrow">Quick Sightline Test Seats</span>
           </div>
-          <div
-            class="quick-seat-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              gap: '6px',
-            }}
-          >
+          <div class="quick-seat-grid">
             {QUICK_TEST_SEATS.map((preset) => {
               const isSelected = selectedSeatId === preset.seatId;
               return (
@@ -356,17 +344,9 @@ export function SeatingNavigator(): JSX.Element {
                   class={`shell-chip quick-seat-btn${isSelected ? ' is-active active' : ''}`}
                   title={preset.description}
                   onClick={() => handleQuickSeatSelect(preset.seatId)}
-                  style={{
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    height: 'auto',
-                    padding: '6px 9px',
-                    borderRadius: '8px',
-                  }}
                 >
-                  <span style={{ fontWeight: 600, fontSize: '11.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {preset.label}
-                  </span>
+                  <span class="quick-seat-label">{preset.label}</span>
+                  <span class="quick-seat-sub">{preset.sublabel}</span>
                 </button>
               );
             })}
@@ -393,15 +373,14 @@ export function SeatingNavigator(): JSX.Element {
 
           {!metrics ? (
             <div class="seat-telemetry-card telemetry-empty">
-              <p style={{ marginBottom: '10px' }}>
+              <p class="telemetry-empty-text">
                 Select any seat in the <strong>3D auditorium</strong> or on the{' '}
                 <strong>2D seating chart</strong> above to inspect its 1st-person stage view
                 and vertical fly-loft clearance.
               </p>
               <button
                 type="button"
-                class="shell-btn shell-btn-primary"
-                style={{ width: '100%', justifyContent: 'center' }}
+                class="shell-btn shell-btn-primary shell-btn-block"
                 onClick={() => handleQuickSeatSelect('MF-C-G-108')}
               >
                 <Icon name="seat" size={14} />
@@ -444,26 +423,26 @@ export function SeatingNavigator(): JSX.Element {
               </div>
 
               <div class="telemetry-bars-list">
-                {VISIBILITY_BARS.map((bar) => (
-                  <div key={bar.label} class="telemetry-bar-row">
-                    <span>{bar.label}</span>
-                    <div class="telemetry-bar-track">
-                      <div
-                        class="telemetry-bar-fill"
-                        style={{
-                          width: `${bar.pct}%`,
-                          background:
-                            bar.pct >= 90
-                              ? '#38e298'
-                              : bar.pct >= 75
-                                ? '#58c4dc'
-                                : '#f5a638',
-                        }}
-                      />
+                {VISIBILITY_BARS.map((bar) => {
+                  const tierClass =
+                    bar.pct >= 90
+                      ? 'tier-high'
+                      : bar.pct >= 75
+                        ? 'tier-mid'
+                        : 'tier-low';
+                  return (
+                    <div key={bar.label} class="telemetry-bar-row">
+                      <span>{bar.label}</span>
+                      <div class="telemetry-bar-track">
+                        <div
+                          class={`telemetry-bar-fill ${tierClass}`}
+                          style={{ width: `${bar.pct}%` }}
+                        />
+                      </div>
+                      <span>{bar.pct}%</span>
                     </div>
-                    <span>{bar.pct}%</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div class="telemetry-notes">
@@ -472,18 +451,11 @@ export function SeatingNavigator(): JSX.Element {
                 ))}
               </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '6px',
-                  marginTop: '10px',
-                }}
-              >
+              <div class="telemetry-actions-row">
                 {seated ? (
                   <button
                     type="button"
-                    class="shell-btn"
-                    style={{ flex: 1, justifyContent: 'center' }}
+                    class="shell-btn shell-btn-block"
                     onClick={() => {
                       sceneCtrl.exitSeatViewToOrbit();
                       syncStoreFromSceneController(sceneCtrl);
@@ -495,8 +467,7 @@ export function SeatingNavigator(): JSX.Element {
                 ) : (
                   <button
                     type="button"
-                    class="shell-btn shell-btn-primary"
-                    style={{ flex: 1, justifyContent: 'center' }}
+                    class="shell-btn shell-btn-primary shell-btn-block"
                     onClick={() => {
                       sceneCtrl.selectSeatById(metrics.seat.id, true);
                       syncStoreFromSceneController(sceneCtrl);
@@ -533,9 +504,9 @@ export function SeatingNavigator(): JSX.Element {
                   <figure
                     key={photo.imgUrl}
                     class="venue-photo-card"
-                    style={{ cursor: 'pointer' }}
                     title={`Click to enlarge ${photo.title}`}
                     onClick={() => {
+                      clearHoverTooltips();
                       lightboxMedia.value = {
                         badge: photo.badge,
                         title: photo.title,

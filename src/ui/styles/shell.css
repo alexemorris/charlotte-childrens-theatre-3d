@@ -10,6 +10,8 @@
   --shell-nav-w: 316px;
   --shell-panel-w: 364px;
   --shell-gap: 12px;
+  --shell-left-inset: 12px;
+  --shell-right-inset: 12px;
   --shell-radius: 14px;
   --shell-radius-sm: 9px;
 
@@ -43,6 +45,14 @@
   --shell-shadow: 0 12px 34px rgba(0, 0, 0, 0.44);
   --shell-font: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --shell-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body.has-nav {
+  --shell-left-inset: calc(var(--shell-nav-w) + 2 * var(--shell-gap));
+}
+
+body.has-panel {
+  --shell-right-inset: calc(var(--shell-panel-w) + 2 * var(--shell-gap));
 }
 
 .shell-glass {
@@ -624,7 +634,7 @@ button:disabled {
 .shell-panel {
   position: fixed;
   top: calc(var(--shell-topbar-h) + var(--shell-gap));
-  bottom: 84px;
+  bottom: var(--shell-gap);
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -841,17 +851,53 @@ button:disabled {
   stroke-width: 1.1;
 }
 
+.shell-seg-2col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.shell-seg-2col .shell-seg-btn {
+  justify-content: center;
+}
+
+.shell-btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+.quick-seat-head {
+  margin-top: 4px;
+}
+
 .quick-seat-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
+  gap: 6px;
 }
 
 .quick-seat-btn {
-  text-align: left;
-  padding: 5px 8px;
+  justify-content: space-between;
+  width: 100%;
+  height: auto;
+  padding: 6px 9px;
   font-size: 11px;
   border-radius: 8px;
+}
+
+.quick-seat-label {
+  font-weight: 600;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-seat-sub {
+  font-family: var(--shell-mono);
+  font-size: 10px;
+  color: var(--shell-fg-faint);
+  flex-shrink: 0;
 }
 
 .seat-telemetry-card {
@@ -865,6 +911,10 @@ button:disabled {
   color: var(--shell-fg-muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.telemetry-empty-text {
+  margin: 0 0 10px;
 }
 
 .telemetry-header {
@@ -969,8 +1019,20 @@ button:disabled {
 
 .telemetry-bar-fill {
   height: 100%;
-  background: #46c67c;
+  background: #38e298;
   border-radius: inherit;
+}
+
+.telemetry-bar-fill.tier-high {
+  background: #38e298;
+}
+
+.telemetry-bar-fill.tier-mid {
+  background: #58c4dc;
+}
+
+.telemetry-bar-fill.tier-low {
+  background: #f5a638;
 }
 
 .telemetry-notes {
@@ -983,6 +1045,12 @@ button:disabled {
   gap: 3px;
 }
 
+.telemetry-actions-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
 .venue-photo-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -991,6 +1059,8 @@ button:disabled {
 }
 
 .venue-photo-card {
+  margin: 0;
+  cursor: pointer;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--shell-line);
   border-radius: 7px;
@@ -1258,11 +1328,11 @@ button:disabled {
   border-color: rgba(56, 239, 140, 0.6);
 }
 
-/* Sliders & Spawner inside Right Stage Panel */
+/* Counterweight Batten Sliders inside Right Stage Panel */
 .batten-sliders-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .hud-slider-row,
@@ -1281,31 +1351,41 @@ button:disabled {
   color: var(--shell-fg-muted);
 }
 
-.spawner-grid,
-.camera-preset-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
+.batten-slider-row {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 6px 8px;
 }
 
-.custom-piece-inspector {
-  margin-top: 6px;
-  padding: 9px 10px;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid var(--shell-line-strong);
-  border-radius: 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+.batten-slider-row.is-stowed {
+  opacity: 0.65;
 }
 
-.custom-piece-head {
+.batten-slider-head {
+  gap: 6px;
+}
+
+.batten-slider-title-wrap {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-weight: 700;
-  font-size: 12px;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+
+.batten-slider-name {
+  font-size: 11.5px;
+  font-weight: 550;
+  color: var(--shell-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batten-trim-val {
   color: var(--shell-cyan);
+  flex-shrink: 0;
 }
 
 /* Workshop Tab Cards in StagePanel */
@@ -1321,6 +1401,12 @@ button:disabled {
 
 .workshop-info-banner strong {
   color: var(--shell-fg);
+}
+
+.workshop-units-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .workshop-unit-card {
@@ -1352,13 +1438,59 @@ button:disabled {
   color: var(--shell-fg);
 }
 
+.workshop-unit-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
+.workshop-unit-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-unit-dim {
+  font-family: var(--shell-mono);
+  color: var(--shell-accent);
+}
+
+.workshop-unit-cnc-count {
+  color: #52f29c;
+  font-weight: 600;
+}
+
+.workshop-unit-shop-tag {
+  color: var(--shell-fg-faint);
+}
+
+.workshop-unit-desc {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-unit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.workshop-unit-inspect-btn {
+  flex: 1;
+  justify-content: center;
+}
+
 /* ---------------------------------------------------------------------------
-   Bottom Tool Dock
+   Bottom Tool Dock (centers in open 3D viewport between side panels)
    --------------------------------------------------------------------------- */
 
 .shell-dock-wrap {
   position: fixed;
-  left: 50%;
+  left: calc((100vw + var(--shell-left-inset) - var(--shell-right-inset)) / 2);
   bottom: 14px;
   z-index: 55;
   transform: translateX(-50%);
@@ -1367,7 +1499,8 @@ button:disabled {
   align-items: center;
   gap: 6px;
   pointer-events: none;
-  max-width: calc(100vw - 24px);
+  max-width: calc(100vw - var(--shell-left-inset) - var(--shell-right-inset));
+  transition: left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), max-width 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .shell-dock-hint {
@@ -1398,7 +1531,12 @@ button:disabled {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   overflow-x: auto;
+  scrollbar-width: none;
   max-width: 100%;
+}
+
+.shell-dock::-webkit-scrollbar {
+  display: none;
 }
 
 .shell-dock-btn {
@@ -1406,8 +1544,8 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  min-width: 62px;
-  padding: 6px 10px 5px;
+  min-width: 58px;
+  padding: 6px 9px 5px;
   border-radius: 11px;
   font-size: 11px;
   font-weight: 600;
@@ -1437,7 +1575,7 @@ button:disabled {
 .shell-dock-sep {
   width: 1px;
   height: 28px;
-  margin: 0 4px;
+  margin: 0 3px;
   background: var(--shell-line-strong);
   flex-shrink: 0;
 }
@@ -1449,11 +1587,11 @@ button:disabled {
 .shell-seat-overlay,
 .walkthrough-hud {
   position: fixed;
-  left: 50%;
+  left: calc((100vw + var(--shell-left-inset) - var(--shell-right-inset)) / 2);
   bottom: 14px;
   transform: translateX(-50%);
   z-index: 56;
-  width: min(860px, calc(100vw - 24px));
+  width: min(860px, calc(100vw - var(--shell-left-inset) - var(--shell-right-inset)));
   padding: 10px 14px;
   border-radius: 16px;
   background: var(--shell-glass-strong);
@@ -1464,6 +1602,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 7px;
+  transition: left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .walkthrough-hud-top,
@@ -1531,6 +1670,16 @@ button:disabled {
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(10px);
   max-width: 340px;
+}
+
+.hover-tooltip-cta-seat {
+  color: var(--shell-cyan);
+  font-weight: 600;
+}
+
+.hover-tooltip-cta-scenic {
+  color: var(--shell-green);
+  font-weight: 600;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2457,7 +2606,7 @@ kbd {
 
 .shell-toast {
   position: fixed;
-  left: 50%;
+  left: calc((100vw + var(--shell-left-inset) - var(--shell-right-inset)) / 2);
   bottom: 96px;
   z-index: 95;
   transform: translateX(-50%);

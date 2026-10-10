@@ -3,11 +3,9 @@ import {
   activeCameraPreset,
   activeProduction,
   activeScene,
-  customPieces,
   hoveredScenicElement,
   hoveredSeat,
   inSeatView,
-  selectedCustomPiece,
   selectedSeatMetrics,
   syncStoreFromSceneController,
   workshopTarget,
@@ -95,11 +93,6 @@ async function bootstrap(): Promise<void> {
       activeScene.value = scene;
       syncStoreFromSceneController(sceneCtrl);
     },
-    onCustomPiecesChanged: (pieces, selectedId) => {
-      customPieces.value = [...pieces];
-      selectedCustomPiece.value =
-        pieces.find((p) => p.id === selectedId) ?? null;
-    },
     onCameraModeChanged: (seated, presetId) => {
       inSeatView.value = seated;
       activeCameraPreset.value = presetId;
@@ -108,7 +101,7 @@ async function bootstrap(): Promise<void> {
 
   updateLoadingProgress(
     68,
-    'Rigging 8 Modular Production Sets & 52-Lineset Counterweight Schedule...'
+    'Rigging 7 Modular Production Sets & 52-Lineset Counterweight Schedule...'
   );
 
   // Support optional URL query params (?prod=..., ?scene=..., ?cam=..., ?seat=..., ?heatmap=1)

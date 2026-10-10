@@ -28,7 +28,6 @@ import {
   buildSoftMaskingLegsAndBorders,
   DEFAULT_RIGGING_BATTENS,
 } from './shared-scenic-helpers.ts';
-import { techGridSandboxSet } from './tech-grid-sandbox.ts';
 import type { ProductionSetModule, ScenicTexturesBundle } from './types.ts';
 
 export { DEFAULT_RIGGING_BATTENS, MCCOLL_52_LINESET_SCHEDULE } from './shared-scenic-helpers.ts';
@@ -41,7 +40,6 @@ export const PRODUCTION_SET_MODULES: ReadonlyArray<ProductionSetModule> = [
   charlottesWebSet,
   maryPoppinsSet,
   matildaSet,
-  techGridSandboxSet,
 ];
 
 export const PRODUCTION_CATALOG: ReadonlyArray<ProductionSpec> =
@@ -199,9 +197,13 @@ export function buildProductionSetsController(): ProductionSetsController {
       visibleSet.has('black-velour-masking')
     );
 
-    for (const b of DEFAULT_RIGGING_BATTENS) {
-      const targetTrim = scene.battenTrimHeightsM?.[b.lineNumber] ?? 0;
-      setBattenTrimHeightInternal(b.lineNumber, targetTrim);
+    const allLineNumbers = new Set<number>([
+      ...DEFAULT_RIGGING_BATTENS.map((b) => b.lineNumber),
+      ...battenNodes.keys(),
+    ]);
+    for (const lineNum of allLineNumbers) {
+      const targetTrim = scene.battenTrimHeightsM?.[lineNum] ?? 0;
+      setBattenTrimHeightInternal(lineNum, targetTrim);
     }
 
     cycMat.color.setHex(scene.cycBottomColor ?? spec.cycBottomColor);
@@ -351,6 +353,27 @@ export function buildProductionSetsController(): ProductionSetsController {
 
     setBattenTrimHeight(lineNumber: number, trimHeightM: number): void {
       setBattenTrimHeightInternal(lineNumber, trimHeightM);
+      const spec = getActiveSpec();
+      const matchingElements = spec.elements.filter((el) => el.battenLine === lineNumber);
+      if (matchingElements.length > 0) {
+        if (trimHeightM < 6.5) {
+          const anyVisible = matchingElements.some(
+            (el) => elementVisibility.get(el.id) ?? false
+          );
+          if (!anyVisible) {
+            setElementVisibilityInternal(matchingElements[0]!.id, true);
+          }
+        } else if (trimHeightM >= 6.7) {
+          const activeId = activeSceneByProd.get(spec.id);
+          const scene = spec.scenes.find((s) => s.id === activeId) ?? spec.scenes[0];
+          const cueSet = new Set(scene?.visibleElementIds ?? []);
+          for (const el of matchingElements) {
+            if (!cueSet.has(el.id)) {
+              setElementVisibilityInternal(el.id, false);
+            }
+          }
+        }
+      }
     },
 
     getBattenTrimHeight(lineNumber: number): number {

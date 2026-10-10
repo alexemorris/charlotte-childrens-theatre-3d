@@ -15,8 +15,8 @@ const STEPS: readonly HelpStepSpec[] = [
     title: '3D Stage & House Navigation',
     body: 'Drag to orbit around the Hugh McColl Family Theatre proscenium, right-drag to pan, and scroll or pinch to zoom.',
     tips: [
-      'Use the Top Bar view switcher for 3D Stage, Front Elevation, or Top 1/4" Ground Plan',
-      'Use the bottom Tool Dock to jump to Proscenium, Stage → House, Balcony, or Fly Grid',
+      'Use the bottom Tool Dock to switch between Overview, Proscenium, Top Plan, Stage → House, Balcony, Fly Grid, and Sit (Seat)',
+      'Toggle the Left 533-Seat Navigator and Right Stage & Workshop Panel anytime from the Top Bar',
     ],
   },
   {
@@ -24,26 +24,26 @@ const STEPS: readonly HelpStepSpec[] = [
     title: '533-Seat Sightlines & Child Eye Height',
     body: 'Click any of the 533 seats in the 3D auditorium—or on the Left 2D Seating Chart—to sit in 1st-person audience view.',
     tips: [
-      'Press C (or click the Top Bar eye badge) to toggle Child (0.96m) vs. Adult (1.18m) seated eye height',
-      'Press L to project 3D Sightline Laser Rays and inspect balcony soffit overhang clearance',
+      'Press C (or click the Top Bar eye toggle) to compare Child (0.96m) vs. Adult (1.18m) seated eye height',
+      'Press L to project 3D Sightline Laser Rays and press R while seated to recenter your gaze to Center Stage',
     ],
   },
   {
     icon: 'sparkles',
     title: 'Scene Cues ([ / ]) & 52-Lineset Fly Rigging',
-    body: 'Step scene-by-scene through the production with [ and ] or the Top Bar & Right Panel cue sequencers.',
+    body: 'Step scene-by-scene through all 7 productions with [ and ] or the Top Bar & Right Panel cue sequencers.',
     tips: [
-      'Open physical Model Box photos and 1/4" = 1\'-0" CAD Ground Plans from the Scene card',
-      'Adjust 52-lineset counterweight batten trims, Grand Drape, and stage lighting faders in the Right Panel',
+      'Inspect physical Model Box photos and 1/4" = 1\'-0" CAD Ground Plans from the Scene card',
+      'Adjust production counterweight batten trims, Grand Drape, and 5 stage lighting channels in the Rigging & Lights tab',
     ],
   },
   {
     icon: 'cnc',
     title: 'Scenic Workshop & 4\'×8\' CNC Fabrication',
-    body: 'Click any scenic unit directly on the 3D stage (or click "Shop / CNC" in the Right Panel) to inspect its fabrication plan.',
+    body: 'Click any scenic unit directly on the 3D stage (or in the Right Panel) to inspect its granular sub-units and fabrication plan.',
     tips: [
-      'Clearly separates 4\'×8\' CNC Router & EPS Foam Mill parts from Soft Goods/Paint Shop drops, Carpentry, and Cast Blocking',
-      'Download true-scale AutoCAD .DXF, Vector .SVG, 3D Foam .STL, and Cut-List BOM .CSV files directly in the browser',
+      'Separates 3-axis 4\'×8\' Plywood CNC router profiles from Timber Carpentry framing, Soft Goods/Scenic Paint drops, and Props',
+      'Download true-scale AutoCAD .DXF, Vector .SVG, 1:24 3D Model .STL, and Cut-List BOM .CSV files directly in the browser',
     ],
   },
 ];
@@ -56,6 +56,7 @@ export const KEYBOARD_SHORTCUTS: readonly { readonly keys: string; readonly acti
   { keys: 'C', action: 'Toggle Child (0.96m) vs. Adult (1.18m) seated eye height' },
   { keys: 'L', action: 'Toggle 3D sightline laser rays from active seat' },
   { keys: 'G', action: 'Toggle 1m × 1m CAD stage floor grid & centerline' },
+  { keys: 'R', action: 'Recenter 1st-person seated gaze to Center Stage' },
   { keys: '← / → / ↑ / ↓', action: 'Step seat left/right or row closer/further while seated' },
   { keys: '?', action: 'Open this interactive guide & keyboard shortcuts' },
   { keys: 'Esc', action: 'Close modal or return from Seat View to 3D Orbit' },

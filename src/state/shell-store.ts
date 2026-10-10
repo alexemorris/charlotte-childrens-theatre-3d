@@ -6,7 +6,6 @@ import type {
   AudienceEyeMode,
   CameraPresetId,
   ChartColorMode,
-  CustomSetPiece,
   LightingState,
   ProductionElementSpec,
   ProductionSceneCue,
@@ -204,12 +203,6 @@ export const lightingState: Signal<LightingState> = signal<LightingState>({
 export const graphicsQuality: Signal<GraphicsQualityMode> =
   signal<GraphicsQualityMode>('ultra');
 
-export const customPieces: Signal<ReadonlyArray<CustomSetPiece>> =
-  signal<ReadonlyArray<CustomSetPiece>>([]);
-
-export const selectedCustomPiece: Signal<CustomSetPiece | null> =
-  signal<CustomSetPiece | null>(null);
-
 export const workshopTarget: Signal<{
   element: ProductionElementSpec;
   objectGroup: THREE.Object3D;
@@ -264,7 +257,13 @@ export function showToast(text: string, durationMs = 2600): void {
   }, durationMs);
 }
 
+export function clearHoverTooltips(): void {
+  hoveredSeat.value = null;
+  hoveredScenicElement.value = null;
+}
+
 export function openHelp(step = 0): void {
+  clearHoverTooltips();
   helpStep.value = step;
   helpOpen.value = true;
 }
@@ -301,6 +300,7 @@ export function openWorkshopForElementId(
   elementId: string,
   subUnitId?: string
 ): void {
+  clearHoverTooltips();
   const target = sceneCtrl.getScenicElementTarget(elementId);
   if (target) {
     workshopTarget.value = {
@@ -350,6 +350,4 @@ export function syncStoreFromSceneController(
   grandDrapeOpenFraction.value = sceneCtrl.getGrandDrapeOpenFraction();
   lightingState.value = sceneCtrl.getLightingState();
   graphicsQuality.value = sceneCtrl.getGraphicsQuality();
-  customPieces.value = [...sceneCtrl.getCustomSetPieces()];
-  selectedCustomPiece.value = sceneCtrl.getSelectedCustomPiece();
 }
