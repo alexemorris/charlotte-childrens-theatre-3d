@@ -1,11 +1,34 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {
   createGrinchPreShowScrimTexture,
   createSeussianRockHatchTexture,
 } from '../engine/procedural-textures.ts';
-import type { ProductionElementSpec, ProductionSceneCue, ProductionSpec } from '../types/theatre.ts';
-import { createHumanScaleFigure } from './shared-scenic-helpers.ts';
+import type {
+  ProductionElementSpec,
+  ProductionSceneCue,
+  ProductionSpec,
+} from '../types/theatre.ts';
+import {
+  buildGrinchCavePortal,
+  buildGrinchMylarCurtain,
+} from './grinch/grinch-cave.ts';
+import { buildPapaWhosHouseUnit } from './grinch/papa-whos-house.ts';
+import {
+  buildGrinchPreShowScrim,
+  buildGrinchSnowPortals,
+  buildGrinchWhovilleHillsAndCrumpit,
+} from './grinch/portals-and-hills.ts';
+import {
+  buildGrinchFinaleBanquet,
+  buildGrinchMtCrumpitSleigh,
+  buildGrinchOffstageStorage,
+  buildGrinchShoppingCounters,
+} from './grinch/shopping-crumpit-finale.ts';
+import {
+  buildGrinchChristmasSign,
+  buildGrinchWhovilleHouses,
+  buildGrinchWhovilleTree,
+} from './grinch/whoville-town.ts';
 import type { ProductionSetBuilderContext, ProductionSetModule } from './types.ts';
 
 const GRINCH_ELEMENTS: ReadonlyArray<ProductionElementSpec> = [
@@ -353,7 +376,7 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
 export const grinchSpec: ProductionSpec = {
   id: 'grinch',
   title: "Dr. Seuss's How The Grinch Stole Christmas!",
-  subtitle: 'Children\'s Theatre of Charlotte · Scenic Design by Andrew Gibbon',
+  subtitle: "Children's Theatre of Charlotte · Scenic Design by Andrew Gibbon",
   playwrightOrComposer: 'Book & Lyrics by Timothy Mason · Music by Mel Marvin',
   ageRecommendation: 'All Ages (4+)',
   description:
@@ -368,408 +391,6 @@ export const grinchSpec: ProductionSpec = {
   elements: GRINCH_ELEMENTS,
   scenes: GRINCH_SCENES,
 };
-
-/**
- * Helper to build a curvy pink Seussian Whoville Round House wagon
- * with a scalloped snow roof, crooked chimney, arched door + wreath, and glowing windows.
- */
-function createPinkWhovilleHouseWagon(
-  widthM: number,
-  heightM: number,
-  rockTex: THREE.CanvasTexture,
-  label: string
-): THREE.Group {
-  const g = new THREE.Group();
-  g.name = `WhovillePinkHouse_${label}`;
-
-  // Rolling caster wagon base (matching blue wagon rectangles on CAD ground plan)
-  const wagonBase = new THREE.Mesh(
-    new THREE.BoxGeometry(widthM + 0.35, 0.12, 1.05),
-    new THREE.MeshStandardMaterial({ color: 0x262c3a, roughness: 0.65 })
-  );
-  wagonBase.position.y = 0.06;
-  g.add(wagonBase);
-
-  const pinkMat = new THREE.MeshStandardMaterial({
-    color: 0xd84688,
-    roughness: 0.56,
-    metalness: 0.04,
-  });
-  const snowRoofMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0xc2d4ec,
-    roughness: 0.62,
-  });
-  const outlineMat = new THREE.MeshBasicMaterial({ color: 0x181422 });
-  const warmWindowMat = new THREE.MeshStandardMaterial({
-    color: 0xffe068,
-    emissive: 0xffa824,
-    emissiveIntensity: 0.65,
-    roughness: 0.3,
-  });
-  const wreathGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x1d8a42,
-    roughness: 0.6,
-  });
-  const redBowMat = new THREE.MeshStandardMaterial({
-    color: 0xd92638,
-    roughness: 0.5,
-  });
-
-  // Bulbous Seussian pink house body
-  const body = new THREE.Mesh(
-    new RoundedBoxGeometry(widthM, heightM * 0.68, 0.68, 3, 0.26),
-    pinkMat
-  );
-  body.position.y = (heightM * 0.68) / 2 + 0.1;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  g.add(body);
-
-  // Scalloped snow-draped dome roof cap
-  const roof = new THREE.Mesh(
-    new THREE.SphereGeometry(widthM * 0.54, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.56),
-    snowRoofMat
-  );
-  roof.scale.set(1.04, 0.68, 0.58);
-  roof.position.set(0, heightM * 0.62, 0);
-  roof.castShadow = true;
-  g.add(roof);
-
-  // Snow icicle scallops along roof eaves
-  const scallopCount = 7;
-  for (let i = 0; i < scallopCount; i++) {
-    const sx = ((i - (scallopCount - 1) / 2) / (scallopCount / 2)) * (widthM * 0.44);
-    const drip = new THREE.Mesh(
-      new THREE.ConeGeometry(0.14, 0.34, 8),
-      snowRoofMat
-    );
-    drip.rotation.x = Math.PI;
-    drip.position.set(sx, heightM * 0.58, 0.34);
-    g.add(drip);
-  }
-
-  // Crooked snow-covered chimney pipe at the top peak
-  const chimney = new THREE.Mesh(
-    new RoundedBoxGeometry(0.28, 0.56, 0.22, 2, 0.06),
-    snowRoofMat
-  );
-  chimney.position.set(0.08, heightM * 0.94, -0.02);
-  chimney.rotation.z = -0.18;
-  g.add(chimney);
-
-  // Arched Seussian front door
-  const doorX = widthM * 0.2;
-  const doorFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(0.62, 1.32, 0.08, 2, 0.22),
-    outlineMat
-  );
-  doorFrame.position.set(doorX, 0.76, 0.33);
-  g.add(doorFrame);
-
-  const doorPanel = new THREE.Mesh(
-    new RoundedBoxGeometry(0.54, 1.24, 0.09, 2, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0xf878b4, roughness: 0.5 })
-  );
-  doorPanel.position.set(doorX, 0.75, 0.34);
-  g.add(doorPanel);
-
-  // Holiday wreath + red bow on door
-  const doorWreath = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.055, 10, 18),
-    wreathGreenMat
-  );
-  doorWreath.position.set(doorX, 0.96, 0.4);
-  g.add(doorWreath);
-
-  const doorBow = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.05), redBowMat);
-  doorBow.position.set(doorX, 1.12, 0.42);
-  g.add(doorBow);
-
-  // Glowing yellow arched windows with mini wreaths
-  for (const wx of [-widthM * 0.3, -widthM * 0.05]) {
-    const win = new THREE.Mesh(
-      new RoundedBoxGeometry(0.34, 0.46, 0.08, 2, 0.12),
-      warmWindowMat
-    );
-    win.position.set(wx, 0.98, 0.34);
-    g.add(win);
-
-    const winWreath = new THREE.Mesh(
-      new THREE.TorusGeometry(0.1, 0.035, 8, 14),
-      wreathGreenMat
-    );
-    winWreath.position.set(wx, 0.98, 0.39);
-    g.add(winWreath);
-  }
-
-  return g;
-}
-
-/**
- * Helper to build Papa Who's House (Lineset #9 at 6'-6") in either
- * solid painted wall mode (Sheet 1H) or translucent backlit scrim mode (Sheet 1E "Mean One").
- */
-function buildPapaWhosHouseUnit(translucentScrimMode: boolean): THREE.Group {
-  const group = new THREE.Group();
-  group.name = translucentScrimMode
-    ? 'Element_grinch-papa-whos-scrim-mode'
-    : 'Element_grinch-papa-whos-house';
-
-  const oliveTimberMat = new THREE.MeshStandardMaterial({
-    color: 0x7b9a44,
-    roughness: 0.56,
-    metalness: 0.05,
-  });
-  const roofGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x5c7c32,
-    roughness: 0.62,
-  });
-  const creamWallMat = new THREE.MeshStandardMaterial({
-    color: translucentScrimMode ? 0xd8d0e8 : 0xece6d4,
-    roughness: 0.65,
-    transparent: translucentScrimMode,
-    opacity: translucentScrimMode ? 0.22 : 1.0,
-    depthWrite: !translucentScrimMode,
-  });
-  const hearthStoneMat = new THREE.MeshStandardMaterial({
-    color: 0x7a8478,
-    roughness: 0.72,
-  });
-  const crimsonMat = new THREE.MeshStandardMaterial({
-    color: 0xd42438,
-    roughness: 0.5,
-  });
-  const wreathGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x1d8a42,
-    roughness: 0.55,
-  });
-  const royalBlueMat = new THREE.MeshStandardMaterial({
-    color: 0x1a75e8,
-    roughness: 0.45,
-  });
-
-  // 1. Main House Unit at Lineset #9 (z = -2.0m)
-  const houseFrame = new THREE.Group();
-  houseFrame.position.set(0, 0, -2.0);
-  group.add(houseFrame);
-
-  // Cream/Scrim Main Wall Backing (left & right of central chimney breast)
-  for (const side of [-1, 1]) {
-    const wallPanel = new THREE.Mesh(
-      new RoundedBoxGeometry(2.65, 2.95, 0.14, 2, 0.18),
-      creamWallMat
-    );
-    wallPanel.position.set(side * 1.85, 1.52, 0);
-    wallPanel.castShadow = !translucentScrimMode;
-    wallPanel.receiveShadow = true;
-    houseFrame.add(wallPanel);
-  }
-
-  // Asymmetrical Curvy Olive-Green Seussian Roof Arch (matching Slides 11, 12, 16, 17!)
-  const roofDome = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.6, 3.85, 0.28, 28, 1, false, 0, Math.PI),
-    roofGreenMat
-  );
-  roofDome.rotation.x = Math.PI / 2;
-  roofDome.rotation.z = -0.08;
-  roofDome.scale.set(1.08, 0.48, 1.0);
-  roofDome.position.set(-0.05, 2.85, 0.02);
-  roofDome.castShadow = true;
-  houseFrame.add(roofDome);
-
-  // Exposed Olive-Green Seussian Timber Rib Framing (visible even in Scrim Reveal mode!)
-  for (const rx of [-3.1, -1.9, -0.75, 0.75, 1.95, 3.05]) {
-    const post = new THREE.Mesh(
-      new RoundedBoxGeometry(0.14, 2.95, 0.22, 1, 0.04),
-      oliveTimberMat
-    );
-    post.position.set(rx, 1.5, 0.04);
-    post.rotation.z = rx * -0.025;
-    post.castShadow = true;
-    houseFrame.add(post);
-  }
-  for (const ry of [0.12, 1.05, 2.35, 2.95]) {
-    const beam = new THREE.Mesh(
-      new RoundedBoxGeometry(6.4, 0.14, 0.22, 1, 0.04),
-      oliveTimberMat
-    );
-    beam.position.set(0, ry, 0.04);
-    beam.rotation.z = ry > 2.0 ? -0.05 : 0;
-    houseFrame.add(beam);
-  }
-
-  // Roof radial timber ribs
-  for (let r = -2; r <= 2; r++) {
-    const rib = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 1.45, 0.24),
-      oliveTimberMat
-    );
-    rib.position.set(r * 1.15, 3.45 - Math.abs(r) * 0.16, 0.06);
-    rib.rotation.z = r * -0.24;
-    houseFrame.add(rib);
-  }
-
-  // Central Chimney Breast & Fireplace Hearth (x = 0, y = 0..2.9m)
-  const chimneyBreast = new THREE.Mesh(
-    new THREE.BoxGeometry(1.42, 2.95, 0.36),
-    hearthStoneMat
-  );
-  chimneyBreast.position.set(-0.05, 1.48, 0.12);
-  chimneyBreast.castShadow = true;
-  houseFrame.add(chimneyBreast);
-
-  // Fireplace Mantel Shelf
-  const mantelShelf = new THREE.Mesh(
-    new RoundedBoxGeometry(1.72, 0.14, 0.48, 2, 0.04),
-    new THREE.MeshStandardMaterial({ color: 0xd8d4ec, roughness: 0.45 })
-  );
-  mantelShelf.position.set(-0.05, 1.28, 0.24);
-  houseFrame.add(mantelShelf);
-
-  // Glowing Firebox Inside Hearth
-  const firebox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.92, 0.95, 0.28),
-    new THREE.MeshStandardMaterial({
-      color: 0x3a0c14,
-      emissive: 0xff3818,
-      emissiveIntensity: 0.85,
-      roughness: 0.6,
-    })
-  );
-  firebox.position.set(-0.05, 0.55, 0.22);
-  houseFrame.add(firebox);
-
-  // Hanging Christmas Stockings along Mantel + Over-Mantel Wreath & Red Banner
-  const stockingColors = [0xff3858, 0x38d878, 0xffd238, 0x48a8ff];
-  for (let s = 0; s < 4; s++) {
-    const st = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 0.26, 0.05),
-      new THREE.MeshStandardMaterial({ color: stockingColors[s] ?? 0xff3858 })
-    );
-    st.position.set(-0.52 + s * 0.32, 1.12, 0.44);
-    st.rotation.z = (s % 2 === 0 ? 1 : -1) * 0.12;
-    houseFrame.add(st);
-  }
-
-  const mantelBanner = new THREE.Mesh(
-    new THREE.BoxGeometry(1.18, 0.32, 0.06),
-    crimsonMat
-  );
-  mantelBanner.position.set(-0.05, 1.68, 0.32);
-  houseFrame.add(mantelBanner);
-
-  const mantelWreath = new THREE.Mesh(
-    new THREE.TorusGeometry(0.24, 0.07, 10, 20),
-    wreathGreenMat
-  );
-  mantelWreath.position.set(-0.05, 2.22, 0.34);
-  houseFrame.add(mantelWreath);
-
-  // Arched Window Cutouts (Left & Right) + Arched Green Door on Right
-  for (const wx of [-1.75, 2.15]) {
-    const archRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.46, 0.06, 10, 20),
-      oliveTimberMat
-    );
-    archRing.scale.set(0.85, 1.35, 1.0);
-    archRing.position.set(wx, 1.65, 0.12);
-    houseFrame.add(archRing);
-
-    const winWreath = new THREE.Mesh(
-      new THREE.TorusGeometry(0.2, 0.055, 8, 16),
-      wreathGreenMat
-    );
-    winWreath.position.set(wx, 1.62, 0.16);
-    houseFrame.add(winWreath);
-  }
-
-  // 2. Downstage Right (DSR) Crooked Seussian Refrigerator & Table (from Slides 11, 16, 17)
-  const fridgeGroup = new THREE.Group();
-  fridgeGroup.position.set(-3.75, 0, -1.25);
-  fridgeGroup.rotation.y = 0.28;
-  const fridgeBody = new THREE.Mesh(
-    new RoundedBoxGeometry(0.95, 1.85, 0.68, 3, 0.18),
-    royalBlueMat
-  );
-  fridgeBody.position.y = 0.92;
-  fridgeBody.castShadow = true;
-  fridgeGroup.add(fridgeBody);
-
-  const fridgeDoor = new THREE.Mesh(
-    new RoundedBoxGeometry(0.76, 1.48, 0.08, 2, 0.14),
-    new THREE.MeshStandardMaterial({ color: 0xf4a8c8, roughness: 0.45 })
-  );
-  fridgeDoor.position.set(0, 0.88, 0.34);
-  fridgeGroup.add(fridgeDoor);
-  group.add(fridgeGroup);
-
-  // DSR Blue Stool / Small Table
-  const tableGroup = new THREE.Group();
-  tableGroup.position.set(-2.55, 0, -1.18);
-  const tableTop = new THREE.Mesh(
-    new RoundedBoxGeometry(0.76, 0.08, 0.58, 2, 0.03),
-    new THREE.MeshStandardMaterial({ color: 0xeef4ff, roughness: 0.4 })
-  );
-  tableTop.position.y = 0.72;
-  tableGroup.add(tableTop);
-  for (const lx of [-0.28, 0.28]) {
-    for (const lz of [-0.2, 0.2]) {
-      const leg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.03, 0.72, 8),
-        royalBlueMat
-      );
-      leg.position.set(lx, 0.36, lz);
-      tableGroup.add(leg);
-    }
-  }
-  group.add(tableGroup);
-
-  // 3. Who Family Christmas Tree (Right of Fireplace, x = +1.05m, z = -1.35m)
-  const whoTreeGroup = new THREE.Group();
-  whoTreeGroup.position.set(1.08, 0, -1.32);
-  for (let tier = 0; tier < 5; tier++) {
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.52 - tier * 0.08, 0.58, 12),
-      wreathGreenMat
-    );
-    cone.position.y = 0.38 + tier * 0.36;
-    cone.castShadow = true;
-    whoTreeGroup.add(cone);
-  }
-  group.add(whoTreeGroup);
-
-  // 4. Downstage Left (DSL) Royal-Blue Curvy Seussian Daybed (x = +3.35m, z = -1.22m)
-  const daybedGroup = new THREE.Group();
-  daybedGroup.position.set(3.35, 0, -1.22);
-  daybedGroup.rotation.y = -0.24;
-  const bedSeat = new THREE.Mesh(
-    new RoundedBoxGeometry(1.55, 0.38, 0.72, 2, 0.08),
-    royalBlueMat
-  );
-  bedSeat.position.y = 0.34;
-  bedSeat.castShadow = true;
-  daybedGroup.add(bedSeat);
-
-  const bedBack = new THREE.Mesh(
-    new RoundedBoxGeometry(1.58, 0.68, 0.18, 2, 0.12),
-    royalBlueMat
-  );
-  bedBack.position.set(0, 0.68, -0.26);
-  bedBack.rotation.z = 0.08;
-  daybedGroup.add(bedBack);
-  group.add(daybedGroup);
-
-  // In Scrim Reveal ("Mean One Mr. Grinch") mode, add the Grinch in his red Santa disguise!
-  if (translucentScrimMode) {
-    const grinchFigure = createHumanScaleFigure(1.82, 0xd41e2e, 0.32, 0xd41e2e);
-    grinchFigure.position.set(0.45, 0, -1.15);
-    grinchFigure.rotation.y = -0.25;
-    group.add(grinchFigure);
-  }
-
-  return group;
-}
 
 export function buildGrinchSet({
   registerElement: registerCtxElement,
@@ -789,609 +410,69 @@ export function buildGrinchSet({
   const rockTex = createSeussianRockHatchTexture();
   const preshowScrimTex = createGrinchPreShowScrimTexture();
 
-  const snowPortalMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0xb6cce8,
-    roughness: 0.62,
-    metalness: 0.04,
-  });
-  const iceCaveMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0x76a2dc,
-    roughness: 0.56,
-    metalness: 0.06,
-  });
-
-  // ==========================================================================
-  // 1. DOWNSTAGE LEFT & RIGHT SCULPTED SEUSSIAN SNOW-CLIFF PORTALS
-  //    (Permanent false proscenium tormentors visible in every slide 3–22)
-  // ==========================================================================
-  const portalsGroup = new THREE.Group();
-  portalsGroup.name = 'Element_grinch-snow-portals';
-
-  for (const side of [-1, 1]) {
-    // Outer Downstage Snow Block Tower
-    const outerTower = new THREE.Mesh(
-      new RoundedBoxGeometry(2.35, 3.65, 0.95, 3, 0.16),
-      snowPortalMat
-    );
-    outerTower.position.set(side * 5.65, 1.82, -0.15);
-    outerTower.rotation.y = side * -0.18;
-    outerTower.castShadow = true;
-    outerTower.receiveShadow = true;
-    portalsGroup.add(outerTower);
-
-    // Overhanging Snow Cap on Outer Tower
-    const snowCap = new THREE.Mesh(
-      new RoundedBoxGeometry(2.52, 1.15, 1.08, 3, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xc6d8f0, roughness: 0.56 })
-    );
-    snowCap.position.set(side * 5.62, 3.15, -0.1);
-    snowCap.rotation.y = side * -0.18;
-    snowCap.rotation.z = side * -0.05;
-    portalsGroup.add(snowCap);
-
-    // Mid-Wing Stepped Snow Flat
-    const midFlat = new THREE.Mesh(
-      new RoundedBoxGeometry(1.85, 3.15, 0.45, 2, 0.12),
-      snowPortalMat
-    );
-    midFlat.position.set(side * 4.45, 1.56, -0.85);
-    midFlat.rotation.y = side * -0.12;
-    midFlat.castShadow = true;
-    portalsGroup.add(midFlat);
-
-    // Tall Curving Seussian Ice-Wave Wing Arch (seen behind the outer snow portals in Slides 5, 11, 14, 20, 22)
-    const waveArch = new THREE.Mesh(
-      new RoundedBoxGeometry(1.95, 4.75, 0.28, 3, 0.24),
-      iceCaveMat
-    );
-    waveArch.position.set(side * 4.65, 2.38, -2.55);
-    waveArch.rotation.z = side * -0.22;
-    waveArch.castShadow = true;
-    portalsGroup.add(waveArch);
-  }
+  // 1. Downstage Left & Right Sculpted Seussian Snow-Cliff Portals & Ice Waves
+  const portalsGroup = buildGrinchSnowPortals(rockTex);
   registerElement('grinch-snow-portals', portalsGroup);
 
-  // ==========================================================================
-  // 2. LINESET #1 (0'-10") PRE-SHOW STORYBOOK SCRIM (Slide 3 / Sheet 1A)
-  // ==========================================================================
-  const preshowScrimGroup = new THREE.Group();
-  preshowScrimGroup.name = 'Element_grinch-preshow-scrim';
-  const scrimMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(11.8, 6.6),
-    new THREE.MeshStandardMaterial({
-      map: preshowScrimTex,
-      transparent: true,
-      opacity: 0.9,
-      roughness: 0.68,
-      emissive: 0x241a46,
-      emissiveIntensity: 0.18,
-    })
-  );
-  scrimMesh.position.set(0, 3.3, -0.35);
-  preshowScrimGroup.add(scrimMesh);
-  preshowScrimGroup.visible = false;
+  // 2. Lineset #1 (0'-10") Pre-Show Storybook Scrim (Sheet 1A)
+  const preshowScrimGroup = buildGrinchPreShowScrim(preshowScrimTex);
   registerElement('grinch-preshow-scrim', preshowScrimGroup, 1);
 
-  // ==========================================================================
-  // 3. UPSTAGE WHOVILLE SNOW HILLS & MT. CRUMPIT PEAK (Lineset #39 / #45)
-  // ==========================================================================
-  const hillsGroup = new THREE.Group();
-  hillsGroup.name = 'Element_grinch-whoville-hills-cyc';
-
-  // Left & Right rolling snow hills groundrow
-  for (const [hx, hy, hz, rx, ry, col] of [
-    [-2.8, 1.25, -6.6, 2.6, 1.45, 0x9eb6de],
-    [2.6, 1.35, -6.5, 2.8, 1.55, 0x90aad6],
-    [0.2, 0.95, -5.9, 1.9, 1.15, 0xacc2e6],
-  ] as const) {
-    const hill = new THREE.Mesh(
-      new THREE.SphereGeometry(1.0, 20, 14),
-      new THREE.MeshStandardMaterial({
-        map: rockTex,
-        color: col,
-        roughness: 0.6,
-      })
-    );
-    hill.scale.set(rx, ry, 0.35);
-    hill.position.set(hx, hy, hz);
-    hillsGroup.add(hill);
-  }
-
-  // Towering Crooked Peak of Mt. Crumpit at Upstage Center (z = -7.2m)
-  const crumpitPeakGroup = new THREE.Group();
-  crumpitPeakGroup.position.set(-0.35, 0, -7.25);
-  const crumpitBody = new THREE.Mesh(
-    new THREE.ConeGeometry(2.65, 5.25, 12),
-    new THREE.MeshStandardMaterial({
-      map: rockTex,
-      color: 0xa2b6dc,
-      roughness: 0.58,
-    })
-  );
-  crumpitBody.scale.set(1.15, 1.0, 0.28);
-  crumpitBody.position.set(0, 2.55, 0);
-  crumpitBody.rotation.z = -0.22;
-  crumpitPeakGroup.add(crumpitBody);
-
-  const crumpitTip = new THREE.Mesh(
-    new RoundedBoxGeometry(1.45, 1.35, 0.42, 3, 0.25),
-    snowPortalMat
-  );
-  crumpitTip.position.set(0.55, 4.45, 0.08);
-  crumpitTip.rotation.z = -0.38;
-  crumpitPeakGroup.add(crumpitTip);
-  hillsGroup.add(crumpitPeakGroup);
-
+  // 3. Upstage Whoville Snow Hills & Mt. Crumpit Peak (Linesets #39 / #45)
+  const hillsGroup = buildGrinchWhovilleHillsAndCrumpit(rockTex);
   registerElement('grinch-whoville-hills-cyc', hillsGroup);
 
-  // ==========================================================================
-  // 4. 3 PINK WHOVILLE ROUND HOUSES (DSR, USR, MSL Wagons — Sheet 1B)
-  // ==========================================================================
-  const housesGroup = new THREE.Group();
-  housesGroup.name = 'Element_grinch-whoville-houses';
-
-  // DSR Pink House (x = -2.85m, z = -2.45m)
-  const dsrHouse = createPinkWhovilleHouseWagon(2.35, 2.75, rockTex, 'DSR');
-  dsrHouse.position.set(-2.85, 0, -2.45);
-  dsrHouse.rotation.y = 0.14;
-  housesGroup.add(dsrHouse);
-
-  // USR Pink House (x = -1.45m, z = -4.55m)
-  const usrHouse = createPinkWhovilleHouseWagon(2.05, 2.48, rockTex, 'USR');
-  usrHouse.position.set(-1.45, 0, -4.55);
-  usrHouse.rotation.y = 0.06;
-  housesGroup.add(usrHouse);
-
-  // MSL Pink House (x = +2.55m, z = -2.85m)
-  const mslHouse = createPinkWhovilleHouseWagon(2.3, 2.7, rockTex, 'MSL');
-  mslHouse.position.set(2.55, 0, -2.85);
-  mslHouse.rotation.y = -0.14;
-  housesGroup.add(mslHouse);
-
+  // 4. 3 Pink Whoville Round Houses (DSR, USR, MSL Wagons — Sheet 1B)
+  const housesGroup = buildGrinchWhovilleHouses(rockTex);
   registerElement('grinch-whoville-houses', housesGroup);
 
-  // ==========================================================================
-  // 5. CENTER WHOVILLE CHRISTMAS TREE & PRESENTS TURNTABLE (Sheet 1B / 1D / 1G)
-  // ==========================================================================
-  const treeWagonGroup = new THREE.Group();
-  treeWagonGroup.name = 'Element_grinch-whoville-tree';
-  treeWagonGroup.position.set(-0.1, 0, -3.35);
-
-  // Round Snow Turntable Base (drawn at Center Stage on CAD Ground Plans 1A, 1B, 1D, 1G)
-  const treePlinth = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.18, 1.28, 0.22, 24),
-    snowPortalMat
-  );
-  treePlinth.position.y = 0.11;
-  treeWagonGroup.add(treePlinth);
-
-  const treeFoliageMat = new THREE.MeshStandardMaterial({
-    color: 0x1b8c3e,
-    roughness: 0.56,
-  });
-  for (let tier = 0; tier < 6; tier++) {
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(1.22 - tier * 0.17, 0.96, 14),
-      treeFoliageMat
-    );
-    cone.position.y = 0.68 + tier * 0.58;
-    cone.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.05;
-    cone.castShadow = true;
-    treeWagonGroup.add(cone);
-  }
-
-  // Gold Star Tree Topper
-  const goldStarMat = new THREE.MeshStandardMaterial({
-    color: 0xffd428,
-    emissive: 0xffa818,
-    emissiveIntensity: 0.9,
-    roughness: 0.25,
-  });
-  const starTop = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), goldStarMat);
-  starTop.position.y = 4.28;
-  treeWagonGroup.add(starTop);
-
-  // Colorful Wrapped Christmas Presents piled around the base of the tree
-  const giftPalette = [0xff2e44, 0xff9224, 0xffd428, 0x8e44ef, 0x2898ff];
-  for (let gIdx = 0; gIdx < 12; gIdx++) {
-    const angle = (gIdx / 12) * Math.PI * 1.4 - Math.PI * 0.2;
-    const rad = 0.65 + (gIdx % 2) * 0.24;
-    const gift = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.26 + (gIdx % 3) * 0.08, 0.24),
-      new THREE.MeshStandardMaterial({
-        color: giftPalette[gIdx % giftPalette.length] ?? 0xff2e44,
-        roughness: 0.42,
-      })
-    );
-    gift.position.set(Math.cos(angle) * rad, 0.34, Math.sin(angle) * rad + 0.15);
-    gift.rotation.y = gIdx * 0.4;
-    treeWagonGroup.add(gift);
-  }
-
+  // 5. Center Whoville Christmas Tree & Presents Turntable (Sheets 1B, 1D, 1G)
+  const treeWagonGroup = buildGrinchWhovilleTree(rockTex);
   registerElement('grinch-whoville-tree', treeWagonGroup);
 
-  // ==========================================================================
-  // 6. LINESET #15 (10'-6") "MERRY CHRISTMAS WHOVILLE" BANNER (Slides 5, 14, 22)
-  // ==========================================================================
-  const signGroup = new THREE.Group();
-  signGroup.name = 'Element_grinch-christmas-sign';
-
-  const signCanvas = document.createElement('canvas');
-  signCanvas.width = 512;
-  signCanvas.height = 160;
-  const sCtx = signCanvas.getContext('2d');
-  if (sCtx) {
-    sCtx.fillStyle = '#c81e38';
-    sCtx.fillRect(0, 0, 512, 160);
-    sCtx.strokeStyle = '#ffd238';
-    sCtx.lineWidth = 5;
-    sCtx.strokeRect(8, 8, 496, 144);
-    sCtx.fillStyle = '#fff4e0';
-    sCtx.font = 'bold 28px Georgia, serif';
-    sCtx.textAlign = 'center';
-    sCtx.textBaseline = 'middle';
-    sCtx.fillText('MERRY CHRISTMAS WHOVILLE', 256, 82);
-  }
-  const signTex = new THREE.CanvasTexture(signCanvas);
-  signTex.colorSpace = THREE.SRGBColorSpace;
-
-  const bannerMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(4.4, 1.15, 16, 4),
-    new THREE.MeshStandardMaterial({
-      map: signTex,
-      roughness: 0.55,
-      side: THREE.DoubleSide,
-    })
-  );
-  // Slight catenary curve in the hanging banner
-  const posAttr = bannerMesh.geometry.attributes.position;
-  if (posAttr) {
-    for (let i = 0; i < posAttr.count; i++) {
-      const bx = posAttr.getX(i);
-      const by = posAttr.getY(i);
-      const sag = -0.22 * (1 - (bx / 2.2) * (bx / 2.2));
-      posAttr.setY(i, by + sag);
-    }
-    posAttr.needsUpdate = true;
-  }
-  bannerMesh.position.set(-0.05, 5.25, -3.2);
-  signGroup.add(bannerMesh);
-
+  // 6. Lineset #15 (10'-6") "MERRY CHRISTMAS WHOVILLE" Banner (Sheets 1B, 1D, 1G)
+  const signGroup = buildGrinchChristmasSign();
   registerElement('grinch-christmas-sign', signGroup, 3);
 
-  // ==========================================================================
-  // 7. LINESET #17 (11'-10") GRINCH'S CAVE JAGGED ICE ARCH & DISTANT VISTA
-  //    (Slides 7, 8, 19 — Sheets 1C & 1F)
-  // ==========================================================================
-  const caveGroup = new THREE.Group();
-  caveGroup.name = 'Element_grinch-cave-portal';
-
-  // Outer jagged blue Seussian rock arch framing the cave mouth at z = -3.65m
-  const archCount = 15;
-  for (let i = 0; i < archCount; i++) {
-    const t = i / (archCount - 1);
-    const angle = Math.PI * (1 - t); // PI (left) to 0 (right)
-    const rx = Math.cos(angle) * 4.45;
-    const ry = Math.sin(angle) * 3.85 + 0.55;
-
-    const rockLob = new THREE.Mesh(
-      new RoundedBoxGeometry(1.55, 1.95, 0.34, 3, 0.22),
-      iceCaveMat
-    );
-    rockLob.position.set(rx, ry, -3.65);
-    rockLob.rotation.z = angle - Math.PI / 2;
-    rockLob.castShadow = true;
-    caveGroup.add(rockLob);
-
-    // Jagged blue icicle spikes hanging inside the cave mouth arch
-    if (i > 2 && i < archCount - 2) {
-      const icicle = new THREE.Mesh(
-        new THREE.ConeGeometry(0.14, 0.65 + (i % 3) * 0.22, 6),
-        iceCaveMat
-      );
-      icicle.rotation.x = Math.PI;
-      icicle.position.set(rx * 0.66, ry * 0.68 - 0.15, -3.55);
-      caveGroup.add(icicle);
-    }
-  }
-
-  // Two small snow boulders at DSL & DSR of cave entrance (seen in Slides 7 & 19)
-  for (const bx of [-1.95, 1.85]) {
-    const boulder = new THREE.Mesh(
-      new RoundedBoxGeometry(0.68, 0.52, 0.42, 2, 0.14),
-      snowPortalMat
-    );
-    boulder.position.set(bx, 0.26, -3.15);
-    caveGroup.add(boulder);
-  }
-
-  // Forced-Perspective Miniature Distant Whoville Vista (seen through cave opening in Slide 8!)
-  const miniVistaGroup = new THREE.Group();
-  miniVistaGroup.position.set(0, 0.45, -5.35);
-  for (const mx of [-0.68, -0.25, 0.28, 0.68]) {
-    const miniHouse = createPinkWhovilleHouseWagon(0.42, 0.52, rockTex, `mini_${mx}`);
-    miniHouse.position.set(mx, 0.35, 0);
-    miniVistaGroup.add(miniHouse);
-  }
-  const miniTree = new THREE.Mesh(
-    new THREE.ConeGeometry(0.22, 0.85, 10),
-    treeFoliageMat
-  );
-  miniTree.position.set(0, 0.78, 0.08);
-  miniVistaGroup.add(miniTree);
-  caveGroup.add(miniVistaGroup);
-
+  // 7. Lineset #17 (11'-10") Grinch's Cave Jagged Ice Arch & Distant Vista (Sheets 1C & 1F)
+  const caveGroup = buildGrinchCavePortal(rockTex);
   caveGroup.visible = false;
   registerElement('grinch-cave-portal', caveGroup, 4);
 
-  // ==========================================================================
-  // 8. LINESET #19 (13'-2") METALLIC MYLAR STREAMER CURTAIN (Slide 9)
-  // ==========================================================================
-  const mylarGroup = new THREE.Group();
-  mylarGroup.name = 'Element_grinch-mylar-curtain';
-
-  const mylarSilverMat = new THREE.MeshStandardMaterial({
-    color: 0xe8d8b8,
-    emissive: 0x5c4224,
-    emissiveIntensity: 0.45,
-    roughness: 0.16,
-    metalness: 0.92,
-  });
-  const mylarGoldMat = new THREE.MeshStandardMaterial({
-    color: 0xffd278,
-    emissive: 0x7a4e18,
-    emissiveIntensity: 0.5,
-    roughness: 0.18,
-    metalness: 0.9,
-  });
-
-  for (let s = 0; s < 34; s++) {
-    const sx = (s - 16.5) * 0.16;
-    const strip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 3.35, 0.03),
-      s % 2 === 0 ? mylarSilverMat : mylarGoldMat
-    );
-    strip.position.set(sx, 1.68, -4.15 + (s % 3) * 0.02);
-    strip.rotation.y = ((s * 7) % 5 - 2) * 0.12;
-    strip.rotation.z = ((s * 3) % 5 - 2) * 0.02;
-    mylarGroup.add(strip);
-  }
+  // 8. Lineset #19 (13'-2") Grinch's Cave Metallic Mylar Streamer Curtain (Sheet 1C·2)
+  const mylarGroup = buildGrinchMylarCurtain();
   mylarGroup.visible = false;
   registerElement('grinch-mylar-curtain', mylarGroup, 5);
 
-  // ==========================================================================
-  // 9. LINESET #9 (6'-6") PAPA WHO'S HOUSE (Solid Mode [1H] & Scrim Mode [1E])
-  // ==========================================================================
-  const papaWhosSolid = buildPapaWhosHouseUnit(false);
-  papaWhosSolid.visible = false;
-  registerElement('grinch-papa-whos-house', papaWhosSolid, 2);
+  // 9. Lineset #9 (6'-6") Papa Who's House — Solid Mode (Sheet 1H)
+  const papaWhosHouseSolid = buildPapaWhosHouseUnit(rockTex, false);
+  papaWhosHouseSolid.name = 'Element_grinch-papa-whos-house';
+  papaWhosHouseSolid.visible = false;
+  registerElement('grinch-papa-whos-house', papaWhosHouseSolid, 2);
 
-  const papaWhosScrim = buildPapaWhosHouseUnit(true);
-  papaWhosScrim.visible = false;
-  registerElement('grinch-papa-whos-scrim-mode', papaWhosScrim, 2);
+  // 10. Lineset #9 (6'-6") Papa Who's House — Scrim Reveal Mode (Sheet 1E)
+  const papaWhosHouseScrim = buildPapaWhosHouseUnit(rockTex, true);
+  papaWhosHouseScrim.name = 'Element_grinch-papa-whos-scrim-mode';
+  papaWhosHouseScrim.visible = false;
+  registerElement('grinch-papa-whos-scrim-mode', papaWhosHouseScrim, 2);
 
-  // ==========================================================================
-  // 10. WHOVILLE DEPARTMENT STORE SHOPPING COUNTERS (Slide 14 / Sheet 1D)
-  // ==========================================================================
-  const shoppingGroup = new THREE.Group();
-  shoppingGroup.name = 'Element_grinch-shopping-counters';
-
-  const counterSpecs = [
-    { x: -2.85, z: -1.65, rotY: 0.14, label: 'NEEDS A MAWOOZIS' },
-    { x: -1.25, z: -2.55, rotY: 0.06, label: 'WHATCH A MA WHO' },
-    { x: 2.45, z: -1.85, rotY: -0.14, label: 'FUZZ A MA WUMPUS' },
-  ] as const;
-
-  const counterBlueMat = new THREE.MeshStandardMaterial({
-    color: 0x1e7ce8,
-    roughness: 0.46,
-  });
-  const candyPostMat = new THREE.MeshStandardMaterial({
-    color: 0x1d9848,
-    roughness: 0.5,
-  });
-  const signRedMat = new THREE.MeshStandardMaterial({
-    color: 0xd42238,
-    roughness: 0.5,
-  });
-
-  for (const cSpec of counterSpecs) {
-    const unit = new THREE.Group();
-    unit.position.set(cSpec.x, 0, cSpec.z);
-    unit.rotation.y = cSpec.rotY;
-
-    // Blue arched store counter base
-    const base = new THREE.Mesh(
-      new RoundedBoxGeometry(1.75, 0.78, 0.52, 2, 0.08),
-      counterBlueMat
-    );
-    base.position.y = 0.39;
-    base.castShadow = true;
-    unit.add(base);
-
-    // White snow-capped counter top
-    const top = new THREE.Mesh(
-      new RoundedBoxGeometry(1.84, 0.09, 0.58, 2, 0.03),
-      new THREE.MeshStandardMaterial({ color: 0xf4f8ff, roughness: 0.4 })
-    );
-    top.position.y = 0.82;
-    unit.add(top);
-
-    // Crooked green candy-cane posts & overhead red store sign
-    for (const px of [-0.72, 0.72]) {
-      const post = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 1.35, 10),
-        candyPostMat
-      );
-      post.position.set(px, 1.45, 0);
-      post.rotation.z = px < 0 ? 0.12 : -0.12;
-      unit.add(post);
-    }
-
-    const storeSign = new THREE.Mesh(
-      new RoundedBoxGeometry(1.42, 0.42, 0.06, 2, 0.08),
-      signRedMat
-    );
-    storeSign.position.set(0, 1.98, 0.04);
-    unit.add(storeSign);
-
-    // Merchandise gift packages on the counter
-    for (let m = -2; m <= 2; m++) {
-      const merch = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.22 + (Math.abs(m) % 2) * 0.08, 0.18),
-        new THREE.MeshStandardMaterial({
-          color: giftPalette[(m + 2) % giftPalette.length] ?? 0xffd428,
-        })
-      );
-      merch.position.set(m * 0.3, 0.96, 0);
-      unit.add(merch);
-    }
-
-    shoppingGroup.add(unit);
-  }
+  // 11. 3 Whoville Department Store Counters & Candy-Cane Signs (Sheet 1D)
+  const shoppingGroup = buildGrinchShoppingCounters(rockTex);
   shoppingGroup.visible = false;
   registerElement('grinch-shopping-counters', shoppingGroup);
 
-  // ==========================================================================
-  // 11. MT. CRUMPIT CLIFF WAGON & OVERSTUFFED RED SLEIGH SACK (Slide 20 / Sheet 1F)
-  // ==========================================================================
-  const crumpitSleighGroup = new THREE.Group();
-  crumpitSleighGroup.name = 'Element_grinch-mt-crumpit-sleigh';
-
-  // DSR Pink House remains onstage in Slide 20
-  const dsrHouse1F = createPinkWhovilleHouseWagon(2.35, 2.75, rockTex, 'DSR_1F');
-  dsrHouse1F.position.set(-2.85, 0, -2.45);
-  dsrHouse1F.rotation.y = 0.14;
-  crumpitSleighGroup.add(dsrHouse1F);
-
-  // Steep Rocky Mt. Crumpit Cliff Wedge at DSL (x = +2.15m, z = -2.1m)
-  const cliffWagon = new THREE.Group();
-  cliffWagon.position.set(2.15, 0, -2.1);
-
-  const cliffRock = new THREE.Mesh(
-    new RoundedBoxGeometry(2.45, 1.65, 0.85, 3, 0.2),
-    iceCaveMat
-  );
-  cliffRock.position.set(0, 0.72, 0);
-  cliffRock.rotation.z = 0.42;
-  cliffRock.castShadow = true;
-  cliffWagon.add(cliffRock);
-
-  // Grinch's Sleigh & Giant Overstuffed Crimson Toy Sack perched on the cliff!
-  const sleighGroup = new THREE.Group();
-  sleighGroup.position.set(0.38, 1.52, 0.05);
-  sleighGroup.rotation.z = -0.32;
-
-  const runnerMat = new THREE.MeshStandardMaterial({
-    color: 0x3b2416,
-    roughness: 0.55,
-  });
-  for (const rz of [-0.22, 0.22]) {
-    const runner = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 0.06), runnerMat);
-    runner.position.set(0, 0, rz);
-    sleighGroup.add(runner);
-  }
-
-  // Huge Crimson Sack of Stolen Presents (matching Slide 20!)
-  const sackMat = new THREE.MeshStandardMaterial({
-    color: 0xd9182e,
-    roughness: 0.48,
-  });
-  const sackBulb = new THREE.Mesh(new THREE.SphereGeometry(0.68, 20, 16), sackMat);
-  sackBulb.scale.set(1.15, 1.05, 0.78);
-  sackBulb.position.set(0.08, 0.65, 0);
-  sackBulb.castShadow = true;
-  sleighGroup.add(sackBulb);
-
-  const sackNeck = new THREE.Mesh(
-    new THREE.ConeGeometry(0.32, 0.42, 12),
-    sackMat
-  );
-  sackNeck.rotation.x = Math.PI;
-  sackNeck.position.set(0.14, 1.32, 0);
-  sleighGroup.add(sackNeck);
-
-  cliffWagon.add(sleighGroup);
-  crumpitSleighGroup.add(cliffWagon);
-
+  // 12. Mt. Crumpit Cliff Wagon & Overstuffed Red Sleigh Sack (Sheet 1F)
+  const crumpitSleighGroup = buildGrinchMtCrumpitSleigh(rockTex);
   crumpitSleighGroup.visible = false;
   registerElement('grinch-mt-crumpit-sleigh', crumpitSleighGroup);
 
-  // ==========================================================================
-  // 12. FINALE CURVED BLUE & WHITE WHOVILLE FEAST BANQUET TABLE (Slide 22 / Sheet 1G)
-  // ==========================================================================
-  const finaleBanquetGroup = new THREE.Group();
-  finaleBanquetGroup.name = 'Element_grinch-finale-banquet';
-  finaleBanquetGroup.position.set(0, 0, -2.55);
-
-  const tableArcCount = 9;
-  for (let i = 0; i < tableArcCount; i++) {
-    const angle = ((i - (tableArcCount - 1) / 2) / (tableArcCount / 2)) * 0.95;
-    const rad = 2.05;
-    const tx = Math.sin(angle) * rad;
-    const tz = Math.cos(angle) * (rad * 0.55);
-
-    const seg = new THREE.Group();
-    seg.position.set(tx, 0, tz);
-    seg.rotation.y = angle;
-
-    const blueArchBase = new THREE.Mesh(
-      new RoundedBoxGeometry(0.62, 0.68, 0.48, 2, 0.06),
-      counterBlueMat
-    );
-    blueArchBase.position.y = 0.34;
-    blueArchBase.castShadow = true;
-    seg.add(blueArchBase);
-
-    const whiteClothTop = new THREE.Mesh(
-      new RoundedBoxGeometry(0.68, 0.08, 0.56, 2, 0.03),
-      new THREE.MeshStandardMaterial({ color: 0xf8fbff, roughness: 0.38 })
-    );
-    whiteClothTop.position.y = 0.72;
-    seg.add(whiteClothTop);
-
-    finaleBanquetGroup.add(seg);
-  }
+  // 13. Finale Curved Blue & White Whoville Feast Banquet Table (Sheet 1G)
+  const finaleBanquetGroup = buildGrinchFinaleBanquet();
   finaleBanquetGroup.visible = false;
   registerElement('grinch-finale-banquet', finaleBanquetGroup);
 
-  // ==========================================================================
-  // 13. CAD OFFSTAGE PROP & WAGON STORAGE BAYS (USR & Stage Left Wing)
-  //     (Directly mirrors the offstage storage rectangles drawn on Sheets 1A–1H!)
-  // ==========================================================================
-  const offstageStorageGroup = new THREE.Group();
-  offstageStorageGroup.name = 'Element_grinch-offstage-storage';
-
-  const propCrateMat = new THREE.MeshStandardMaterial({
-    color: 0x323c52,
-    roughness: 0.65,
-  });
-
-  // USR Offstage Storage: Tree, Refrigerator & Curved Finale Bench sections
-  const usrFridgeParked = new THREE.Mesh(
-    new RoundedBoxGeometry(0.95, 1.75, 0.68, 2, 0.12),
-    propCrateMat
-  );
-  usrFridgeParked.position.set(-5.85, 0.88, -7.85);
-  offstageStorageGroup.add(usrFridgeParked);
-
-  // Stage Left Wing Storage Bay: "Mt. Crumpit with sleigh" (x = +8.25m, z = -2.2m) & "Fireplace" (x = +8.1m, z = -8.6m)
-  const slCrumpitParked = new THREE.Mesh(
-    new RoundedBoxGeometry(1.15, 1.65, 2.45, 2, 0.14),
-    iceCaveMat
-  );
-  slCrumpitParked.position.set(8.25, 0.82, -2.35);
-  offstageStorageGroup.add(slCrumpitParked);
-
-  const slFireplaceParked = new THREE.Mesh(
-    new THREE.BoxGeometry(1.05, 2.2, 1.45),
-    propCrateMat
-  );
-  slFireplaceParked.position.set(8.15, 1.1, -8.55);
-  offstageStorageGroup.add(slFireplaceParked);
-
+  // 14. CAD Offstage Prop & Wagon Storage Bays (USR & SL Wing)
+  const offstageStorageGroup = buildGrinchOffstageStorage(rockTex);
   registerElement('grinch-offstage-storage', offstageStorageGroup);
 
   return root;
