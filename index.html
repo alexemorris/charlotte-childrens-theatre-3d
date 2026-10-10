@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="Children's Theatre of Charlotte — Hugh McColl Family Theatre (ImaginOn) 3D Set Design & Audience Sightline Modeler" />
+  <title>Children's Theatre of Charlotte — 3D Set Design &amp; Sightline Modeler</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Architectural Loading Screen Overlay -->
+  <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
+    <div class="loading-card">
+      <div class="loading-eyebrow">CHILDREN'S THEATRE OF CHARLOTTE · IMAGINON (300 E. 7TH ST)</div>
+      <h1 class="loading-title">Hugh McColl Family Theatre</h1>
+      <p class="loading-subtitle">3D Scenic Set Design, Counterweight Fly Loft &amp; 570-Seat Sightline Modeler</p>
+
+      <div class="loading-specs-row">
+        <span class="loading-spec-pill">420 MAIN FLOOR</span>
+        <span class="loading-spec-pill">150 BALCONY</span>
+        <span class="loading-spec-pill">6 PRODUCTION SETS</span>
+        <span class="loading-spec-pill">HDR ACES PBR</span>
+      </div>
+
+      <div class="loading-progress-track">
+        <div id="loading-progress-bar" class="loading-progress-bar" style="width: 12%"></div>
+      </div>
+
+      <div class="loading-status-row">
+        <span id="loading-step-text" class="loading-step-text">Initializing WebGL2 HDR Pipeline &amp; Shader Light Culling...</span>
+        <span id="loading-pct-text" class="loading-pct-text">12%</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Floating Hover Seat Tooltip -->
+    <div id="seat-hover-tooltip" class="seat-hover-tooltip" hidden></div>
+
+    <!-- Top-Center Quick-Launch Pill (Visible in Orbit Camera Mode) -->
+    <div id="orbit-top-pill" class="orbit-top-pill">
+      <span class="live-status-dot"></span>
+      <span class="orbit-pill-label">Click any seat in 3D or 2D Chart for <strong>1st-Person Sightline View</strong></span>
+      <button id="quick-seat-director-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Center Orchestra Row G Seat 108">
+        Sit Center (G-108)
+      </button>
+      <button id="quick-seat-balcony-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Lower Balcony Center Row AA Seat 105">
+        Sit Balcony (AA-105)
+      </button>
+    </div>
+
+    <!-- Top-Center 1st-Person Seated Sightline HUD Bar (Visible when Seated) -->
+    <div id="seat-view-hud" class="walkthrough-hud" hidden role="region" aria-label="1st-Person Seated Sightline Controls">
+      <div class="walkthrough-hud-top">
+        <div class="walkthrough-hud-brand">
+          <span class="live-status-dot is-cyan"></span>
+          <span class="walkthrough-hud-title">1ST-PERSON SEAT VIEW</span>
+          <span id="seat-hud-readout" class="walkthrough-pos-readout">MAIN FLOOR · ROW G · SEAT 108</span>
+          <span id="seat-hud-score-badge" class="seat-score-badge grade-optimal">99% OPTIMAL</span>
+        </div>
+        <div class="walkthrough-hud-actions">
+          <button
+            id="seat-hud-eye-btn"
+            class="hud-inline-btn walkthrough-action-btn is-active"
+            type="button"
+            title="Toggle Seated Eye Height between Child (0.96m / Ages 5–10) and Adult (1.18m) (Shortcut: C)"
+          >
+            Eye: Child 0.96m (C)
+          </button>
+          <button
+            id="seat-hud-laser-btn"
+            class="hud-inline-btn walkthrough-action-btn"
+            type="button"
+            title="Toggle 3D Sightline Laser Rays to Stage Targets (Shortcut: L)"
+          >
+            3D Lasers: OFF (L)
+          </button>
+          <button id="seat-hud-prev-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Previous Seat in Row (Left Arrow)">
+            ← Seat
+          </button>
+          <button id="seat-hud-next-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Next Seat in Row (Right Arrow)">
+            Seat →
+          </button>
+          <button id="seat-hud-row-up-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Step 1 Row Closer to Stage (Up Arrow)">
+            ↑ Row
+          </button>
+          <button id="seat-hud-row-down-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Step 1 Row Further Back (Down Arrow)">
+            ↓ Row
+          </button>
+          <button
+            id="seat-hud-exit-btn"
+            class="hud-inline-btn walkthrough-exit-btn"
+            type="button"
+            title="Return to 3D Orbit Camera (Shortcut: Esc)"
+          >
+            Exit to Orbit (Esc)
+          </button>
+        </div>
+      </div>
+      <div class="walkthrough-hint-row">
+        <span><strong>Drag Mouse</strong> to Look Around Stage &amp; Proscenium</span>
+        <span>·</span>
+        <span><kbd>←</kbd><kbd>→</kbd> Adjacent Seat</span>
+        <span>·</span>
+        <span><kbd>↑</kbd><kbd>↓</kbd> Step Row</span>
+        <span>·</span>
+        <span><kbd>C</kbd> Child / Adult Eye Height</span>
+        <span>·</span>
+        <span><kbd>L</kbd> 3D Sightline Lasers</span>
+        <span>·</span>
+        <span><kbd>Esc</kbd> Orbit View</span>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         LEFT FLOATING WINDOW: 570-SEAT CHART & SIGHTLINE ANALYZER
+         ====================================================================== -->
+    <aside id="seating-window" class="hud-window seating-window" aria-label="McColl Family Theatre 570-Seat Sightline Inspector">
+      <header id="seating-titlebar" class="hud-titlebar" title="Drag to move Seating & Sightline Inspector">
+        <button id="seating-collapse-btn" class="hud-win-btn" type="button" title="Collapse / Expand Seating Chart" aria-label="Collapse Seating Chart"></button>
+        <span class="hud-title">McColl Family Theatre · 570 Seats</span>
+        <span id="seating-active-badge" class="hud-count">420 Main · 150 Balc</span>
+      </header>
+
+      <div id="seating-body" class="hud-body">
+        <!-- Section 1: Audience Eye Height & Chart Color Mode -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>AUDIENCE SIGHTLINE PROFILE</span>
+            <span id="eye-height-meta" class="hud-meta">0.96m CHILD EYE</span>
+          </div>
+          <div class="hud-seg-row" role="group" aria-label="Audience Seated Eye Height">
+            <button id="eye-mode-child-btn" class="hud-seg-btn active" type="button" title="Child Seated Eye Height (0.96m above riser — critical for CTC young audiences)">
+              Child Eye (0.96m)
+            </button>
+            <button id="eye-mode-adult-btn" class="hud-seg-btn" type="button" title="Adult Seated Eye Height (1.18m above riser)">
+              Adult Eye (1.18m)
+            </button>
+          </div>
+
+          <div class="hud-section-head" style="margin-top: 7px;">
+            <span>SEATING CHART COLOR OVERLAY</span>
+          </div>
+          <div class="hud-seg-row" role="group" aria-label="Seating Chart Color Mode">
+            <button id="chart-mode-section-btn" class="hud-seg-btn active" type="button" title="Color seats by Main Floor (Green), Lower Balcony (Coral), and Upper Balcony (Blue)">
+              Venue Sections
+            </button>
+            <button id="chart-mode-heatmap-btn" class="hud-seg-btn" type="button" title="Color all 570 seats in 2D and 3D by real-time Sightline Score & Balcony Overhang Clearance">
+              Sightline Heatmap
+            </button>
+          </div>
+        </section>
+
+        <!-- Section 2: Interactive 2D SVG Seating Chart (570 Clickable Seats) -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>INTERACTIVE 2D SEATING CHART</span>
+            <span class="hud-meta">CLICK ANY SEAT</span>
+          </div>
+          <div id="seating-chart-mount" class="seating-chart-mount"></div>
+
+          <!-- Quick Seat Test Presets for Set Designers -->
+          <div class="hud-section-head" style="margin-top: 6px;">
+            <span>CRITICAL SIGHTLINE TEST SEATS</span>
+          </div>
+          <div class="quick-seat-grid">
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-left-A-101" title="Row A Front Center — Steep upward angle & shallow floor grazing check">
+              Row A Front (A-101)
+            </button>
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-left-G-108" title="Row G Center Orchestra — Director's Table reference sightline">
+              Director's (G-108)
+            </button>
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-left-wing-C-1" title="Extreme House Left Wing — Check Stage Right masking leg & portal reveal">
+              Left Wing (C-1)
+            </button>
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-right-wing-C-208" title="Extreme House Right Wing — Check Stage Left masking & Alice red swag drape">
+              Right Wing (C-208)
+            </button>
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-right-N-112" title="Row N Under Lower Balcony Overhang — Check vertical trim cutoff at upstage drop">
+              Under Balc (N-112)
+            </button>
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="upper-balcony-left-UB-104" title="Upper Balcony Row UB — Steep downward rake onto painted stage floor cloth">
+              Upper Balc (UB-104)
+            </button>
+          </div>
+        </section>
+
+        <!-- Section 3: Selected Seat Sightline Telemetry -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>SELECTED SEAT SIGHTLINE REPORT</span>
+            <button id="toggle-sightline-laser-btn" class="hud-inline-btn" type="button" title="Draw 3D laser rays from selected seat eye to stage targets (Shortcut: L)">
+              3D Lasers: OFF
+            </button>
+          </div>
+          <div id="seat-telemetry-card" class="seat-telemetry-card">
+            <div class="telemetry-empty">
+              Click any of the <strong>570 seats</strong> in the 3D auditorium or on the 2D chart above to inspect its exact 1st-person stage view and sightline clearance.
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Venue Reference Photos & ImaginOn Architecture Info -->
+        <section class="hud-section hud-section-last">
+          <div class="hud-section-head">
+            <span>VENUE REFERENCE &amp; IMAGINON SPECS</span>
+            <button id="toggle-venue-drawer-btn" class="hud-inline-btn" type="button">
+              Photos &amp; Specs ▾
+            </button>
+          </div>
+          <div id="venue-info-drawer" class="hud-drawer" hidden>
+            <div class="venue-photo-grid">
+              <figure class="venue-photo-card">
+                <img src="reference/stage_proscenium_alice.jpg" alt="McColl Proscenium & Alice in Wonderland Set" loading="lazy" />
+                <figcaption>Proscenium Frieze &amp; Alice Set</figcaption>
+              </figure>
+              <figure class="venue-photo-card">
+                <img src="reference/house_from_stage.jpg" alt="570-Seat House & Balconies from Stage" loading="lazy" />
+                <figcaption>570-Seat House &amp; Balconies</figcaption>
+              </figure>
+              <figure class="venue-photo-card">
+                <img src="reference/seating_chart.png" alt="McColl Family Theatre Official Seating Chart" loading="lazy" />
+                <figcaption>Official Seating Chart</figcaption>
+              </figure>
+            </div>
+            <div class="venue-research-summary">
+              <p><strong>Venue:</strong> Hugh McColl Family Theatre at ImaginOn: The Joe &amp; Joan Martin Center (300 E. 7th St, Charlotte, NC).</p>
+              <p><strong>Opened:</strong> October 8, 2005 (Inaugural production: <em>The Lion, the Witch and the Wardrobe</em>).</p>
+              <p><strong>Architects &amp; Theatre Consultants:</strong> Holzman Moss Bottino Architecture, Gantt Huberman Architects &amp; Theatre Projects Consultants.</p>
+              <p><strong>Technical Capabilities:</strong> 570 seats (420 Orchestra Rows A–P + 150 Balcony across Lower &amp; Upper tiers), trapped stage deck, single-purchase counterweight fly tower, 20-player orchestra pit, and FOH catwalk.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- ======================================================================
+         RIGHT FLOATING WINDOW: SET DESIGNER & STAGE TECHNICAL CONSOLE
+         ====================================================================== -->
+    <aside id="stage-console-window" class="hud-window stage-console-window" aria-label="Set Designer & Stage Technical Console">
+      <header id="stage-console-titlebar" class="hud-titlebar" title="Drag to move Set Designer Console">
+        <button id="stage-console-collapse-btn" class="hud-win-btn" type="button" title="Collapse / Expand Set Designer Console" aria-label="Collapse Set Designer Console"></button>
+        <span class="hud-title">Set Designer &amp; Stage Console</span>
+        <span id="active-prod-badge" class="hud-count">Alice Set</span>
+      </header>
+
+      <div id="stage-console-body" class="hud-body">
+        <!-- Section 1: Switchable Production Sets (6 Modular Sets in src/sets/) -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>SWITCHABLE PRODUCTION SETS (6)</span>
+            <span class="hud-meta"><code>src/sets/*</code></span>
+          </div>
+          <div id="production-switcher-grid" class="production-switcher-grid"></div>
+          <div id="production-info-box" class="production-info-box"></div>
+        </section>
+
+        <!-- Section 2: Active Scenic Elements & Counterweight Fly Battens -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>SCENIC UNITS &amp; LAYER VISIBILITY</span>
+            <span class="hud-meta">TOGGLE PIECES</span>
+          </div>
+          <div id="scenic-elements-list" class="scenic-elements-list"></div>
+
+          <div class="hud-section-head" style="margin-top: 8px;">
+            <span>COUNTERWEIGHT FLY BATTENS (TRIM)</span>
+            <button id="reset-battens-btn" class="hud-inline-btn" type="button" title="Reset all fly battens to 0.0m Show In-Trim">
+              Reset In-Trim
+            </button>
+          </div>
+          <div id="batten-sliders-list" class="batten-sliders-list"></div>
+
+          <div class="hud-slider-row" style="margin-top: 5px;">
+            <div class="hud-slider-label">
+              <span>Grand Velour Drape</span>
+              <span id="grand-drape-val">100% Open</span>
+            </div>
+            <input id="grand-drape-slider" type="range" min="0" max="100" value="100" />
+          </div>
+        </section>
+
+        <!-- Section 3: Stage Mechanics & Sightline Overlays -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>STAGE MECHANICS &amp; OVERLAYS</span>
+          </div>
+          <div class="hud-two-way-row">
+            <button id="toggle-cad-grid-btn" class="hud-rocker-btn hud-two-way-btn" type="button" title="Overlay 1m x 1m CAD grid & Centerline/Plaster Line on the stage floor">
+              <div class="hud-rocker-main">
+                <span id="dot-cad-grid" class="hud-rocker-dot off-state"></span>
+                <span>1m CAD Floor Grid</span>
+              </div>
+              <div class="hud-two-way-sub">Centerline &amp; Plaster Line</div>
+            </button>
+
+            <button id="toggle-traps-btn" class="hud-rocker-btn hud-two-way-btn" type="button" title="Open the 3 McColl Family Theatre stage floor traps into the trap room">
+              <div class="hud-rocker-main">
+                <span id="dot-stage-traps" class="hud-rocker-dot off-state"></span>
+                <span>Stage Deck Traps</span>
+              </div>
+              <div class="hud-two-way-sub">3 Center/Side Traps</div>
+            </button>
+          </div>
+
+          <div class="hud-two-way-row" style="margin-top: 4px;">
+            <button id="toggle-pit-btn" class="hud-rocker-btn hud-two-way-btn" type="button" title="Remove forestage apron cover to reveal the 20-player sunken Orchestra Pit">
+              <div class="hud-rocker-main">
+                <span id="dot-orch-pit" class="hud-rocker-dot off-state"></span>
+                <span>20-Player Orch Pit</span>
+              </div>
+              <div class="hud-two-way-sub">Forestage Apron Lift</div>
+            </button>
+
+            <button id="toggle-overhang-guides-btn" class="hud-rocker-btn hud-two-way-btn" type="button" title="Show 3D translucent planes for Lower & Upper Balcony sightline overhangs">
+              <div class="hud-rocker-main">
+                <span id="dot-overhang-guides" class="hud-rocker-dot off-state"></span>
+                <span>Overhang Planes</span>
+              </div>
+              <div class="hud-two-way-sub">Balcony Soffit Cutoff</div>
+            </button>
+          </div>
+        </section>
+
+        <!-- Section 4: Custom Set Piece Builder (Risers, Flats, Portals, Actors) -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>MODULAR SET PIECE BUILDER</span>
+            <button id="clear-custom-pieces-btn" class="hud-inline-btn" type="button" title="Remove all custom spawned set pieces">
+              Clear All
+            </button>
+          </div>
+          <div class="spawner-grid">
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="platform-4x8">+ 4×8 Riser</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="flat-12ft">+ 12ft Flat</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="arch-portal">+ Arch Portal</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="stairs-3step">+ 3-Step Stair</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="periaktos">+ Periaktos</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="prop-table">+ Prop Table</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="actor-child">+ Child (1.35m)</button>
+            <button class="hud-inline-btn spawn-piece-btn" type="button" data-piece-kind="actor-adult">+ Adult (1.75m)</button>
+          </div>
+
+          <div id="custom-piece-inspector" class="custom-piece-inspector" hidden>
+            <div class="custom-piece-head">
+              <span id="custom-piece-title">Selected Piece</span>
+              <button id="delete-custom-piece-btn" class="hud-inline-btn btn-danger" type="button">Delete</button>
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>Stage X (L/R)</span><span id="cp-x-val">0.0m</span></div>
+              <input id="cp-x-slider" type="range" min="-6.0" max="6.0" step="0.1" value="0" />
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>Stage Z (Up/Down)</span><span id="cp-z-val">-2.2m</span></div>
+              <input id="cp-z-slider" type="range" min="-8.2" max="1.2" step="0.1" value="-2.2" />
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>Elev Y / Rot°</span><span id="cp-rot-val">0°</span></div>
+              <input id="cp-rot-slider" type="range" min="-180" max="180" step="5" value="0" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 5: Stage & House Lighting Console -->
+        <section class="hud-section">
+          <div class="hud-section-head">
+            <span>LIGHTING CONSOLE &amp; CUES</span>
+            <span id="lighting-preset-meta" class="hud-meta">SHOW MODE</span>
+          </div>
+          <div class="hud-seg-row" role="group" aria-label="Lighting Cue Presets">
+            <button class="hud-seg-btn light-preset-btn active" type="button" data-light-preset="show-mode">Show</button>
+            <button class="hud-seg-btn light-preset-btn" type="button" data-light-preset="work-lights">Work Lights</button>
+            <button class="hud-seg-btn light-preset-btn" type="button" data-light-preset="tech-rehearsal">Tech</button>
+            <button class="hud-seg-btn light-preset-btn" type="button" data-light-preset="dramatic-cue">Dramatic</button>
+          </div>
+          <div class="lighting-sliders-wrap">
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>House Chandeliers</span><span id="light-house-val">42%</span></div>
+              <input id="light-house-slider" type="range" min="0" max="100" value="42" />
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>FOH Balcony Rail (14)</span><span id="light-foh-val">92%</span></div>
+              <input id="light-foh-slider" type="range" min="0" max="100" value="92" />
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>Stage Electrics Key</span><span id="light-stage-val">95%</span></div>
+              <input id="light-stage-slider" type="range" min="0" max="100" value="95" />
+            </div>
+            <div class="hud-slider-row">
+              <div class="hud-slider-label"><span>Upstage Cyclorama</span><span id="light-cyc-val">88%</span></div>
+              <input id="light-cyc-slider" type="range" min="0" max="100" value="88" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 6: Camera Presets & Graphics Quality -->
+        <section class="hud-section hud-section-last">
+          <div class="hud-section-head">
+            <span>CAMERA VIEWPOINTS &amp; GRAPHICS</span>
+            <button id="gfx-quality-btn" class="hud-inline-btn" type="button" title="Cycle Graphics Quality Preset (Ultra / Balanced / Max FPS)">
+              GFX: Ultra
+            </button>
+          </div>
+          <div class="camera-preset-grid">
+            <button class="hud-inline-btn cam-preset-btn active" type="button" data-cam="house-overview">House Overview</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="stage-front">Proscenium Front</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="from-stage-to-house">Stage → House</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="directors-table">Director's Table</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="lower-balcony-center">Lower Balcony</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="upper-balcony-catwalk">Upper Catwalk</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="fly-loft-grid">Fly Loft Grid</button>
+            <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="ortho-ground-plan">Top Ground Plan</button>
+          </div>
+        </section>
+
+        <footer class="hud-statusbar">
+          <span class="hud-status-apci">MCCOLL 3D</span>
+          <span id="statusbar-summary" class="hud-status-summary">570 Seats · Alice in Wonderland Active</span>
+        </footer>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
