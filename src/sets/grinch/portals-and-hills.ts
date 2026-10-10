@@ -83,28 +83,28 @@ function createSculptedSnowDriftCap(
   underLip.position.set(0, -height * 0.44, -0.035);
   group.add(underLip);
 
-  // Continuous wavy Seussian icicle valance curtain tucked cleanly under the front overhang
+  // Continuous wavy Seussian icicle valance curtain tucked cleanly behind the front overhang lip
   const valance = createSeussianIcicleValance(
     width * 0.92,
     Math.min(0.42, height * 0.46),
     scallopCount * 2 + 2,
     icicleMat,
     glazeBackMat,
-    0.055,
+    0.045,
     seed
   );
-  valance.position.set(0, -height * 0.36, depth * 0.36);
+  valance.position.set(0, -height * 0.32, -depth * 0.12);
   group.add(valance);
 
-  // Organic fluted LatheGeometry icicle drips hanging from the scalloped pockets
+  // Organic fluted LatheGeometry icicle drips hanging from behind the scalloped lip
   const dripCount = scallopCount + 2;
   for (let i = 0; i < dripCount; i++) {
     const t = (i + 0.5) / dripCount;
     const xPos = THREE.MathUtils.lerp(-halfW * 0.84, halfW * 0.84, t);
-    const dripLen = 0.22 + ((i * 5 + seed) % 4) * 0.075;
+    const dripLen = 0.24 + ((i * 5 + seed) % 4) * 0.075;
     const topRadius = 0.036 + ((i * 3) % 3) * 0.008;
     const bendM = (i % 2 === 0 ? 1 : -1) * (0.02 + (i % 3) * 0.008);
-    const zOffset = depth * 0.28 + (i % 2 === 0 ? 0.035 : -0.035);
+    const zOffset = -depth * 0.04 + (i % 2 === 0 ? 0.025 : -0.025);
 
     const drip = createSculptedIcicleDrip(
       dripLen,
@@ -112,8 +112,8 @@ function createSculptedSnowDriftCap(
       icicleMat,
       bendM
     );
-    // Root at y = 0 is tucked up inside the snow cap overhang (-height * 0.34)
-    drip.position.set(xPos, -height * 0.34, zOffset);
+    // Root at y = 0 is tucked up behind the front snow cap lip (-height * 0.30)
+    drip.position.set(xPos, -height * 0.30, zOffset);
     group.add(drip);
   }
 
@@ -1205,18 +1205,18 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   summitSnowCap.rotation.z = -0.24;
   crumpitGroup.add(summitSnowCap);
 
-  // Sculpted Seussian icicle valance + fluted icicle drips hanging beneath the right overhang of Mt. Crumpit
-  // (Clearly visible in `model_1B_whoville.jpg` right next to the star of the tree!)
+  // Sculpted Seussian icicle valance + fluted icicle drips mounted BEHIND the right overhang of Mt. Crumpit
+  // so only their pointed icicle tips poke out from behind the cliff nose (`model_1B_whoville.jpg`)
   const cliffValance = createSeussianIcicleValance(
     0.68,
     0.46,
     6,
     snowCrestMat,
     crumpitShadowCliffMat,
-    0.05,
+    0.04,
     11
   );
-  cliffValance.position.set(0.7, 4.18, 0.22);
+  cliffValance.position.set(0.7, 4.18, -0.11);
   cliffValance.rotation.z = 0.32;
   crumpitGroup.add(cliffValance);
 
@@ -1227,8 +1227,9 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     [0.86, 4.3, 0.48, 0.038, 0.024],
   ] as const) {
     const cliffIcicle = createSculptedIcicleDrip(len, rad, snowCrestMat, bend);
-    cliffIcicle.position.set(ix, iy, 0.19);
+    cliffIcicle.position.set(ix, iy, -0.08);
     cliffIcicle.rotation.z = -0.06;
+    cliffIcicle.scale.set(1.0, 1.0, 0.45);
     crumpitGroup.add(cliffIcicle);
   }
 

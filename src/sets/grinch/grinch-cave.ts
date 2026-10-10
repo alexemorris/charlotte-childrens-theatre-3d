@@ -1279,25 +1279,6 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     )
   );
 
-  // Sculpted Upper Glacier Stalactite Drips on the Upper Rock Face (`z = -3.42m`)
-  // Using `createSculptedIcicleDrip` for organic fluted Seussian ice drips!
-  for (const [ux, uy, uLen, uRad, uBend] of [
-    [-0.92, 5.88, 1.65, 0.12, 0.05],
-    [-0.68, 5.95, 2.25, 0.16, -0.06],
-    [0.96, 5.96, 2.42, 0.17, 0.07],
-    [1.22, 5.88, 1.72, 0.13, -0.05],
-  ] as const) {
-    const upperDrip = createSculptedIcicleDrip(
-      uLen,
-      uRad,
-      icicleFangMat,
-      uBend
-    );
-    upperDrip.position.set(ux, uy, -3.42);
-    upperDrip.scale.set(1.0, 1.0, 0.35);
-    caveGroup.add(upperDrip);
-  }
-
   // Bold 3D Seussian Charcoal-Black Ink Fissure Ribs across the Arch Face (`z = -3.40m`)
   const majorStrataFissures: ReadonlyArray<
     ReadonlyArray<readonly [number, number]>
@@ -1338,10 +1319,12 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
   }
 
   // =========================================================================
-  // SCULPTED SEUSSIAN ICICLE VALANCES & FLUTED STALACTITES AROUND CAVE MOUTH
-  // (`z ∈ [-3.46m, -3.39m]`, using `createSeussianIcicleValance` & `createSculptedIcicleDrip`)
+  // SCULPTED SEUSSIAN ICICLE VALANCES & FLUTED STALACTITES BEHIND CAVE MOUTH
+  // (`z ∈ [-3.98m, -3.86m]`, mounted BEHIND `outerArchMesh` at `z = -3.83m` with
+  //  their top roots recessed up behind the solid rock rim so only the jagged
+  //  icicle fingers poke down through the cave opening!)
   // =========================================================================
-  // 1. Wavy Seussian Ice-Glaze Valance Curtains tucked along the upper cavern rim (`z = -3.45m`)
+  // 1. Wavy Seussian Ice-Glaze Valance Curtains mounted behind the upper cavern arch (`z = -3.96m`)
   const archValanceSegments: ReadonlyArray<{
     readonly x: number;
     readonly y: number;
@@ -1351,11 +1334,11 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     readonly rotZ: number;
     readonly seed: number;
   }> = [
-    { x: -1.62, y: 2.38, width: 1.05, drop: 0.42, fingers: 5, rotZ: 0.62, seed: 1 },
-    { x: -0.78, y: 3.04, width: 1.08, drop: 0.48, fingers: 6, rotZ: 0.26, seed: 2 },
-    { x: 0.08, y: 3.20, width: 1.12, drop: 0.46, fingers: 6, rotZ: -0.08, seed: 3 },
-    { x: 0.92, y: 2.94, width: 1.08, drop: 0.48, fingers: 6, rotZ: -0.34, seed: 4 },
-    { x: 1.66, y: 2.32, width: 1.02, drop: 0.40, fingers: 5, rotZ: -0.66, seed: 5 },
+    { x: -1.62, y: 2.50, width: 1.05, drop: 0.54, fingers: 5, rotZ: 0.62, seed: 1 },
+    { x: -0.78, y: 3.16, width: 1.08, drop: 0.60, fingers: 6, rotZ: 0.26, seed: 2 },
+    { x: 0.08, y: 3.32, width: 1.12, drop: 0.58, fingers: 6, rotZ: -0.08, seed: 3 },
+    { x: 0.92, y: 3.06, width: 1.08, drop: 0.60, fingers: 6, rotZ: -0.34, seed: 4 },
+    { x: 1.66, y: 2.44, width: 1.02, drop: 0.52, fingers: 5, rotZ: -0.66, seed: 5 },
   ];
 
   for (const vSeg of archValanceSegments) {
@@ -1365,16 +1348,18 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
       vSeg.fingers,
       icicleFangMat,
       icicleGlazeBackMat,
-      0.036,
+      0.032,
       vSeg.seed
     );
-    valance.position.set(vSeg.x, vSeg.y, -3.45);
+    valance.position.set(vSeg.x, vSeg.y, -3.96);
     valance.rotation.z = vSeg.rotZ;
     caveGroup.add(valance);
   }
 
   // 2. 20 Sculpted Fluted Seussian Stalactites (`createSculptedIcicleDrip`)
-  //    Whose flared roots blend smoothly into the upper cave rock arch (`z = -3.41m`)
+  //    Mounted behind the cave rock arch (`z = -3.89m`) with `topY` recessed up
+  //    behind the solid rock rim so the roots are hidden behind the cave and
+  //    only the pointed icicles poke down through the cave opening!
   const stalactiteSpecs: ReadonlyArray<{
     readonly x: number;
     readonly topY: number;
@@ -1383,26 +1368,26 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     readonly bend: number;
     readonly tiltZ: number;
   }> = [
-    { x: -2.06, topY: 1.76, len: 0.46, topR: 0.068, bend: 0.032, tiltZ: 0.12 },
-    { x: -1.86, topY: 2.06, len: 0.66, topR: 0.082, bend: -0.038, tiltZ: 0.09 },
-    { x: -1.64, topY: 2.36, len: 0.50, topR: 0.072, bend: 0.028, tiltZ: 0.06 },
-    { x: -1.42, topY: 2.60, len: 1.06, topR: 0.112, bend: 0.055, tiltZ: 0.04 },
-    { x: -1.18, topY: 2.80, len: 0.54, topR: 0.076, bend: -0.032, tiltZ: 0.03 },
-    { x: -0.96, topY: 2.96, len: 0.72, topR: 0.088, bend: 0.042, tiltZ: 0.02 },
-    { x: -0.74, topY: 3.08, len: 0.48, topR: 0.070, bend: -0.026, tiltZ: -0.02 },
-    { x: -0.52, topY: 3.18, len: 0.92, topR: 0.115, bend: 0.048, tiltZ: 0.05 },
-    { x: -0.28, topY: 3.22, len: 0.44, topR: 0.068, bend: -0.025, tiltZ: -0.03 },
-    { x: -0.04, topY: 3.24, len: 0.86, topR: 0.108, bend: -0.045, tiltZ: -0.02 },
-    { x: 0.20, topY: 3.21, len: 0.50, topR: 0.072, bend: 0.030, tiltZ: 0.03 },
-    { x: 0.44, topY: 3.15, len: 0.74, topR: 0.092, bend: -0.038, tiltZ: -0.04 },
-    { x: 0.68, topY: 3.07, len: 0.46, topR: 0.070, bend: 0.026, tiltZ: -0.02 },
-    { x: 0.90, topY: 2.94, len: 1.10, topR: 0.108, bend: -0.052, tiltZ: -0.04 },
-    { x: 1.12, topY: 2.78, len: 0.58, topR: 0.080, bend: 0.034, tiltZ: -0.05 },
-    { x: 1.34, topY: 2.60, len: 0.88, topR: 0.095, bend: -0.044, tiltZ: -0.05 },
-    { x: 1.56, topY: 2.40, len: 0.54, topR: 0.075, bend: 0.030, tiltZ: -0.07 },
-    { x: 1.76, topY: 2.16, len: 0.78, topR: 0.088, bend: -0.040, tiltZ: -0.09 },
-    { x: 1.94, topY: 1.90, len: 0.66, topR: 0.082, bend: 0.035, tiltZ: -0.11 },
-    { x: 2.10, topY: 1.60, len: 0.48, topR: 0.068, bend: -0.028, tiltZ: -0.12 },
+    { x: -2.06, topY: 1.92, len: 0.62, topR: 0.068, bend: 0.032, tiltZ: 0.12 },
+    { x: -1.86, topY: 2.22, len: 0.82, topR: 0.082, bend: -0.038, tiltZ: 0.09 },
+    { x: -1.64, topY: 2.52, len: 0.66, topR: 0.072, bend: 0.028, tiltZ: 0.06 },
+    { x: -1.42, topY: 2.76, len: 1.22, topR: 0.112, bend: 0.055, tiltZ: 0.04 },
+    { x: -1.18, topY: 2.96, len: 0.70, topR: 0.076, bend: -0.032, tiltZ: 0.03 },
+    { x: -0.96, topY: 3.12, len: 0.88, topR: 0.088, bend: 0.042, tiltZ: 0.02 },
+    { x: -0.74, topY: 3.24, len: 0.64, topR: 0.070, bend: -0.026, tiltZ: -0.02 },
+    { x: -0.52, topY: 3.34, len: 1.08, topR: 0.115, bend: 0.048, tiltZ: 0.05 },
+    { x: -0.28, topY: 3.38, len: 0.60, topR: 0.068, bend: -0.025, tiltZ: -0.03 },
+    { x: -0.04, topY: 3.40, len: 1.02, topR: 0.108, bend: -0.045, tiltZ: -0.02 },
+    { x: 0.20, topY: 3.37, len: 0.66, topR: 0.072, bend: 0.030, tiltZ: 0.03 },
+    { x: 0.44, topY: 3.31, len: 0.90, topR: 0.092, bend: -0.038, tiltZ: -0.04 },
+    { x: 0.68, topY: 3.23, len: 0.62, topR: 0.070, bend: 0.026, tiltZ: -0.02 },
+    { x: 0.90, topY: 3.10, len: 1.26, topR: 0.108, bend: -0.052, tiltZ: -0.04 },
+    { x: 1.12, topY: 2.94, len: 0.74, topR: 0.080, bend: 0.034, tiltZ: -0.05 },
+    { x: 1.34, topY: 2.76, len: 1.04, topR: 0.095, bend: -0.044, tiltZ: -0.05 },
+    { x: 1.56, topY: 2.56, len: 0.70, topR: 0.075, bend: 0.030, tiltZ: -0.07 },
+    { x: 1.76, topY: 2.32, len: 0.94, topR: 0.088, bend: -0.040, tiltZ: -0.09 },
+    { x: 1.94, topY: 2.06, len: 0.82, topR: 0.082, bend: 0.035, tiltZ: -0.11 },
+    { x: 2.10, topY: 1.76, len: 0.64, topR: 0.068, bend: -0.028, tiltZ: -0.12 },
   ];
 
   for (const st of stalactiteSpecs) {
@@ -1412,9 +1397,9 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
       icicleFangMat,
       st.bend
     );
-    drip.position.set(st.x, st.topY, -3.41);
+    drip.position.set(st.x, st.topY, -3.89);
     drip.rotation.z = st.tiltZ;
-    drip.scale.set(1.0, 1.0, 0.52);
+    drip.scale.set(1.0, 1.0, 0.32);
     caveGroup.add(drip);
   }
 
