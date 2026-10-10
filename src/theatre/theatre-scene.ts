@@ -159,7 +159,7 @@ export class TheatreSceneController {
       0.15,
       90
     );
-    this.camera.position.set(8.6, 5.4, 14.2);
+    this.camera.position.set(4.8, 4.4, 10.2);
 
     this.controls = new OrbitControls(this.camera, this.canvas);
     this.controls.enableDamping = true;
@@ -167,7 +167,7 @@ export class TheatreSceneController {
     this.controls.maxDistance = 36;
     this.controls.minDistance = 0.5;
     this.controls.maxPolarAngle = Math.PI * 0.495;
-    this.controls.target.set(0, 2.2, -1.2);
+    this.controls.target.set(0, 2.0, -2.2);
     this.controls.update();
 
     this.postPipeline = new PostProcessingPipeline(
@@ -852,13 +852,13 @@ export class TheatreSceneController {
     this.camera.fov = this.computeAdaptiveFov(52);
     this.camera.updateProjectionMatrix();
 
-    let endPos = new THREE.Vector3(8.6, 5.4, 14.2);
-    let endTarget = new THREE.Vector3(0, 2.2, -1.2);
+    let endPos = new THREE.Vector3(4.8, 4.4, 10.2);
+    let endTarget = new THREE.Vector3(0, 2.0, -2.2);
 
     switch (preset) {
       case 'house-overview':
-        endPos = new THREE.Vector3(8.6, 5.4, 14.2);
-        endTarget = new THREE.Vector3(0, 2.2, -1.2);
+        endPos = new THREE.Vector3(4.8, 4.4, 10.2);
+        endTarget = new THREE.Vector3(0, 2.0, -2.2);
         break;
       case 'stage-front':
         endPos = new THREE.Vector3(0, 2.55, 8.4);
@@ -874,11 +874,11 @@ export class TheatreSceneController {
         endTarget = new THREE.Vector3(0, 1.95, -2.6);
         break;
       case 'lower-balcony-center':
-        endPos = new THREE.Vector3(0, 4.92, 12.15);
+        endPos = new THREE.Vector3(0, 5.15, 11.95);
         endTarget = new THREE.Vector3(0, 1.85, -2.8);
         break;
       case 'upper-balcony-catwalk':
-        endPos = new THREE.Vector3(-2.4, 7.75, 14.1);
+        endPos = new THREE.Vector3(0, 8.05, 13.65);
         endTarget = new THREE.Vector3(0, 1.9, -2.6);
         break;
       case 'fly-loft-grid':

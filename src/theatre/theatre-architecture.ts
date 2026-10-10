@@ -3,8 +3,6 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import {
   createAcousticWoodWallTexture,
   createMarleyStageDeckTexture,
-  createProsceniumCheckerTexture,
-  createQuiltedDiamondTexture,
   createSeatTapestryTexture,
   createVelourCurtainTexture,
 } from '../engine/procedural-textures.ts';
@@ -59,8 +57,6 @@ export function buildMcCollTheatreArchitecture(
   root.name = 'McCollFamilyTheatre_Architecture';
 
   const woodWallTex = createAcousticWoodWallTexture();
-  const checkerTex = createProsceniumCheckerTexture();
-  const quiltedTex = createQuiltedDiamondTexture();
   const seatTapestryTex = createSeatTapestryTexture();
   const marleyPlainTexture = createMarleyStageDeckTexture(false);
   const marleyGridTexture = createMarleyStageDeckTexture(true);
@@ -435,16 +431,16 @@ export function buildMcCollTheatreArchitecture(
   }
 
   // ==========================================================================
-  // 2. PROSCENIUM ARCH & ICONIC GEOMETRIC SCULPTURAL FRIEZE (Photo da3a8cf7.jpg)
+  // 2. PERMANENT ARCHITECTURAL PROSCENIUM ARCH & FOH LIGHTING POSITIONS
   // ==========================================================================
   const prosceniumGroup = new THREE.Group();
-  prosceniumGroup.name = 'ProsceniumAndSculpturalFrieze';
+  prosceniumGroup.name = 'ProsceniumArchAndFOH';
   root.add(prosceniumGroup);
 
   const halfProscW = PROSCENIUM_WIDTH_M / 2; // 6.3m
   const proscH = PROSCENIUM_HEIGHT_M; // 7.2m
 
-  // Left & Right Proscenium Piers
+  // Left & Right Proscenium Piers (x ∈ [-8.9, -6.3] and [6.3, 8.9])
   for (const side of [-1, 1]) {
     const pier = new THREE.Mesh(
       new THREE.BoxGeometry(2.6, 12.2, 0.65),
@@ -456,95 +452,39 @@ export function buildMcCollTheatreArchitecture(
     prosceniumGroup.add(pier);
   }
 
-  // Upper Proscenium Header Wall
+  // Upper Proscenium Header Wall (spans strictly between piers: width = 12.6m to avoid coplanar overlap)
   const proscHeader = new THREE.Mesh(
-    new THREE.BoxGeometry(17.8, 4.8, 0.65),
+    new THREE.BoxGeometry(PROSCENIUM_WIDTH_M, 4.8, 0.65),
     matteBlackMat
   );
   proscHeader.position.set(0, proscH + 2.4, 0.0);
+  proscHeader.castShadow = true;
+  proscHeader.receiveShadow = true;
   prosceniumGroup.add(proscHeader);
 
-  // Iconic Postmodern Geometric Relief Sculpture across Proscenium Header (from photo da3a8cf7.jpg)
-  const friezeGroup = new THREE.Group();
-  friezeGroup.position.set(0, proscH + 0.35, 0.38);
-  prosceniumGroup.add(friezeGroup);
-
-  // 2a. Left Black-and-White Checkerboard Fan/Diamond Relief
-  const checkerMat = new THREE.MeshStandardMaterial({
-    map: checkerTex,
-    roughness: 0.45,
-    metalness: 0.08,
+  // Architectural Proscenium Reveal Trim (strictly disjoint from piers & header — zero overlapping faces)
+  const archTrimMat = new THREE.MeshStandardMaterial({
+    color: 0x22242c,
+    roughness: 0.65,
+    metalness: 0.12,
   });
-  const checkerTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.45, 0.22), checkerMat);
-  checkerTop.position.set(-5.35, 0.25, 0.12);
-  checkerTop.rotation.z = 0.28;
-  friezeGroup.add(checkerTop);
+  const topArchLintel = new THREE.Mesh(
+    new THREE.BoxGeometry(PROSCENIUM_WIDTH_M - 0.36, 0.18, 0.7),
+    archTrimMat
+  );
+  topArchLintel.position.set(0, proscH - 0.09, 0.0);
+  prosceniumGroup.add(topArchLintel);
 
-  const checkerBottom = new THREE.Mesh(new THREE.BoxGeometry(1.85, 1.35, 0.2), checkerMat);
-  checkerBottom.position.set(-5.05, -0.95, 0.08);
-  checkerBottom.rotation.z = -0.34;
-  friezeGroup.add(checkerBottom);
-
-  // 2b. Center Angled Color-Block Ribbon (Yellow, Crimson, Charcoal, Gold)
-  const colorBlocks: ReadonlyArray<{
-    readonly x: number;
-    readonly y: number;
-    readonly w: number;
-    readonly h: number;
-    readonly rotZ: number;
-    readonly color: number;
-  }> = [
-    { x: -3.55, y: 0.15, w: 1.55, h: 0.88, rotZ: 0.12, color: 0xe6b81e }, // Bright yellow
-    { x: -2.15, y: 0.28, w: 1.45, h: 0.92, rotZ: 0.14, color: 0x24262e }, // Charcoal
-    { x: -0.85, y: 0.32, w: 1.4, h: 0.95, rotZ: 0.12, color: 0x7c1f28 }, // Deep burgundy/crimson
-    { x: 0.45, y: 0.25, w: 1.55, h: 0.85, rotZ: 0.1, color: 0x1c1e24 }, // Black-slate
-    { x: 1.65, y: 0.12, w: 1.5, h: 0.65, rotZ: 0.11, color: 0xe8bc22 }, // Yellow bar
-    { x: 2.35, y: 0.68, w: 1.75, h: 0.58, rotZ: 0.09, color: 0x8f242e }, // Upper crimson accent
-  ];
-
-  for (const blk of colorBlocks) {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(blk.w, blk.h, 0.2),
-      new THREE.MeshStandardMaterial({ color: blk.color, roughness: 0.48, metalness: 0.08 })
+  for (const side of [-1, 1]) {
+    const sideArchJamb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, proscH, 0.7),
+      archTrimMat
     );
-    mesh.position.set(blk.x, blk.y, 0.1);
-    mesh.rotation.z = blk.rotZ;
-    mesh.castShadow = true;
-    friezeGroup.add(mesh);
+    sideArchJamb.position.set(side * (halfProscW - 0.09), proscH / 2, 0.0);
+    prosceniumGroup.add(sideArchJamb);
   }
 
-  // 2c. Right White Quilted Diamond Square & Slate Trapezoid Wings (from photo da3a8cf7.jpg)
-  const quiltedSquare = new THREE.Mesh(
-    new THREE.BoxGeometry(1.65, 1.55, 0.24),
-    new THREE.MeshStandardMaterial({ map: quiltedTex, roughness: 0.5, metalness: 0.06 })
-  );
-  quiltedSquare.position.set(3.85, 0.38, 0.15);
-  quiltedSquare.rotation.z = 0.08;
-  friezeGroup.add(quiltedSquare);
-
-  const rightGreyWing = new THREE.Mesh(
-    new THREE.BoxGeometry(2.35, 1.38, 0.18),
-    new THREE.MeshStandardMaterial({ color: 0x8d8c88, roughness: 0.56 })
-  );
-  rightGreyWing.position.set(5.65, 0.48, 0.08);
-  rightGreyWing.rotation.z = -0.14;
-  friezeGroup.add(rightGreyWing);
-
-  // 2d. Right Vertical Proscenium Column Alternating Red & White Blocks
-  for (let row = 0; row < 6; row++) {
-    const isRed = row % 2 === 0;
-    const colBlock = new THREE.Mesh(
-      new THREE.BoxGeometry(0.48, 1.15, 0.22),
-      new THREE.MeshStandardMaterial({
-        color: isRed ? 0x9e1f28 : 0xeae6dc,
-        roughness: 0.52,
-      })
-    );
-    colBlock.position.set(halfProscW + 0.28, 1.2 + row * 1.18, 0.36);
-    prosceniumGroup.add(colBlock);
-  }
-
-  // 2e. House-Left Stage Manager / Lighting Box Boom Gallery (visible in photo da3a8cf7.jpg)
+  // House-Left Stage Manager / Lighting Box Boom Gallery (visible in photo da3a8cf7.jpg)
   const leftTechBox = new THREE.Mesh(
     new THREE.BoxGeometry(2.2, 2.3, 1.6),
     matteBlackMat
@@ -552,8 +492,8 @@ export function buildMcCollTheatreArchitecture(
   leftTechBox.position.set(-7.65, 4.4, 2.2);
   prosceniumGroup.add(leftTechBox);
 
-  // 2f. FOH #1 Overhead Box Truss & 9 Theatrical Spotlights + Side Box Booms
-  //     (Visible across the top & sides of every Grinch Model Box photo!)
+  // FOH #1 Overhead Box Truss & 9 Theatrical Spotlights + Side Box Booms
+  // (Visible across the top & sides of every Grinch Model Box photo!)
   const fohTrussGroup = new THREE.Group();
   fohTrussGroup.name = 'FOH_BoxTrussAndBooms';
   fohTrussGroup.position.set(0, proscH - 0.35, 0.95);
@@ -628,7 +568,7 @@ export function buildMcCollTheatreArchitecture(
     prosceniumGroup.add(boomLadder);
   }
 
-  // Grand Valance & Main Crimson Velour Curtain (Flown just behind Proscenium)
+  // Grand Valance & Main Crimson Velour Curtain (Flown cleanly upstage of Proscenium Wall)
   const grandDrapeGroup = new THREE.Group();
   grandDrapeGroup.name = 'GrandDrapeCurtain';
   root.add(grandDrapeGroup);
@@ -639,19 +579,19 @@ export function buildMcCollTheatreArchitecture(
     metalness: 0.04,
   });
 
-  // Top Valance Border
-  const valance = new THREE.Mesh(new THREE.BoxGeometry(12.8, 1.35, 0.18), drapeMat);
-  valance.position.set(0, PROSCENIUM_HEIGHT_M - 0.5, -0.25);
+  // Top Valance Border (z = -0.44, cleanly behind proscenium wall back face at z = -0.325)
+  const valance = new THREE.Mesh(new THREE.BoxGeometry(12.4, 1.25, 0.14), drapeMat);
+  valance.position.set(0, PROSCENIUM_HEIGHT_M - 0.55, -0.44);
   grandDrapeGroup.add(valance);
 
-  // Left & Right Draw Curtains
-  const leftDrape = new THREE.Mesh(new THREE.BoxGeometry(2.2, 7.2, 0.16), drapeMat);
-  leftDrape.position.set(-5.3, 3.6, -0.32);
+  // Left & Right Draw Curtains (z = -0.58, cleanly behind valance)
+  const leftDrape = new THREE.Mesh(new THREE.BoxGeometry(2.2, 7.1, 0.12), drapeMat);
+  leftDrape.position.set(-5.3, 3.55, -0.58);
   leftDrape.name = 'GrandDrapeLeft';
   grandDrapeGroup.add(leftDrape);
 
-  const rightDrape = new THREE.Mesh(new THREE.BoxGeometry(2.2, 7.2, 0.16), drapeMat);
-  rightDrape.position.set(5.3, 3.6, -0.32);
+  const rightDrape = new THREE.Mesh(new THREE.BoxGeometry(2.2, 7.1, 0.12), drapeMat);
+  rightDrape.position.set(5.3, 3.55, -0.58);
   rightDrape.name = 'GrandDrapeRight';
   grandDrapeGroup.add(rightDrape);
 

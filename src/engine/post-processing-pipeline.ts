@@ -84,21 +84,20 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
     );
   }
 
-  // Symmetric-pair depth curvature AO for theatre seat rows, risers, and scenic flats
+  // Smooth deterministic symmetric-pair depth curvature AO (zero screen-space dithering)
   float computeContactAO(vec2 uv, float centerLinZ, float noise) {
     if (uAoIntensity <= 0.001 || centerLinZ >= 38.0) {
       return 1.0;
     }
 
-    float radiusPx = clamp(26.0 / max(1.4, centerLinZ), 2.5, 16.0);
+    float radiusPx = clamp(22.0 / max(1.4, centerLinZ), 2.0, 12.0);
     vec2 aspectStep = uTexelSize * radiusPx;
-    float baseAngle = noise * 6.2831853;
     float occlusion = 0.0;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
       float fi = float(i);
-      float angle = baseAngle + fi * 0.78539816;
-      float ringScale = 0.45 + 0.55 * ((fi + 0.5) / 4.0);
+      float angle = fi * 0.52359878; // 30-degree symmetric pairs covering 180 degrees
+      float ringScale = (i == 0 || i == 2 || i == 4) ? 0.55 : 1.0;
       vec2 dir = vec2(cos(angle), sin(angle)) * aspectStep * ringScale;
 
       float zPlus = readLinearDepth(uv + dir);
@@ -108,14 +107,14 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
       float delta = centerLinZ - pairAvgZ;
       float maxSpan = max(abs(zPlus - centerLinZ), abs(zMinus - centerLinZ));
 
-      float rangeCheck = smoothstep(0.75, 0.10, maxSpan);
-      float crease = smoothstep(0.005, 0.18, delta) * rangeCheck;
+      float rangeCheck = smoothstep(0.68, 0.08, maxSpan);
+      float crease = smoothstep(0.018, 0.20, delta) * rangeCheck;
       occlusion += crease;
     }
 
     float distanceFade = 1.0 - smoothstep(26.0, 38.0, centerLinZ);
-    float ao = 1.0 - (occlusion * 0.25) * uAoIntensity * distanceFade;
-    return clamp(ao, 0.50, 1.0);
+    float ao = 1.0 - (occlusion / 6.0) * 0.85 * uAoIntensity * distanceFade;
+    return clamp(ao, 0.58, 1.0);
   }
 
   vec3 extractBrightHighlight(vec2 uv) {

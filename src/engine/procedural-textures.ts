@@ -131,71 +131,75 @@ export function createAcousticWoodWallTexture(): THREE.CanvasTexture {
 
 /**
  * Generates the black-and-white checkerboard relief texture on the House-Left
- * proscenium sculptural frieze in `da3a8cf7.jpg`.
+ * Alice in Wonderland proscenium sculptural frieze in `da3a8cf7.jpg`.
  */
 export function createProsceniumCheckerTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = 512;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
     const cells = 4;
-    const size = 256 / cells;
+    const size = 512 / cells;
     for (let r = 0; r < cells; r++) {
       for (let c = 0; c < cells; c++) {
         const isWhite = (r + c) % 2 === 0;
-        ctx.fillStyle = isWhite ? '#e8e3d9' : '#18181b';
+        ctx.fillStyle = isWhite ? '#e6e1d6' : '#18191e';
         ctx.fillRect(c * size, r * size, size, size);
-        ctx.strokeStyle = '#101014';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(c * size + 1.5, r * size + 1.5, size - 3, size - 3);
       }
     }
+    ctx.strokeStyle = '#14151a';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, 504, 504);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
 /**
  * Generates the white quilted diamond-grid square panel on the House-Right
- * proscenium sculptural frieze in `da3a8cf7.jpg`.
+ * Alice in Wonderland proscenium sculptural frieze in `da3a8cf7.jpg`.
  */
 export function createQuiltedDiamondTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = 512;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    ctx.fillStyle = '#ece8e0';
-    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#eae5dc';
+    ctx.fillRect(0, 0, 512, 512);
 
-    ctx.strokeStyle = '#b8b2a6';
-    ctx.lineWidth = 3;
-    const step = 42;
-    for (let i = -256; i <= 512; i += step) {
+    ctx.strokeStyle = '#b4aea2';
+    ctx.lineWidth = 5;
+    const step = 84;
+    for (let i = -512; i <= 1024; i += step) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
-      ctx.lineTo(i + 256, 256);
+      ctx.lineTo(i + 512, 512);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(i + 256, 0);
-      ctx.lineTo(i, 256);
+      ctx.moveTo(i + 512, 0);
+      ctx.lineTo(i, 512);
       ctx.stroke();
     }
 
-    ctx.strokeStyle = '#cfcac0';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(4, 4, 248, 248);
+    ctx.strokeStyle = '#cac4b8';
+    ctx.lineWidth = 12;
+    ctx.strokeRect(6, 6, 500, 500);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
