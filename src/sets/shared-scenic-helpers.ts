@@ -1996,65 +1996,82 @@ export function getPaintedIcicleCutoutTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Builds a 3-axis CNC-routed 15mm (5/8") painted plywood icicle profile cutout
- * (`ExtrudeGeometry`) hanging downward from `y = 0` to `y = -lengthM`, with
- * Seussian wavy side scallops, a gentle S-curve bend, and scenic-artist painted
- * trompe-l'oeil ice shading — avoiding expensive 4-axis foam turning.
+ * Builds a sharp, jagged, faceted crystalline icicle fang (`createSculptedIcicleDrip`)
+ * hanging downward from `y = 0` to `y = -lengthM`, matching the jagged cavemouth
+ * icicles with crisp angular crystal steps, a central prismatic ridge, and a
+ * needle-sharp pointed tip.
  */
 export function createSculptedIcicleDrip(
   lengthM: number,
   topRadiusM: number,
   material: THREE.Material,
-  curveBendM = 0.035
+  curveBendM = 0.025
 ): THREE.Mesh {
-  const steps = 12;
   const shape = new THREE.Shape();
+  const rootW = topRadiusM * 1.18;
+  const tipX = curveBendM * 0.65;
 
-  // Top mounting tab (tucked behind the rock/snow eave)
-  shape.moveTo(-topRadiusM * 1.15, 0.015);
-  shape.lineTo(topRadiusM * 1.15, 0.015);
+  // Top mounting root (tucked behind/inside the rock or snow overhang)
+  shape.moveTo(-rootW, 0.025);
+  shape.lineTo(rootW, 0.025);
 
-  // Right scalloped profile descending from y = 0 down to y = -lengthM
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const y = -t * lengthM;
-    const taper = Math.pow(1 - t, 0.76);
-    const ripple = 1.0 + 0.14 * Math.sin(t * Math.PI * 4.0);
-    const bendX = Math.sin(t * Math.PI * 1.1) * t * curveBendM;
-    const halfWidth = Math.max(0.005, topRadiusM * taper * ripple);
-    shape.lineTo(bendX + halfWidth, y);
-  }
+  // Right jagged crystalline profile descending in sharp angular steps to the needle tip
+  shape.lineTo(rootW * 0.92, -lengthM * 0.16);
+  shape.lineTo(rootW * 1.02 + tipX * 0.18, -lengthM * 0.22); // Sharp crystal barb
+  shape.lineTo(rootW * 0.64 + tipX * 0.38, -lengthM * 0.48);
+  shape.lineTo(rootW * 0.72 + tipX * 0.46, -lengthM * 0.54); // Secondary crystal notch
+  shape.lineTo(rootW * 0.34 + tipX * 0.74, -lengthM * 0.78);
+  // Needle-sharp icicle tip
+  shape.lineTo(tipX, -lengthM);
 
-  // Left scalloped profile ascending from y = -lengthM back to y = 0
-  for (let i = steps; i >= 0; i--) {
-    const t = i / steps;
-    const y = -t * lengthM;
-    const taper = Math.pow(1 - t, 0.76);
-    const ripple = 1.0 + 0.14 * Math.cos(t * Math.PI * 4.0);
-    const bendX = Math.sin(t * Math.PI * 1.1) * t * curveBendM;
-    const halfWidth = Math.max(0.005, topRadiusM * taper * ripple);
-    shape.lineTo(bendX - halfWidth, y);
-  }
+  // Left jagged crystalline profile ascending back to the root
+  shape.lineTo(-rootW * 0.32 + tipX * 0.72, -lengthM * 0.74);
+  shape.lineTo(-rootW * 0.68 + tipX * 0.42, -lengthM * 0.50);
+  shape.lineTo(-rootW * 0.58 + tipX * 0.34, -lengthM * 0.44);
+  shape.lineTo(-rootW * 0.96 + tipX * 0.14, -lengthM * 0.20);
+  shape.lineTo(-rootW * 0.88, -lengthM * 0.12);
   shape.closePath();
 
-  const plyThicknessM = 0.015; // Standard 5/8" (15mm) CNC-routed scenic plywood
+  const plyThicknessM = 0.022;
   const geom = new THREE.ExtrudeGeometry(shape, {
     depth: plyThicknessM,
     bevelEnabled: true,
-    bevelThickness: 0.003,
-    bevelSize: 0.003,
+    bevelThickness: 0.005,
+    bevelSize: 0.004,
     bevelSegments: 1,
-    curveSegments: 8,
+    curveSegments: 2,
   });
   geom.translate(0, 0, -plyThicknessM * 0.5);
+
+  // Chisel a sharp central crystalline prism ridge along the front & back faces
+  const pos = geom.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const vx = pos.getX(i);
+    const vy = pos.getY(i);
+    const vz = pos.getZ(i);
+    const t = Math.min(1, Math.max(0, -vy / Math.max(0.05, lengthM)));
+    const centerLineX = tipX * t;
+    const localHalfW = Math.max(0.006, rootW * (1 - t * 0.85));
+    const ridgeFactor = Math.max(
+      0,
+      1 - Math.abs(vx - centerLineX) / localHalfW
+    );
+    if (vz > 0) {
+      pos.setZ(i, vz + ridgeFactor * 0.014 * (1 - t * 0.65));
+    } else {
+      pos.setZ(i, vz - ridgeFactor * 0.01 * (1 - t * 0.65));
+    }
+  }
+  geom.computeVertexNormals();
 
   const paintedMat =
     material instanceof THREE.MeshStandardMaterial
       ? new THREE.MeshStandardMaterial({
           map: getPaintedIcicleCutoutTexture(),
           color: material.color,
-          roughness: Math.max(0.55, material.roughness),
-          metalness: material.metalness,
+          roughness: Math.max(0.52, material.roughness),
+          metalness: Math.max(0.06, material.metalness),
+          flatShading: true,
         })
       : material;
 
@@ -2064,10 +2081,10 @@ export function createSculptedIcicleDrip(
 }
 
 /**
- * Builds a continuous 3-axis CNC-routed 18mm (3/4") plywood Seussian wavy
- * snow-drip & icicle valance flat (`ExtrudeGeometry`) spanning `[-widthM/2, +widthM/2]`
- * and hanging from `y = 0` down to `-maxDropM`, painted by scenic artists with
- * trompe-l'oeil ice facets and a dark Seussian ink shadow backing outline.
+ * Builds a continuous jagged cavemouth-style sawtooth icicle valance
+ * (`createSeussianIcicleValance`) spanning `[-widthM/2, +widthM/2]` and hanging
+ * from `y = 0` down to `-maxDropM`, featuring sharp multi-length crystalline
+ * icicle fangs, intermediate jagged V-cleft sub-teeth, and prismatic facet shading.
  */
 export function createSeussianIcicleValance(
   widthM: number,
@@ -2075,63 +2092,81 @@ export function createSeussianIcicleValance(
   fingerCount: number,
   frontMaterial: THREE.Material,
   glazeBackMaterial?: THREE.Material,
-  depthM = 0.018,
+  depthM = 0.024,
   seed = 1
 ): THREE.Group {
   const group = new THREE.Group();
   const halfW = widthM / 2;
-  const count = Math.max(3, fingerCount);
+  const count = Math.max(4, fingerCount);
   const stepW = widthM / count;
 
   const shape = new THREE.Shape();
-  shape.moveTo(-halfW, 0.04);
-  shape.lineTo(halfW, 0.04);
-  shape.lineTo(halfW, -maxDropM * 0.22);
+  // Top mounting bar (recessed inside/behind the snow or rock overhang)
+  shape.moveTo(-halfW, 0.03);
+  shape.lineTo(halfW, 0.03);
+  shape.lineTo(halfW, -maxDropM * 0.14);
 
   for (let i = count - 1; i >= 0; i--) {
     const rightX = -halfW + (i + 1) * stepW;
     const leftX = -halfW + i * stepW;
     const midX = (leftX + rightX) * 0.5;
-    const hash = Math.abs(Math.sin((i + 1) * 12.9898 + seed * 78.233));
-    const fingerLen = maxDropM * (0.48 + 0.52 * hash);
-    const valleyY = -maxDropM * (0.16 + 0.12 * ((i + seed) % 2));
-    const tipSkew = (i % 2 === 0 ? 1 : -1) * stepW * 0.08;
+    const hash1 = Math.abs(Math.sin((i + 1) * 12.9898 + seed * 78.233));
+    const hash2 = Math.abs(Math.cos((i + 3) * 29.173 + seed * 41.89));
 
-    // Smooth curve from right valley down to rounded icicle tip and back up to left valley
-    shape.quadraticCurveTo(
-      rightX - stepW * 0.18,
-      -fingerLen * 0.55,
-      midX + tipSkew,
-      -fingerLen
-    );
-    shape.quadraticCurveTo(
-      leftX + stepW * 0.18,
-      -fingerLen * 0.55,
-      leftX,
-      valleyY
-    );
+    // Alternating long and medium sharp jagged icicle fangs (matching cavemouth rhythm!)
+    const mainFangLen =
+      maxDropM * (i % 2 === 0 ? 0.68 + 0.32 * hash1 : 0.42 + 0.28 * hash2);
+    const subFangLen = maxDropM * (0.28 + 0.22 * hash2);
+    const cleftUpperY = -maxDropM * (0.10 + 0.08 * ((i + seed) % 2));
+    const tipSkew = ((i % 3) - 1) * stepW * 0.06;
+
+    // 1. Sharp angular step down right shoulder of primary fang
+    shape.lineTo(rightX - stepW * 0.12, -mainFangLen * 0.38);
+    shape.lineTo(rightX - stepW * 0.07, -mainFangLen * 0.44); // Jagged crystal barb
+    // 2. Needle-sharp primary icicle fang tip
+    shape.lineTo(midX + stepW * 0.14 + tipSkew, -mainFangLen);
+    // 3. Sharp V-notch up to intermediate cleft
+    shape.lineTo(midX - stepW * 0.04, -subFangLen * 0.52);
+    // 4. Secondary sharp jagged sub-fang in the valley
+    shape.lineTo(leftX + stepW * 0.24, -subFangLen);
+    // 5. Sharp V-cleft back up to left valley
+    shape.lineTo(leftX, cleftUpperY);
   }
 
   shape.closePath();
 
-  const plyDepth = Math.min(0.022, Math.max(0.012, depthM));
+  const plyDepth = Math.min(0.032, Math.max(0.016, depthM));
   const extrudeGeom = new THREE.ExtrudeGeometry(shape, {
     depth: plyDepth,
     bevelEnabled: true,
-    bevelThickness: 0.004,
+    bevelThickness: 0.005,
     bevelSize: 0.004,
     bevelSegments: 1,
-    curveSegments: 10,
+    curveSegments: 2,
   });
   extrudeGeom.translate(0, 0, -plyDepth / 2);
+
+  // Chisel sharp vertical prismatic ridges onto each icicle tooth
+  const pos = extrudeGeom.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const vx = pos.getX(i);
+    const vy = pos.getY(i);
+    const vz = pos.getZ(i);
+    if (vy < 0 && vz > 0) {
+      const toothPhase = Math.abs(Math.sin(((vx + halfW) / stepW) * Math.PI * 2));
+      pos.setZ(i, vz + toothPhase * 0.012);
+    }
+  }
+  extrudeGeom.computeVertexNormals();
 
   const paintedFrontMat =
     frontMaterial instanceof THREE.MeshStandardMaterial
       ? new THREE.MeshStandardMaterial({
           map: getPaintedIcicleCutoutTexture(),
           color: frontMaterial.color,
-          roughness: Math.max(0.55, frontMaterial.roughness),
-          metalness: frontMaterial.metalness,
+          roughness: Math.max(0.52, frontMaterial.roughness),
+          metalness: Math.max(0.06, frontMaterial.metalness),
+          flatShading: true,
         })
       : frontMaterial;
 
@@ -2141,8 +2176,8 @@ export function createSeussianIcicleValance(
 
   if (glazeBackMaterial) {
     const backMesh = new THREE.Mesh(extrudeGeom, glazeBackMaterial);
-    backMesh.scale.set(1.012, 1.04, 0.75);
-    backMesh.position.set(0, -0.016, -0.024);
+    backMesh.scale.set(1.01, 1.05, 0.72);
+    backMesh.position.set(0, -0.018, -0.022);
     group.add(backMesh);
   }
 

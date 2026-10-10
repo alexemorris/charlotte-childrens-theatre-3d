@@ -739,13 +739,23 @@ function createMerchandiseGiftStack(
 /**
  * 1. SCENE 1D — WHOVILLE DEPARTMENT STORE SHOPPING COUNTERS (`'grinch-shopping-counters'`)
  *
- * Recreates the 3 crooked, curvy blue & turquoise Seussian Department Store Counter Booths
- * from `model_1D_shopping.jpg` and `plan_1D_shopping.jpg`:
- * - DSR Wagon (`x = -2.65m, z = -1.12m`) · "WHO DEPT. STORE" ("NEEDS-A-MAWOOZIS")
- * - Center Wagon (`x = 0.0m, z = -1.25m`) · "TINSEL & TRIMMINGS" ("WHATCH-A-MA-WHO")
- * - DSL Wagon (`x = +2.65m, z = -1.12m`) · "FLOO-FLOOBERS & TOYS" ("FUZZ-A-MA-WUMPUS")
- * Positioned downstage with >0.65m clearance from the Center Christmas Tree Turntable
- * (`z = -3.55m`, front edge `-2.40m`) and the 3 Pink Whoville Houses (`z <= -2.45m`).
+ * Recreates 3 distinct, character-rich Whoville Market & Store Booths inspired by
+ * `model_1D_shopping.jpg`, `plan_1D_shopping.jpg`, and the Whoville market reference
+ * (`media_1791675835868_1a63c754.jpg`):
+ * - Booth 1 (DSR `x = -2.65m, z = -1.12m`) · **"CANDY CANE LANE" Sweet Bakery & Confectionery Stall**:
+ *   Mint-turquoise counter with festive evergreen garland & big red bows, scalloped pink-and-red
+ *   awning valance, colossal hooked Candy Cane column on the right, tiered wooden bakery shelves
+ *   & angled pastry trays (donuts, loaves, gingerbread, peppermint jars), and a towering 7-box
+ *   present stack beside the stall.
+ * - Booth 2 (Center `x = 0.0m, z = -1.25m`) · **"WHO FOODS" Carved Timber Arch Market & Grocer**:
+ *   Warm carved walnut/honey timber facade with flaring pilasters, grand central arch with golden
+ *   keystone crest, snow-capped cornice ledge, lobed crimson-and-gold `"WHO FOODS"` sign, side
+ *   blue-and-white striped dome awning with snow cap, hanging round `"FRESH PRODUCE"` bracket sign,
+ *   and a golden Roast Beast platter + produce baskets on the counter.
+ * - Booth 3 (DSL `x = +2.65m, z = -1.12m`) · **"TINSEL & TOYS" Striped Awning Ornament & Tree Chalet**:
+ *   Steep pitched red-and-white vertical-striped chalet roof with scalloped trim & 3D gold star
+ *   finials, warm timber stall frame displaying rows of hanging gold bells & colorful baubles,
+ *   flanked by decorated star-topped Whoville Christmas trees and tabletop toy displays.
  */
 export function buildGrinchShoppingCounters(
   rockTex: THREE.CanvasTexture
@@ -754,427 +764,1065 @@ export function buildGrinchShoppingCounters(
   shoppingGroup.name = 'Element_grinch-shopping-counters';
 
   const candyStripeTex = createCandyCaneStripeTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
 
-  const counterBlueMat = new THREE.MeshStandardMaterial({
-    map: createPaintedShopCounterTimberTexture('#1c78d8', '#3896f2', '#104a8e'),
-    roughness: 0.56,
-    metalness: 0.06,
-  });
-  const counterTurquoiseMat = new THREE.MeshStandardMaterial({
-    map: createPaintedShopCounterTimberTexture('#249cc8', '#42bde8', '#146488'),
-    roughness: 0.56,
-    metalness: 0.06,
+  // Shared materials across the market square
+  const casterDeckMat = new THREE.MeshStandardMaterial({
+    color: 0x1e2432,
+    roughness: 0.7,
   });
   const darkRecessMat = new THREE.MeshStandardMaterial({
-    color: 0x10182c,
+    color: 0x121826,
     roughness: 0.82,
   });
-  const papierMacheNormalTex = createPapierMacheNormalTexture();
   const snowCounterTopMat = new THREE.MeshStandardMaterial({
     map: rockTex,
     normalMap: papierMacheNormalTex,
     normalScale: new THREE.Vector2(0.45, 0.45),
     color: 0xcad2dc,
-    roughness: 0.6,
+    roughness: 0.58,
   });
-  const iceGlazeMat = new THREE.MeshStandardMaterial({
-    color: 0x8eb8dc,
-    roughness: 0.56,
+  // Crystalline cavemouth-style icicle materials (#a4c4d8 & #6290c8)
+  const crystallineIceFrontMat = new THREE.MeshStandardMaterial({
+    color: 0xa4c4d8,
+    roughness: 0.45,
+    metalness: 0.16,
+    flatShading: true,
   });
-  const limeFrameMat = new THREE.MeshStandardMaterial({
-    map: createLimeBranchBarkTexture(),
-    roughness: 0.55,
+  const crystallineIceBackMat = new THREE.MeshStandardMaterial({
+    color: 0x6290c8,
+    roughness: 0.48,
+    metalness: 0.14,
+    flatShading: true,
   });
   const candyCanePostMat = new THREE.MeshStandardMaterial({
     map: candyStripeTex,
-    roughness: 0.55,
+    roughness: 0.35,
+    metalness: 0.05,
   });
   const pineGarlandMat = new THREE.MeshStandardMaterial({
-    color: 0x1c7a3c,
-    roughness: 0.65,
+    map: createLimeBranchBarkTexture(),
+    color: 0x269448,
+    roughness: 0.62,
   });
   const goldOrnamentMat = new THREE.MeshStandardMaterial({
     color: 0xd4a828,
-    roughness: 0.35,
+    roughness: 0.32,
     metalness: 0.68,
   });
   const crimsonOrnamentMat = new THREE.MeshStandardMaterial({
     color: 0xc82238,
     roughness: 0.38,
-    metalness: 0.35,
+    metalness: 0.32,
+  });
+  const turquoiseOrnamentMat = new THREE.MeshStandardMaterial({
+    color: 0x28a8c8,
+    roughness: 0.35,
+    metalness: 0.42,
+  });
+  const creamAwningMat = new THREE.MeshStandardMaterial({
+    color: 0xd6d0ca,
+    roughness: 0.56,
+  });
+  const blushPinkAwningMat = new THREE.MeshStandardMaterial({
+    color: 0xd6a6b8,
+    roughness: 0.56,
+  });
+  const crimsonAwningMat = new THREE.MeshStandardMaterial({
+    color: 0xc82034,
+    roughness: 0.54,
+  });
+  const blueAwningMat = new THREE.MeshStandardMaterial({
+    color: 0x2468b8,
+    roughness: 0.54,
+  });
+  const pastryGoldMat = new THREE.MeshStandardMaterial({
+    color: 0xc88232,
+    roughness: 0.62,
+  });
+  const chocolateGlazeMat = new THREE.MeshStandardMaterial({
+    color: 0x4e2a18,
+    roughness: 0.42,
+  });
+  const strawberryIcingMat = new THREE.MeshStandardMaterial({
+    color: 0xd45888,
+    roughness: 0.45,
   });
 
-  const boothSpecs = [
-    {
-      x: -2.65,
-      z: -1.12,
-      rotY: 0.16,
-      mainTitle: 'WHO DEPT. STORE',
-      subTitle: 'NEEDS-A-MAWOOZIS',
-      clerkColor: 0xc82848,
-      shopperColor: 0x2884c8,
-      registerColor: 0xc42438,
-      boxPalette: [0xd42c44, 0xd4a828, 0x3298d4] as const,
-    },
-    {
-      x: 0.0,
-      z: -1.25,
-      rotY: 0.03,
-      mainTitle: 'TINSEL & TRIMMINGS',
-      subTitle: 'WHATCH-A-MA-WHO',
-      clerkColor: 0x2e9448,
-      shopperColor: 0xb83894,
-      registerColor: 0x2484b8,
-      boxPalette: [0x8838c8, 0xd42848, 0x38b468] as const,
-    },
-    {
-      x: 2.65,
-      z: -1.12,
-      rotY: -0.16,
-      mainTitle: 'FLOO-FLOOBERS & TOYS',
-      subTitle: 'FUZZ-A-MA-WUMPUS',
-      clerkColor: 0x7c38b8,
-      shopperColor: 0xd47828,
-      registerColor: 0x8e32b8,
-      boxPalette: [0x288cd4, 0xd48424, 0xc82864] as const,
-    },
-  ] as const;
+  // Helper to build a 3D 5-point golden star topper for signs, awnings, and trees
+  const createGoldStarFinial = (radiusM: number): THREE.Mesh => {
+    const starShape = new THREE.Shape();
+    const pts = 5;
+    for (let i = 0; i < pts * 2; i++) {
+      const r = i % 2 === 0 ? radiusM : radiusM * 0.44;
+      const a = (i / (pts * 2)) * Math.PI * 2 - Math.PI * 0.5;
+      const sx = Math.cos(a) * r;
+      const sy = Math.sin(a) * r;
+      if (i === 0) starShape.moveTo(sx, sy);
+      else starShape.lineTo(sx, sy);
+    }
+    starShape.closePath();
+    const geo = new THREE.ExtrudeGeometry(starShape, {
+      depth: radiusM * 0.28,
+      bevelEnabled: true,
+      bevelSegments: 1,
+      steps: 1,
+      bevelSize: radiusM * 0.08,
+      bevelThickness: radiusM * 0.08,
+    });
+    geo.translate(0, 0, -radiusM * 0.14);
+    const mesh = new THREE.Mesh(geo, goldOrnamentMat);
+    mesh.castShadow = true;
+    return mesh;
+  };
 
-  for (let bIdx = 0; bIdx < boothSpecs.length; bIdx++) {
-    const spec = boothSpecs[bIdx];
-    if (!spec) continue;
+  // ==========================================================================
+  // BOOTH 1 (DSR x = -2.65m, z = -1.12m): "CANDY CANE LANE" SWEET BAKERY STALL
+  // ==========================================================================
+  {
+    const bakeryUnit = new THREE.Group();
+    bakeryUnit.name = 'WhovilleShoppingBooth_1_CandyCaneLane';
+    bakeryUnit.position.set(-2.65, 0, -1.12);
+    bakeryUnit.rotation.y = 0.16;
 
-    const unit = new THREE.Group();
-    unit.name = `WhovilleShoppingBooth_${bIdx + 1}`;
-    unit.position.set(spec.x, 0, spec.z);
-    unit.rotation.y = spec.rotY;
+    const tealCounterMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#187e78', '#2ea89e', '#0e4e4a'),
+      roughness: 0.55,
+      metalness: 0.05,
+    });
+    const mintTrimMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#32b4a8', '#54d0c4', '#1a746c'),
+      roughness: 0.52,
+      metalness: 0.05,
+    });
+    const bakeryWoodMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#8a5228', '#a86838', '#522e14'),
+      roughness: 0.6,
+    });
 
-    // 1. Rolling caster base platform (separated from floor at y = 0.04m)
-    const wagonCasterDeck = new THREE.Mesh(
-      new RoundedBoxGeometry(1.92, 0.08, 0.62, 2, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x1e2432, roughness: 0.7 })
+    // 1. Rolling caster deck
+    const deck = new THREE.Mesh(
+      new RoundedBoxGeometry(1.96, 0.08, 0.66, 2, 0.02),
+      casterDeckMat
     );
-    wagonCasterDeck.position.set(0, 0.04, 0);
-    unit.add(wagonCasterDeck);
+    deck.position.set(0, 0.04, 0);
+    bakeryUnit.add(deck);
 
-    // 2. Curved multi-segment Seussian counter front with recessed center arch niche
-    for (const side of [-1, 1] as const) {
-      const pier = new THREE.Mesh(
-        new RoundedBoxGeometry(0.55, 0.76, 0.54, 3, 0.08),
-        counterBlueMat
-      );
-      pier.position.set(side * 0.61, 0.46, 0.01);
-      pier.rotation.y = side * -0.1;
-      pier.castShadow = true;
-      pier.receiveShadow = true;
-      unit.add(pier);
+    // 2. Mint-Teal Paneled Bakery Counter Body + Festive Garland & Big Red Bows on Front
+    const counterBody = new THREE.Mesh(
+      new RoundedBoxGeometry(1.86, 0.78, 0.54, 3, 0.05),
+      tealCounterMat
+    );
+    counterBody.position.set(0, 0.47, 0);
+    counterBody.castShadow = true;
+    counterBody.receiveShadow = true;
+    bakeryUnit.add(counterBody);
 
-      // Molded turquoise front relief panel (offset +0.04m in Z to avoid coplanarity)
-      const reliefPanel = new THREE.Mesh(
-        new RoundedBoxGeometry(0.41, 0.54, 0.045, 2, 0.04),
-        counterTurquoiseMat
+    for (const px of [-0.58, 0, 0.58] as const) {
+      const insetPanel = new THREE.Mesh(
+        new RoundedBoxGeometry(0.46, 0.54, 0.04, 2, 0.03),
+        mintTrimMat
       );
-      reliefPanel.position.set(side * 0.61, 0.46, 0.305);
-      reliefPanel.rotation.y = side * -0.1;
-      unit.add(reliefPanel);
+      insetPanel.position.set(px, 0.47, 0.28);
+      bakeryUnit.add(insetPanel);
     }
 
-    // Center upper arch bridge of the counter
-    const archBridge = new THREE.Mesh(
-      new RoundedBoxGeometry(0.74, 0.28, 0.52, 2, 0.06),
-      counterBlueMat
-    );
-    archBridge.position.set(0, 0.7, 0);
-    archBridge.castShadow = true;
-    unit.add(archBridge);
-
-    // Recessed dark arched display niche in the front center of the counter
-    const nicheBacking = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.33, 0.35, 0.5, 16, 1, false, 0, Math.PI),
-      darkRecessMat
-    );
-    nicheBacking.rotation.x = Math.PI / 2;
-    nicheBacking.position.set(0, 0.12, 0.21);
-    unit.add(nicheBacking);
-
-    // Turquoise arch molding rim around the center cutout
-    const archRim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.34, 0.04, 10, 20, Math.PI),
-      counterTurquoiseMat
-    );
-    archRim.position.set(0, 0.12, 0.305);
-    unit.add(archRim);
-
-    // 3. Snowy white-ice curved counter top slab + sculpted Seussian icicle valance
-    const counterTopCenter = new THREE.Mesh(
-      new RoundedBoxGeometry(1.96, 0.09, 0.6, 3, 0.04),
-      snowCounterTopMat
-    );
-    counterTopCenter.position.set(0, 0.88, 0.02);
-    counterTopCenter.castShadow = true;
-    counterTopCenter.receiveShadow = true;
-    unit.add(counterTopCenter);
-
-    // Sculpted Seussian snow-drip valance along the front counter edge (no ConeGeometry!)
-    const counterIcicleValance = createSeussianIcicleValance(
-      1.86,
-      0.16,
-      11,
-      snowCounterTopMat,
-      iceGlazeMat,
-      0.045,
-      bIdx + 10
-    );
-    counterIcicleValance.position.set(0, 0.85, 0.345);
-    unit.add(counterIcicleValance);
-
-    // Individual sculpted icicle drips at the two outer corners of the counter top
+    // Lush evergreen garland swags + big red bows + blue/white target medallion across counter front
     for (const side of [-1, 1] as const) {
-      const cornerDrip = createSculptedIcicleDrip(
-        0.22,
-        0.042,
-        snowCounterTopMat,
-        side * 0.025
-      );
-      cornerDrip.position.set(side * 0.91, 0.85, 0.31);
-      unit.add(cornerDrip);
-    }
-
-    // 4. Tall red-and-white spiral candy-cane side posts + crooked lime-green Seussian branch arms
-    for (const side of [-1, 1] as const) {
-      const postGroup = new THREE.Group();
-      postGroup.position.set(side * 0.76, 0.92, 0.05);
-
-      const postCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(side * -0.06, 0.42, 0.03),
-        new THREE.Vector3(side * 0.05, 0.86, -0.02),
-        new THREE.Vector3(side * -0.04, 1.28, 0.02),
+      const frontSwagCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side * 0.86, 0.74, 0.31),
+        new THREE.Vector3(side * 0.44, 0.52, 0.33),
+        new THREE.Vector3(0, 0.72, 0.32),
       ]);
-      const candyPost = new THREE.Mesh(
-        new THREE.TubeGeometry(postCurve, 24, 0.048, 12, false),
-        candyCanePostMat
-      );
-      candyPost.castShadow = true;
-      postGroup.add(candyPost);
-
-      const branchCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(side * 0.07, 0, 0.04),
-        new THREE.Vector3(side * 0.16, 0.45, 0.06),
-        new THREE.Vector3(side * 0.09, 0.92, 0.04),
-        new THREE.Vector3(side * 0.18, 1.34, 0.05),
-      ]);
-      const limeBranch = new THREE.Mesh(
-        new THREE.TubeGeometry(branchCurve, 20, 0.036, 10, false),
-        limeFrameMat
-      );
-      limeBranch.castShadow = true;
-      postGroup.add(limeBranch);
-
-      // Side sprout arm with hanging ornament & sculpted icicle drip
-      const sproutArm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.018, 0.028, 0.26, 8),
-        limeFrameMat
-      );
-      sproutArm.position.set(side * 0.22, 0.72, 0.06);
-      sproutArm.rotation.z = side * -0.68;
-      postGroup.add(sproutArm);
-
-      const hangingBall = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 12, 10),
-        side < 0 ? crimsonOrnamentMat : goldOrnamentMat
-      );
-      hangingBall.position.set(side * 0.3, 0.62, 0.06);
-      postGroup.add(hangingBall);
-
-      const finialKnob = new THREE.Mesh(
-        new THREE.SphereGeometry(0.075, 12, 10),
-        limeFrameMat
-      );
-      finialKnob.position.set(side * -0.04, 1.32, 0.02);
-      postGroup.add(finialKnob);
-
-      unit.add(postGroup);
-    }
-
-    // 5. Crooked scalloped lime-green & crimson Seussian overhead shop sign
-    const signGroup = new THREE.Group();
-    signGroup.position.set(0, 2.08, 0.08);
-    signGroup.rotation.z = bIdx === 1 ? -0.04 : bIdx === 0 ? 0.05 : -0.05;
-
-    const limeSignFrame = new THREE.Mesh(
-      new RoundedBoxGeometry(1.68, 0.56, 0.04, 3, 0.08),
-      limeFrameMat
-    );
-    limeSignFrame.position.set(0, 0, -0.035);
-    limeSignFrame.castShadow = true;
-    signGroup.add(limeSignFrame);
-
-    for (let sc = -3; sc <= 3; sc++) {
-      const scallop = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.11, 0.04, 12),
-        limeFrameMat
-      );
-      scallop.rotation.x = Math.PI / 2;
-      scallop.position.set(sc * 0.22, -0.27, -0.035);
-      signGroup.add(scallop);
-    }
-
-    // High-res 512×192 Seussian signboard rendered with `drawSeussianDisplayText`
-    const signTex = createSeussianShopSignTexture(
-      spec.mainTitle,
-      spec.subTitle,
-      '#b81e34',
-      '#52c438'
-    );
-    const signBoard = new THREE.Mesh(
-      new RoundedBoxGeometry(1.54, 0.44, 0.04, 2, 0.04),
-      new THREE.MeshStandardMaterial({
-        map: signTex,
-        roughness: 0.56,
-      })
-    );
-    signBoard.position.set(0, 0.01, 0.015);
-    signGroup.add(signBoard);
-
-    // Snow bolster + sculpted icicle drips hanging from top corners of the shop sign
-    for (const side of [-1, 1] as const) {
-      const signDrip = createSculptedIcicleDrip(
-        0.19,
-        0.036,
-        snowCounterTopMat,
-        side * 0.02
-      );
-      signDrip.position.set(side * 0.76, -0.24, 0.03);
-      signGroup.add(signDrip);
-    }
-
-    // Hanging ornaments & pine garland swag under the sign
-    for (let o = -2; o <= 2; o++) {
-      const swagBead = new THREE.Mesh(
-        new THREE.SphereGeometry(0.048, 10, 8),
+      const frontSwag = new THREE.Mesh(
+        new THREE.TubeGeometry(frontSwagCurve, 18, 0.048, 8, false),
         pineGarlandMat
       );
-      swagBead.scale.set(1.6, 0.85, 0.9);
-      swagBead.position.set(
-        o * 0.28,
-        -0.31 - (1 - Math.abs(o) / 3) * 0.05,
-        0.02
+      bakeryUnit.add(frontSwag);
+    }
+    for (const bowX of [-0.82, 0, 0.82] as const) {
+      const redBow = new THREE.Mesh(
+        new RoundedBoxGeometry(0.18, 0.12, 0.05, 2, 0.02),
+        crimsonOrnamentMat
       );
-      signGroup.add(swagBead);
+      redBow.position.set(bowX, 0.74, 0.34);
+      bakeryUnit.add(redBow);
+    }
+    const targetMedallion = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.11, 0.03, 16),
+      turquoiseOrnamentMat
+    );
+    targetMedallion.rotation.x = Math.PI * 0.5;
+    targetMedallion.position.set(0, 0.46, 0.33);
+    bakeryUnit.add(targetMedallion);
 
-      if (o % 2 === 0) {
-        const dropOrn = new THREE.Mesh(
-          new THREE.SphereGeometry(0.042, 10, 10),
-          o === 0 ? goldOrnamentMat : crimsonOrnamentMat
-        );
-        dropOrn.position.set(o * 0.28, -0.41, 0.02);
-        signGroup.add(dropOrn);
+    // Countertop slab + tucked jagged crystalline icicles
+    const counterTop = new THREE.Mesh(
+      new RoundedBoxGeometry(1.98, 0.09, 0.62, 3, 0.04),
+      mintTrimMat
+    );
+    counterTop.position.set(0, 0.89, 0.02);
+    counterTop.castShadow = true;
+    bakeryUnit.add(counterTop);
+
+    // 3. Tiered Wooden Bakery Display Shelves at Back of Stall + Angled Pastry Trays on Counter
+    const backHutch = new THREE.Mesh(
+      new RoundedBoxGeometry(1.56, 1.18, 0.24, 2, 0.03),
+      bakeryWoodMat
+    );
+    backHutch.position.set(-0.08, 1.48, -0.16);
+    backHutch.castShadow = true;
+    bakeryUnit.add(backHutch);
+
+    for (const [shelfY, rowSeed] of [
+      [1.26, 1],
+      [1.58, 2],
+      [1.86, 3],
+    ] as const) {
+      const shelfBoard = new THREE.Mesh(
+        new RoundedBoxGeometry(1.52, 0.05, 0.32, 1, 0.015),
+        mintTrimMat
+      );
+      shelfBoard.position.set(-0.08, shelfY, -0.08);
+      bakeryUnit.add(shelfBoard);
+
+      // Rows of baked loaves, frosted donuts, and peppermint jars on the shelves
+      for (let itemIdx = -3; itemIdx <= 3; itemIdx++) {
+        const ix = -0.08 + itemIdx * 0.19;
+        if (rowSeed === 1 && Math.abs(itemIdx) >= 2) {
+          // Candy cane glass jar
+          const jar = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.055, 0.05, 0.16, 10),
+            candyCanePostMat
+          );
+          jar.position.set(ix, shelfY + 0.1, -0.04);
+          bakeryUnit.add(jar);
+        } else {
+          // Golden baked loaf / pastry mound
+          const loaf = new THREE.Mesh(
+            new RoundedBoxGeometry(0.14, 0.09, 0.14, 2, 0.035),
+            (itemIdx + rowSeed) % 2 === 0 ? pastryGoldMat : strawberryIcingMat
+          );
+          loaf.position.set(ix, shelfY + 0.065, -0.04);
+          bakeryUnit.add(loaf);
+        }
       }
     }
 
-    // Multi-Colored Emissive Who-Land Fairy Lights framing the shop marquee sign & draped in a catenary swag
-    const signMarqueeTopPts = [
-      new THREE.Vector3(-0.78, 0.26, 0.05),
-      new THREE.Vector3(0, 0.28, 0.055),
-      new THREE.Vector3(0.78, 0.26, 0.05),
-    ];
-    signGroup.add(
-      createWhoLandFairyLightStrand(signMarqueeTopPts, {
-        bulbCount: 11,
-        bulbRadiusM: 0.028,
-        emissiveIntensity: 0.95,
-      })
-    );
+    // 3 Angled Wooden Pastry & Donut Trays along the front counter
+    for (const trayX of [-0.54, 0.0, 0.52] as const) {
+      const trayGroup = new THREE.Group();
+      trayGroup.position.set(trayX, 0.98, 0.15);
+      trayGroup.rotation.x = 0.32;
 
-    const signUnderSwagPts = [
-      new THREE.Vector3(-0.76, -0.25, 0.055),
-      new THREE.Vector3(-0.38, -0.38, 0.06),
-      new THREE.Vector3(0, -0.28, 0.065),
-      new THREE.Vector3(0.38, -0.38, 0.06),
-      new THREE.Vector3(0.76, -0.25, 0.055),
-    ];
-    signGroup.add(
-      createWhoLandFairyLightStrand(signUnderSwagPts, {
-        bulbCount: 14,
-        bulbRadiusM: 0.032,
-        emissiveIntensity: 0.95,
-        pointLightCount: 1,
-        pointLightIntensity: 0.72,
-        pointLightDistance: 2.6,
-      })
-    );
-
-    unit.add(signGroup);
-
-    // Multi-Colored Emissive Who-Land Fairy Lights draped along the front counter edge
-    const counterFrontFairyPts = [
-      new THREE.Vector3(-0.92, 0.84, 0.365),
-      new THREE.Vector3(-0.46, 0.76, 0.375),
-      new THREE.Vector3(0, 0.83, 0.38),
-      new THREE.Vector3(0.46, 0.76, 0.375),
-      new THREE.Vector3(0.92, 0.84, 0.365),
-    ];
-    unit.add(
-      createWhoLandFairyLightStrand(counterFrontFairyPts, {
-        bulbCount: 15,
-        bulbRadiusM: 0.028,
-        emissiveIntensity: 0.95,
-        pointLightCount: 1,
-        pointLightIntensity: 0.65,
-        pointLightDistance: 2.4,
-      })
-    );
-
-    // 6. Countertop Merchandise: Seussian Cash Register, Tiered Hatboxes, & Gift Stacks
-    const cashRegister = createSeussianCashRegister(spec.registerColor);
-    cashRegister.position.set(-0.52, 0.92, 0.02);
-    cashRegister.rotation.y = 0.22;
-    unit.add(cashRegister);
-
-    const giftStackRight = createMerchandiseGiftStack(spec.boxPalette, 0xd4b828);
-    giftStackRight.position.set(0.48, 0.92, 0.03);
-    giftStackRight.rotation.y = -0.18;
-    unit.add(giftStackRight);
-
-    // Colorful tiered Seussian display domes/spools on counter center
-    const displayColors = [0xd42838, 0xd4a824, 0x2884d4, 0x34a848];
-    for (let c = 0; c < 3; c++) {
-      const displayStand = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.082, 0.22 + (c % 2) * 0.06, 12),
-        new THREE.MeshStandardMaterial({
-          color: displayColors[(bIdx + c) % displayColors.length] ?? 0xd42838,
-          roughness: 0.55,
-        })
+      const trayBox = new THREE.Mesh(
+        new RoundedBoxGeometry(0.44, 0.05, 0.32, 1, 0.01),
+        bakeryWoodMat
       );
-      displayStand.position.set(-0.14 + c * 0.18, 1.03, 0.06 + (c % 2) * 0.04);
-      displayStand.rotation.z = (c - 1) * 0.08;
-      displayStand.castShadow = true;
-      unit.add(displayStand);
+      trayGroup.add(trayBox);
+
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const donut = new THREE.Mesh(
+            new THREE.TorusGeometry(0.042, 0.02, 8, 12),
+            (dx + dz) % 2 === 0 ? strawberryIcingMat : chocolateGlazeMat
+          );
+          donut.rotation.x = Math.PI * 0.5;
+          donut.position.set(dx * 0.12, 0.038, dz * 0.085);
+          trayGroup.add(donut);
+        }
+      }
+      bakeryUnit.add(trayGroup);
     }
 
-    // 7. Expressive Who Store Clerk behind counter (`z = -0.58m` local) & Who Shopper in front (`z = +0.88m` local)
-    const clerk = createWhoCharacter({
-      heightM: 1.54,
-      coatColorHex: spec.clerkColor,
-      hatColorHex: 0x2e9448,
-      trimColorHex: 0xd4d8de,
-    });
-    clerk.position.set(0.0, 0, -0.58);
-    unit.add(clerk);
+    // 4. Colossal Hooked Red-and-White Spiral Candy Cane Column on the Right + Left Support Post
+    const leftPost = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.048, 0.052, 1.32, 12),
+      candyCanePostMat
+    );
+    leftPost.position.set(-0.84, 1.54, 0.08);
+    bakeryUnit.add(leftPost);
 
-    const shopper = createWhoCharacter({
-      heightM: 1.42,
-      coatColorHex: spec.shopperColor,
-      hatColorHex: 0xd42848,
-      hasBraids: bIdx === 1,
+    const giantCaneCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.84, 0.88, 0.10),
+      new THREE.Vector3(0.86, 1.48, 0.12),
+      new THREE.Vector3(0.88, 2.02, 0.14),
+      new THREE.Vector3(0.98, 2.32, 0.16),
+      new THREE.Vector3(1.16, 2.26, 0.18),
+      new THREE.Vector3(1.22, 2.02, 0.18),
+    ]);
+    const giantCaneCol = new THREE.Mesh(
+      new THREE.TubeGeometry(giantCaneCurve, 32, 0.095, 14, false),
+      candyCanePostMat
+    );
+    giantCaneCol.castShadow = true;
+    bakeryUnit.add(giantCaneCol);
+
+    // 5. Scalloped Pink-and-Crimson Striped Bakery Awning Valance + "CANDY CANE LANE" Signboard
+    const signGroup = new THREE.Group();
+    signGroup.position.set(-0.02, 2.18, 0.12);
+    signGroup.rotation.z = 0.03;
+
+    // Scalloped striped awning tabs underneath the sign
+    const scallopCount = 9;
+    for (let s = 0; s < scallopCount; s++) {
+      const sx = -0.84 + s * 0.21;
+      const tabMat = s % 2 === 0 ? crimsonAwningMat : blushPinkAwningMat;
+      const awningTab = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.112, 0.112, 0.18, 14),
+        tabMat
+      );
+      awningTab.rotation.x = Math.PI * 0.5;
+      awningTab.position.set(sx, -0.22, 0.02);
+      signGroup.add(awningTab);
+    }
+
+    // Crimson & gold framed mint-turquoise signboard ("CANDY CANE LANE")
+    const outerSignBorder = new THREE.Mesh(
+      new RoundedBoxGeometry(1.76, 0.46, 0.05, 2, 0.04),
+      crimsonAwningMat
+    );
+    outerSignBorder.position.set(0, 0.04, 0);
+    signGroup.add(outerSignBorder);
+
+    const candyLaneTex = createSeussianShopSignTexture(
+      'CANDY CANE LANE',
+      'SWEETS & PASTRIES',
+      '#28b4a8',
+      '#d49828'
+    );
+    const candyLaneBoard = new THREE.Mesh(
+      new RoundedBoxGeometry(1.64, 0.36, 0.04, 2, 0.03),
+      new THREE.MeshStandardMaterial({ map: candyLaneTex, roughness: 0.52 })
+    );
+    candyLaneBoard.position.set(0, 0.04, 0.028);
+    signGroup.add(candyLaneBoard);
+
+    // Golden scroll crest + pine garland on top of the Candy Cane Lane sign
+    const scrollCrest = new THREE.Mesh(
+      new RoundedBoxGeometry(0.52, 0.16, 0.045, 2, 0.05),
+      goldOrnamentMat
+    );
+    scrollCrest.position.set(0, 0.31, 0.01);
+    signGroup.add(scrollCrest);
+
+    const topGarland = new THREE.Mesh(
+      new RoundedBoxGeometry(1.72, 0.08, 0.08, 2, 0.03),
+      pineGarlandMat
+    );
+    topGarland.position.set(0, 0.28, 0.03);
+    signGroup.add(topGarland);
+
+    // Jagged crystalline icicle fangs tucked under the awning corners
+    for (const side of [-1, 1] as const) {
+      const signDrip = createSculptedIcicleDrip(
+        0.21,
+        0.036,
+        crystallineIceFrontMat,
+        side * 0.018
+      );
+      signDrip.position.set(side * 0.82, -0.22, 0.04);
+      signGroup.add(signDrip);
+    }
+
+    signGroup.add(
+      createWhoLandFairyLightStrand(
+        [
+          new THREE.Vector3(-0.84, -0.14, 0.12),
+          new THREE.Vector3(0, -0.16, 0.13),
+          new THREE.Vector3(0.84, -0.14, 0.12),
+        ],
+        {
+          bulbCount: 12,
+          bulbRadiusM: 0.028,
+          emissiveIntensity: 0.95,
+          pointLightCount: 1,
+          pointLightIntensity: 0.68,
+          pointLightDistance: 2.5,
+        }
+      )
+    );
+    bakeryUnit.add(signGroup);
+
+    // 6. Towering 7-Box Christmas Present Stack beside the right Candy Cane column (matching reference photo!)
+    const towerStackGroup = new THREE.Group();
+    towerStackGroup.position.set(1.12, 0.08, -0.04);
+    const towerBoxColors = [
+      0xd4283c,
+      0x2498d4,
+      0x34a848,
+      0xd49c24,
+      0x9834b8,
+      0xd42868,
+      0x28b498,
+    ] as const;
+    let curTowerY = 0;
+    for (let tb = 0; tb < towerBoxColors.length; tb++) {
+      const bw = 0.28 - tb * 0.014;
+      const bh = 0.19 - (tb % 2) * 0.02;
+      const boxMesh = new THREE.Mesh(
+        new RoundedBoxGeometry(bw, bh, bw, 2, 0.018),
+        new THREE.MeshStandardMaterial({
+          color: towerBoxColors[tb] ?? 0xd4283c,
+          roughness: 0.48,
+        })
+      );
+      boxMesh.position.set(
+        (tb % 2 === 0 ? 1 : -1) * 0.018,
+        curTowerY + bh * 0.5,
+        0
+      );
+      boxMesh.rotation.y = tb * 0.22;
+      boxMesh.rotation.z = (tb % 2 === 0 ? 1 : -1) * 0.05;
+      boxMesh.castShadow = true;
+      towerStackGroup.add(boxMesh);
+
+      const ribStrip = new THREE.Mesh(
+        new THREE.BoxGeometry(bw + 0.014, bh + 0.01, 0.04),
+        tb % 2 === 0 ? creamAwningMat : goldOrnamentMat
+      );
+      ribStrip.position.copy(boxMesh.position);
+      ribStrip.rotation.copy(boxMesh.rotation);
+      towerStackGroup.add(ribStrip);
+
+      curTowerY += bh;
+    }
+    bakeryUnit.add(towerStackGroup);
+
+    // 7. Bakery Clerk & Shopper
+    const bakeryClerk = createWhoCharacter({
+      heightM: 1.52,
+      coatColorHex: 0xc82838,
+      hatColorHex: 0xd43242,
+      trimColorHex: 0xd6d2ce,
+    });
+    bakeryClerk.position.set(-0.18, 0, -0.58);
+    bakeryUnit.add(bakeryClerk);
+
+    const bakeryShopper = createWhoCharacter({
+      heightM: 1.44,
+      coatColorHex: 0xd43848,
+      hatColorHex: 0x249498,
       holdingGift: true,
     });
-    shopper.position.set(bIdx === 2 ? -0.32 : 0.32, 0, 0.88);
-    shopper.rotation.y = bIdx === 2 ? 2.85 : -2.85;
-    unit.add(shopper);
+    bakeryShopper.position.set(0.36, 0, 0.88);
+    bakeryShopper.rotation.y = -2.82;
+    bakeryUnit.add(bakeryShopper);
 
-    shoppingGroup.add(unit);
+    shoppingGroup.add(bakeryUnit);
+  }
+
+  // ==========================================================================
+  // BOOTH 2 (Center x = 0.0m, z = -1.25m): "WHO FOODS" CARVED TIMBER ARCH MARKET
+  // ==========================================================================
+  {
+    const whoFoodsUnit = new THREE.Group();
+    whoFoodsUnit.name = 'WhovilleShoppingBooth_2_WhoFoods';
+    whoFoodsUnit.position.set(0.0, 0, -1.25);
+    whoFoodsUnit.rotation.y = 0.02;
+
+    const carvedWalnutMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#784822', '#9c6434', '#46260e'),
+      roughness: 0.58,
+      metalness: 0.06,
+    });
+    const honeyTimberMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#986232', '#bc8248', '#5c3818'),
+      roughness: 0.54,
+      metalness: 0.06,
+    });
+
+    // 1. Rolling caster base platform
+    const deck = new THREE.Mesh(
+      new RoundedBoxGeometry(2.14, 0.08, 0.68, 2, 0.02),
+      casterDeckMat
+    );
+    deck.position.set(0, 0.04, 0);
+    whoFoodsUnit.add(deck);
+
+    // 2. Outward-Flaring Carved Walnut Timber Pilasters & Grand Central Arch Portal
+    for (const side of [-1, 1] as const) {
+      const pilaster = new THREE.Mesh(
+        new RoundedBoxGeometry(0.48, 1.98, 0.44, 3, 0.05),
+        carvedWalnutMat
+      );
+      pilaster.position.set(side * 0.78, 1.03, -0.02);
+      pilaster.rotation.z = side * -0.055;
+      pilaster.castShadow = true;
+      pilaster.receiveShadow = true;
+      whoFoodsUnit.add(pilaster);
+
+      // Lower honey-timber counter pier with arched relief panel
+      const counterPier = new THREE.Mesh(
+        new RoundedBoxGeometry(0.58, 0.78, 0.56, 3, 0.05),
+        honeyTimberMat
+      );
+      counterPier.position.set(side * 0.68, 0.47, 0.04);
+      counterPier.castShadow = true;
+      whoFoodsUnit.add(counterPier);
+    }
+
+    // Grand Central Archway Header & Carved Golden Keystone Crest
+    const upperEntablature = new THREE.Mesh(
+      new RoundedBoxGeometry(2.18, 0.34, 0.52, 3, 0.05),
+      carvedWalnutMat
+    );
+    upperEntablature.position.set(0, 1.96, 0.0);
+    upperEntablature.castShadow = true;
+    whoFoodsUnit.add(upperEntablature);
+
+    const grandArchRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.56, 0.065, 12, 24, Math.PI),
+      honeyTimberMat
+    );
+    grandArchRim.position.set(0, 1.24, 0.22);
+    whoFoodsUnit.add(grandArchRim);
+
+    const keystoneCrest = new THREE.Mesh(
+      new RoundedBoxGeometry(0.22, 0.26, 0.09, 2, 0.04),
+      goldOrnamentMat
+    );
+    keystoneCrest.position.set(0, 1.81, 0.26);
+    whoFoodsUnit.add(keystoneCrest);
+
+    // Center counter bridge + recessed arched display niche
+    const centerCounterBridge = new THREE.Mesh(
+      new RoundedBoxGeometry(0.84, 0.76, 0.52, 2, 0.04),
+      carvedWalnutMat
+    );
+    centerCounterBridge.position.set(0, 0.46, 0.02);
+    whoFoodsUnit.add(centerCounterBridge);
+
+    const centerNiche = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.34, 0.52, 16, 1, false, 0, Math.PI),
+      darkRecessMat
+    );
+    centerNiche.rotation.x = Math.PI * 0.5;
+    centerNiche.position.set(0, 0.14, 0.22);
+    whoFoodsUnit.add(centerNiche);
+
+    // Snowy counter top + jagged crystalline cavemouth-style icicle valance tucked under edge
+    const counterTop = new THREE.Mesh(
+      new RoundedBoxGeometry(2.08, 0.09, 0.62, 3, 0.04),
+      snowCounterTopMat
+    );
+    counterTop.position.set(0, 0.88, 0.04);
+    counterTop.castShadow = true;
+    whoFoodsUnit.add(counterTop);
+
+    const counterValance = createSeussianIcicleValance(
+      1.92,
+      0.18,
+      11,
+      crystallineIceFrontMat,
+      crystallineIceBackMat,
+      0.038,
+      21
+    );
+    counterValance.position.set(0, 0.86, 0.31);
+    whoFoodsUnit.add(counterValance);
+
+    // 3. Left Blue-and-White Striped Dome Awning with Snow Cap & Right "FRESH PRODUCE" Bracket Sign
+    const sideAwningGroup = new THREE.Group();
+    sideAwningGroup.position.set(-0.78, 1.46, 0.24);
+    for (let seg = 0; seg < 5; seg++) {
+      const segMesh = new THREE.Mesh(
+        new RoundedBoxGeometry(0.088, 0.22, 0.22, 2, 0.03),
+        seg % 2 === 0 ? blueAwningMat : creamAwningMat
+      );
+      segMesh.position.set((seg - 2) * 0.086, 0, 0);
+      sideAwningGroup.add(segMesh);
+    }
+    const sideAwningSnow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      snowCounterTopMat
+    );
+    sideAwningSnow.scale.set(1.05, 0.65, 0.58);
+    sideAwningSnow.position.set(0, 0.08, 0);
+    sideAwningGroup.add(sideAwningSnow);
+    whoFoodsUnit.add(sideAwningGroup);
+
+    // Right hanging round "FRESH PRODUCE" sign on scrolled bracket
+    const bracketArm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.016, 0.016, 0.34, 8),
+      casterDeckMat
+    );
+    bracketArm.rotation.z = Math.PI * 0.5;
+    bracketArm.position.set(1.12, 1.68, 0.12);
+    whoFoodsUnit.add(bracketArm);
+
+    const produceDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.16, 0.035, 18),
+      crimsonAwningMat
+    );
+    produceDisc.rotation.x = Math.PI * 0.5;
+    produceDisc.position.set(1.22, 1.48, 0.12);
+    whoFoodsUnit.add(produceDisc);
+
+    const produceInnerDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.125, 0.125, 0.042, 18),
+      creamAwningMat
+    );
+    produceInnerDisc.rotation.x = Math.PI * 0.5;
+    produceInnerDisc.position.set(1.22, 1.48, 0.12);
+    whoFoodsUnit.add(produceInnerDisc);
+
+    // 4. Snow-Capped Upper Cornice Ledge + Jagged Crystalline Icicles + Lobed Crimson "WHO FOODS" Sign
+    const corniceSnowCap = new THREE.Mesh(
+      new RoundedBoxGeometry(2.26, 0.12, 0.58, 3, 0.045),
+      snowCounterTopMat
+    );
+    corniceSnowCap.position.set(0, 2.14, 0.04);
+    corniceSnowCap.castShadow = true;
+    whoFoodsUnit.add(corniceSnowCap);
+
+    const corniceIcicleValance = createSeussianIcicleValance(
+      2.12,
+      0.24,
+      13,
+      crystallineIceFrontMat,
+      crystallineIceBackMat,
+      0.04,
+      29
+    );
+    corniceIcicleValance.position.set(0, 2.11, 0.28);
+    whoFoodsUnit.add(corniceIcicleValance);
+
+    // Lobed crimson-and-gold "WHO FOODS" rooftop sign (matching center building in reference image!)
+    const whoFoodsSignGroup = new THREE.Group();
+    whoFoodsSignGroup.position.set(0, 2.48, 0.06);
+
+    const goldSignBacking = new THREE.Mesh(
+      new RoundedBoxGeometry(1.62, 0.52, 0.05, 3, 0.06),
+      goldOrnamentMat
+    );
+    whoFoodsSignGroup.add(goldSignBacking);
+
+    const topLobeGold = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.05, 20),
+      goldOrnamentMat
+    );
+    topLobeGold.rotation.x = Math.PI * 0.5;
+    topLobeGold.position.set(0, 0.18, 0);
+    whoFoodsSignGroup.add(topLobeGold);
+
+    const topLobeCrimson = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.27, 0.27, 0.055, 20),
+      crimsonAwningMat
+    );
+    topLobeCrimson.rotation.x = Math.PI * 0.5;
+    topLobeCrimson.position.set(0, 0.18, 0.01);
+    whoFoodsSignGroup.add(topLobeCrimson);
+
+    // Golden horn/cornucopia emblem inside the upper sign lobe
+    const hornEmblem = new THREE.Mesh(
+      new THREE.TorusGeometry(0.09, 0.026, 8, 14, Math.PI * 1.25),
+      goldOrnamentMat
+    );
+    hornEmblem.position.set(0, 0.22, 0.045);
+    whoFoodsSignGroup.add(hornEmblem);
+
+    const whoFoodsTex = createSeussianShopSignTexture(
+      'WHO FOODS',
+      'ROAST BEAST & PRODUCE',
+      '#b81c30',
+      '#d49a28'
+    );
+    const whoFoodsBoard = new THREE.Mesh(
+      new RoundedBoxGeometry(1.50, 0.42, 0.04, 2, 0.04),
+      new THREE.MeshStandardMaterial({ map: whoFoodsTex, roughness: 0.52 })
+    );
+    whoFoodsBoard.position.set(0, -0.02, 0.025);
+    whoFoodsSignGroup.add(whoFoodsBoard);
+
+    whoFoodsUnit.add(whoFoodsSignGroup);
+
+    // Warm fairy light strand along the Who Foods cornice
+    whoFoodsUnit.add(
+      createWhoLandFairyLightStrand(
+        [
+          new THREE.Vector3(-1.04, 2.06, 0.31),
+          new THREE.Vector3(-0.52, 1.98, 0.32),
+          new THREE.Vector3(0, 2.05, 0.33),
+          new THREE.Vector3(0.52, 1.98, 0.32),
+          new THREE.Vector3(1.04, 2.06, 0.31),
+        ],
+        {
+          bulbCount: 15,
+          bulbRadiusM: 0.03,
+          emissiveIntensity: 0.95,
+          pointLightCount: 1,
+          pointLightIntensity: 0.72,
+          pointLightDistance: 2.6,
+        }
+      )
+    );
+
+    // 5. Countertop Merchandise: Golden Roast Beast Platter, Wicker Produce Baskets, & Grocer Register
+    const grocerRegister = createSeussianCashRegister(0x227848);
+    grocerRegister.position.set(-0.62, 0.92, 0.04);
+    grocerRegister.rotation.y = 0.2;
+    whoFoodsUnit.add(grocerRegister);
+
+    // Silver platter + Golden Roast Beast centerpiece
+    const platter = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.21, 0.03, 18),
+      new THREE.MeshStandardMaterial({
+        color: 0xc2ccd6,
+        roughness: 0.28,
+        metalness: 0.75,
+      })
+    );
+    platter.scale.set(1.25, 1, 0.85);
+    platter.position.set(0.02, 0.94, 0.08);
+    whoFoodsUnit.add(platter);
+
+    const roastBeast = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 14, 12),
+      pastryGoldMat
+    );
+    roastBeast.scale.set(1.35, 0.92, 0.95);
+    roastBeast.position.set(0.02, 1.04, 0.08);
+    roastBeast.castShadow = true;
+    whoFoodsUnit.add(roastBeast);
+
+    // Wicker produce baskets filled with colorful Who-fruits on right side of counter
+    for (const [bx, bz] of [
+      [0.48, 0.10],
+      [0.74, -0.02],
+    ] as const) {
+      const basket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.10, 0.12, 12),
+        honeyTimberMat
+      );
+      basket.position.set(bx, 0.98, bz);
+      whoFoodsUnit.add(basket);
+
+      for (let f = 0; f < 5; f++) {
+        const fruit = new THREE.Mesh(
+          new THREE.SphereGeometry(0.042, 8, 8),
+          f % 2 === 0 ? crimsonOrnamentMat : goldOrnamentMat
+        );
+        fruit.position.set(
+          bx + Math.cos(f * 1.25) * 0.055,
+          1.06 + (f % 2) * 0.025,
+          bz + Math.sin(f * 1.25) * 0.055
+        );
+        whoFoodsUnit.add(fruit);
+      }
+    }
+
+    // 6. Grocer Clerk & Shopper
+    const grocerClerk = createWhoCharacter({
+      heightM: 1.56,
+      coatColorHex: 0x2e8844,
+      hatColorHex: 0xc82438,
+      trimColorHex: 0xd4d8de,
+    });
+    grocerClerk.position.set(0.0, 0, -0.58);
+    whoFoodsUnit.add(grocerClerk);
+
+    const grocerShopper = createWhoCharacter({
+      heightM: 1.45,
+      coatColorHex: 0x2484c8,
+      hatColorHex: 0xd49828,
+      hasBraids: true,
+      holdingGift: true,
+    });
+    grocerShopper.position.set(-0.34, 0, 0.88);
+    grocerShopper.rotation.y = 2.85;
+    whoFoodsUnit.add(grocerShopper);
+
+    shoppingGroup.add(whoFoodsUnit);
+  }
+
+  // ==========================================================================
+  // BOOTH 3 (DSL x = +2.65m, z = -1.12m): RED & WHITE STRIPED AWNING ORNAMENT
+  //                                       & CHRISTMAS TREE CHALET STALL
+  // ==========================================================================
+  {
+    const chaletUnit = new THREE.Group();
+    chaletUnit.name = 'WhovilleShoppingBooth_3_StripedOrnamentChalet';
+    chaletUnit.position.set(2.65, 0, -1.12);
+    chaletUnit.rotation.y = -0.16;
+
+    const chaletTimberMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#58341c', '#784828', '#361e0e'),
+      roughness: 0.58,
+      metalness: 0.05,
+    });
+    const crimsonPanelMat = new THREE.MeshStandardMaterial({
+      map: createPaintedShopCounterTimberTexture('#981c2e', '#be283e', '#5e101c'),
+      roughness: 0.54,
+      metalness: 0.05,
+    });
+
+    // 1. Rolling caster base platform
+    const deck = new THREE.Mesh(
+      new RoundedBoxGeometry(1.96, 0.08, 0.66, 2, 0.02),
+      casterDeckMat
+    );
+    deck.position.set(0, 0.04, 0);
+    chaletUnit.add(deck);
+
+    // 2. Warm Timber & Festive Crimson Chalet Counter Base + Corner Posts
+    const chaletCounter = new THREE.Mesh(
+      new RoundedBoxGeometry(1.84, 0.78, 0.54, 3, 0.04),
+      chaletTimberMat
+    );
+    chaletCounter.position.set(0, 0.47, 0);
+    chaletCounter.castShadow = true;
+    chaletCounter.receiveShadow = true;
+    chaletUnit.add(chaletCounter);
+
+    for (const px of [-0.56, 0, 0.56] as const) {
+      const crimsonInset = new THREE.Mesh(
+        new RoundedBoxGeometry(0.46, 0.54, 0.04, 2, 0.03),
+        crimsonPanelMat
+      );
+      crimsonInset.position.set(px, 0.47, 0.28);
+      chaletUnit.add(crimsonInset);
+    }
+
+    const counterTop = new THREE.Mesh(
+      new RoundedBoxGeometry(1.96, 0.09, 0.62, 3, 0.04),
+      snowCounterTopMat
+    );
+    counterTop.position.set(0, 0.88, 0.02);
+    counterTop.castShadow = true;
+    chaletUnit.add(counterTop);
+
+    const chaletCounterValance = createSeussianIcicleValance(
+      1.82,
+      0.16,
+      11,
+      crystallineIceFrontMat,
+      crystallineIceBackMat,
+      0.038,
+      33
+    );
+    chaletCounterValance.position.set(0, 0.86, 0.30);
+    chaletUnit.add(chaletCounterValance);
+
+    // Timber chalet support posts & hanging ornament/bell display rack in the upper opening
+    for (const side of [-1, 1] as const) {
+      const post = new THREE.Mesh(
+        new RoundedBoxGeometry(0.11, 1.28, 0.11, 2, 0.02),
+        chaletTimberMat
+      );
+      post.position.set(side * 0.82, 1.52, 0.04);
+      post.castShadow = true;
+      chaletUnit.add(post);
+    }
+
+    // 3 horizontal rows of hanging golden bells & colorful baubles inside the chalet stall (matching right stall in reference photo!)
+    for (const [rodY, rowIdx] of [
+      [1.36, 0],
+      [1.62, 1],
+      [1.86, 2],
+    ] as const) {
+      const displayRod = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.014, 0.014, 1.56, 8),
+        chaletTimberMat
+      );
+      displayRod.rotation.z = Math.PI * 0.5;
+      displayRod.position.set(0, rodY, -0.02);
+      chaletUnit.add(displayRod);
+
+      for (let b = -4; b <= 4; b++) {
+        const bx = b * 0.17;
+        const isBell = (Math.abs(b) + rowIdx) % 2 === 0;
+        if (isBell) {
+          const bellOrn = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.042, 0.075, 10),
+            goldOrnamentMat
+          );
+          bellOrn.position.set(bx, rodY - 0.05, -0.02);
+          chaletUnit.add(bellOrn);
+        } else {
+          const baubleMat =
+            b % 3 === 0
+              ? crimsonOrnamentMat
+              : b % 3 === 1 || b % 3 === -1
+                ? turquoiseOrnamentMat
+                : goldOrnamentMat;
+          const bauble = new THREE.Mesh(
+            new THREE.SphereGeometry(0.038, 10, 10),
+            baubleMat
+          );
+          bauble.position.set(bx, rodY - 0.05, -0.02);
+          chaletUnit.add(bauble);
+        }
+      }
+    }
+
+    // 3. Steep Pitched Red-and-White Vertical-Striped Chalet Awning Roof + Scalloped Valance + 3D Gold Stars
+    const awningGroup = new THREE.Group();
+    awningGroup.position.set(0, 2.22, 0.08);
+
+    const stripeCount = 11;
+    const stripeW = 1.98 / stripeCount;
+    for (let s = 0; s < stripeCount; s++) {
+      const sx = -0.99 + (s + 0.5) * stripeW;
+      const stripeMat = s % 2 === 0 ? crimsonAwningMat : creamAwningMat;
+
+      // Steep pitched roof stripe panel
+      const roofPanel = new THREE.Mesh(
+        new RoundedBoxGeometry(stripeW + 0.006, 0.68, 0.06, 2, 0.015),
+        stripeMat
+      );
+      roofPanel.position.set(sx, 0.14, 0.02);
+      roofPanel.rotation.x = -0.42;
+      roofPanel.castShadow = true;
+      awningGroup.add(roofPanel);
+
+      // Matching scalloped tab along the bottom edge of the striped awning
+      const scallopTab = new THREE.Mesh(
+        new THREE.CylinderGeometry(stripeW * 0.52, stripeW * 0.52, 0.06, 12),
+        stripeMat
+      );
+      scallopTab.rotation.x = Math.PI * 0.5;
+      scallopTab.position.set(sx, -0.17, 0.15);
+      awningGroup.add(scallopTab);
+    }
+
+    // 3D Golden Star finials perched on the left/right awning peaks (matching reference photo!)
+    for (const side of [-1, 1] as const) {
+      const cornerStar = createGoldStarFinial(0.13);
+      cornerStar.position.set(side * 0.92, 0.52, -0.06);
+      cornerStar.rotation.z = side * -0.18;
+      awningGroup.add(cornerStar);
+    }
+
+    // Warm fairy light strand along the scalloped awning edge
+    awningGroup.add(
+      createWhoLandFairyLightStrand(
+        [
+          new THREE.Vector3(-0.94, -0.18, 0.19),
+          new THREE.Vector3(-0.46, -0.22, 0.20),
+          new THREE.Vector3(0, -0.18, 0.20),
+          new THREE.Vector3(0.46, -0.22, 0.20),
+          new THREE.Vector3(0.94, -0.18, 0.19),
+        ],
+        {
+          bulbCount: 14,
+          bulbRadiusM: 0.028,
+          emissiveIntensity: 0.95,
+          pointLightCount: 1,
+          pointLightIntensity: 0.7,
+          pointLightDistance: 2.5,
+        }
+      )
+    );
+    chaletUnit.add(awningGroup);
+
+    // 4. Flanking Decorated Whoville Christmas Trees on Left & Right of the Stall (matching reference photo!)
+    for (const side of [-1, 1] as const) {
+      const sideTreeGroup = new THREE.Group();
+      sideTreeGroup.position.set(side * 1.12, 0.04, 0.08);
+
+      for (let tier = 0; tier < 4; tier++) {
+        const tierCone = new THREE.Mesh(
+          new THREE.ConeGeometry(0.36 - tier * 0.065, 0.48, 14),
+          pineGarlandMat
+        );
+        tierCone.position.set(
+          side * (tier * 0.02),
+          0.32 + tier * 0.32,
+          0
+        );
+        tierCone.rotation.z = side * -0.04 * tier;
+        tierCone.castShadow = true;
+        sideTreeGroup.add(tierCone);
+
+        // Ornaments around each tree tier
+        for (let o = 0; o < 4; o++) {
+          const oa = (o / 4) * Math.PI * 2 + tier * 0.6;
+          const orad = 0.28 - tier * 0.05;
+          const orn = new THREE.Mesh(
+            new THREE.SphereGeometry(0.036, 8, 8),
+            (o + tier) % 3 === 0
+              ? crimsonOrnamentMat
+              : (o + tier) % 3 === 1
+                ? goldOrnamentMat
+                : turquoiseOrnamentMat
+          );
+          orn.position.set(
+            Math.cos(oa) * orad,
+            0.22 + tier * 0.32,
+            Math.sin(oa) * orad
+          );
+          sideTreeGroup.add(orn);
+        }
+      }
+
+      const treeTopStar = createGoldStarFinial(0.11);
+      treeTopStar.position.set(side * 0.06, 1.62, 0);
+      sideTreeGroup.add(treeTopStar);
+
+      chaletUnit.add(sideTreeGroup);
+    }
+
+    // 5. Countertop Merchandise: Toy Train Engine, Toy Drum, Gift Boxes & Register
+    const toyRegister = createSeussianCashRegister(0x8e32b8);
+    toyRegister.position.set(-0.56, 0.92, 0.04);
+    toyRegister.rotation.y = 0.18;
+    chaletUnit.add(toyRegister);
+
+    // Seussian Toy Train Engine on countertop
+    const trainGroup = new THREE.Group();
+    trainGroup.position.set(0.02, 0.94, 0.08);
+    trainGroup.rotation.y = -0.15;
+    const boiler = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065, 0.065, 0.22, 12),
+      crimsonOrnamentMat
+    );
+    boiler.rotation.z = Math.PI * 0.5;
+    boiler.position.set(0, 0.08, 0);
+    trainGroup.add(boiler);
+    const cab = new THREE.Mesh(
+      new RoundedBoxGeometry(0.11, 0.16, 0.13, 2, 0.015),
+      turquoiseOrnamentMat
+    );
+    cab.position.set(-0.08, 0.11, 0);
+    trainGroup.add(cab);
+    const smokestack = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.02, 0.09, 10),
+      goldOrnamentMat
+    );
+    smokestack.position.set(0.07, 0.16, 0);
+    trainGroup.add(smokestack);
+    chaletUnit.add(trainGroup);
+
+    const giftStackRight = createMerchandiseGiftStack(
+      [0x288cd4, 0xd48424, 0xc82864] as const,
+      0xd4b828
+    );
+    giftStackRight.position.set(0.52, 0.92, 0.04);
+    giftStackRight.rotation.y = -0.18;
+    chaletUnit.add(giftStackRight);
+
+    // 6. Chalet Clerk & Shopper
+    const chaletClerk = createWhoCharacter({
+      heightM: 1.54,
+      coatColorHex: 0x7c38b8,
+      hatColorHex: 0xc82238,
+      trimColorHex: 0xd4d8de,
+    });
+    chaletClerk.position.set(0.0, 0, -0.58);
+    chaletUnit.add(chaletClerk);
+
+    const chaletShopper = createWhoCharacter({
+      heightM: 1.42,
+      coatColorHex: 0xd47828,
+      hatColorHex: 0x2484c8,
+      holdingGift: true,
+    });
+    chaletShopper.position.set(-0.32, 0, 0.88);
+    chaletShopper.rotation.y = 2.85;
+    chaletUnit.add(chaletShopper);
+
+    shoppingGroup.add(chaletUnit);
   }
 
   shoppingGroup.visible = false;
@@ -1215,9 +1863,17 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
     color: 0xbed0d8,
     roughness: 0.62,
   });
-  const iceGlazeMat = new THREE.MeshStandardMaterial({
-    color: 0x86b2dc,
-    roughness: 0.56,
+  const crystallineIceFrontMat = new THREE.MeshStandardMaterial({
+    color: 0xa4c4d8,
+    roughness: 0.45,
+    metalness: 0.16,
+    flatShading: true,
+  });
+  const crystallineIceBackMat = new THREE.MeshStandardMaterial({
+    color: 0x6290c8,
+    roughness: 0.48,
+    metalness: 0.14,
+    flatShading: true,
   });
   const outlineMat = new THREE.MeshBasicMaterial({ color: 0x181422 });
   const warmWindowMat = new THREE.MeshStandardMaterial({
@@ -1261,28 +1917,28 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
   roof.castShadow = true;
   g.add(roof);
 
-  // Continuous sculpted Seussian snow-drip valance along the roof eaves (replaces ConeGeometry!)
+  // Continuous jagged cavemouth-style crystalline icicle valance tucked under the roof eaves
   const eavesValance = createSeussianIcicleValance(
-    widthM * 0.92,
+    widthM * 0.9,
     0.34,
     9,
-    snowRoofMat,
-    iceGlazeMat,
-    0.055,
+    crystallineIceFrontMat,
+    crystallineIceBackMat,
+    0.042,
     17
   );
-  eavesValance.position.set(0, heightM * 0.65, 0.37);
+  eavesValance.position.set(0, heightM * 0.66, 0.34);
   g.add(eavesValance);
 
-  // Additional organic fluted icicle drips flanking the eaves corners
+  // Additional sharp crystalline icicle fangs flanking the eaves corners
   for (const side of [-1, 1] as const) {
     const cornerIcicle = createSculptedIcicleDrip(
       0.36,
-      0.058,
-      snowRoofMat,
-      side * 0.035
+      0.048,
+      crystallineIceFrontMat,
+      side * 0.024
     );
-    cornerIcicle.position.set(side * (widthM * 0.45), heightM * 0.64, 0.35);
+    cornerIcicle.position.set(side * (widthM * 0.44), heightM * 0.66, 0.33);
     g.add(cornerIcicle);
   }
 
@@ -1410,9 +2066,16 @@ export function buildGrinchMtCrumpitSleigh(
     roughness: 0.58,
   });
   const icicleMat = new THREE.MeshStandardMaterial({
-    color: 0xb4cce0,
-    roughness: 0.55,
-    metalness: 0.12,
+    color: 0xa4c4d8,
+    roughness: 0.45,
+    metalness: 0.16,
+    flatShading: true,
+  });
+  const icicleGlazeBackMat = new THREE.MeshStandardMaterial({
+    color: 0x6290c8,
+    roughness: 0.48,
+    metalness: 0.14,
+    flatShading: true,
   });
 
   // Rolling steel wagon base frame
@@ -1525,12 +2188,12 @@ export function buildGrinchMtCrumpitSleigh(
     0.68,
     0.20,
     6,
-    snowLedgeMat,
     icicleMat,
-    0.04,
+    icicleGlazeBackMat,
+    0.038,
     31
   );
-  lowerValance.position.set(-1.16, 0.56, 0.74);
+  lowerValance.position.set(-1.16, 0.60, 0.68);
   cliffWagon.add(lowerValance);
 
   // Horizontal Snow-Ledge Step #2 (Mid Terrace for the Grinch):
@@ -1548,12 +2211,12 @@ export function buildGrinchMtCrumpitSleigh(
     0.66,
     0.22,
     6,
-    snowLedgeMat,
     icicleMat,
-    0.04,
+    icicleGlazeBackMat,
+    0.038,
     37
   );
-  midValance.position.set(-0.52, 0.88, 0.80);
+  midValance.position.set(-0.52, 0.92, 0.74);
   cliffWagon.add(midValance);
 
   // Upper Tilted Summit Snow Ramp Ledge (for the Grinch's Sleigh):
@@ -1579,20 +2242,20 @@ export function buildGrinchMtCrumpitSleigh(
   upperSummitLedge.receiveShadow = true;
   cliffWagon.add(upperSummitLedge);
 
-  // Sculpted Seussian icicle valance + organic fluted icicle drips hanging under the summit ledge
+  // Jagged cavemouth-style crystalline icicle valance + fangs tucked cleanly under the summit ledge
   const summitValance = createSeussianIcicleValance(
     1.46,
     0.32,
     9,
-    snowLedgeMat,
     icicleMat,
-    0.045,
+    icicleGlazeBackMat,
+    0.042,
     43
   );
   summitValance.position.set(
     upperLedgeCenterX,
-    upperLedgeCenterY - 0.04,
-    upperLedgeCenterZ + 0.41
+    upperLedgeCenterY - 0.02,
+    upperLedgeCenterZ + 0.34
   );
   summitValance.rotation.z = sleighTiltRad;
   cliffWagon.add(summitValance);
@@ -1607,8 +2270,8 @@ export function buildGrinchMtCrumpitSleigh(
     const localX = dIdx * 0.3;
     drip.position.set(
       upperLedgeCenterX + localX * Math.cos(sleighTiltRad),
-      upperLedgeCenterY + localX * Math.sin(sleighTiltRad) - 0.08,
-      upperLedgeCenterZ + 0.38
+      upperLedgeCenterY + localX * Math.sin(sleighTiltRad) - 0.05,
+      upperLedgeCenterZ + 0.32
     );
     cliffWagon.add(drip);
   }

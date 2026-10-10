@@ -1188,30 +1188,72 @@ export function buildPapaWhosHouseUnit(
   }
 
   // --------------------------------------------------------------------------
-  // 1D. SCALLOPED SNOWY ROOF EAVES, ORGANIC ICICLE DRIPS, HOLIDAY GARLAND & CHIMNEY
+  // 1D. SNOWY ROOF EAVE CREST, JAGGED CAVEMOUTH-STYLE CRYSTALLINE ICICLES, HOLIDAY GARLAND & CHIMNEY
   // --------------------------------------------------------------------------
   const roofCurveForSnow = new THREE.CatmullRomCurve3(outerRoofArchPts);
+
+  // Continuous sculpted snow eave crest along the gable arch (replaces boxy RoundedBox blocks!)
+  const snowEaveCrest = new THREE.Mesh(
+    new THREE.TubeGeometry(roofCurveForSnow, 56, 0.095, 10, false),
+    tonedSnowMat
+  );
+  snowEaveCrest.scale.set(1.0, 1.05, 1.25);
+  snowEaveCrest.position.set(0, 0.08, 0.055);
+  snowEaveCrest.castShadow = true;
+  houseFrame.add(snowEaveCrest);
+
+  const crystallineIceFrontMat = new THREE.MeshStandardMaterial({
+    color: 0xa4c4d8,
+    roughness: 0.45,
+    metalness: 0.16,
+    flatShading: true,
+  });
+  const crystallineIceBackMat = new THREE.MeshStandardMaterial({
+    color: 0x6290c8,
+    roughness: 0.48,
+    metalness: 0.14,
+    flatShading: true,
+  });
+
+  // Segmented jagged cavemouth-style icicle valances tucked cleanly behind the snow eave crest
+  const valanceSegCount = 7;
+  for (let s = 0; s < valanceSegCount; s++) {
+    const t0 = (s + 0.12) / valanceSegCount;
+    const t1 = (s + 0.88) / valanceSegCount;
+    const p0 = roofCurveForSnow.getPoint(t0);
+    const p1 = roofCurveForSnow.getPoint(t1);
+    const midPt = roofCurveForSnow.getPoint((t0 + t1) * 0.5);
+    const segLen = p0.distanceTo(p1);
+    const segAngle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+
+    const roofValanceSeg = createSeussianIcicleValance(
+      segLen * 0.96,
+      0.28 + (s % 2) * 0.06,
+      5,
+      crystallineIceFrontMat,
+      crystallineIceBackMat,
+      0.036,
+      s * 11 + 5
+    );
+    roofValanceSeg.position.set(midPt.x, midPt.y + 0.05, 0.12);
+    roofValanceSeg.rotation.z = segAngle;
+    houseFrame.add(roofValanceSeg);
+  }
+
   const snowLobeCount = 19;
   for (let i = 0; i < snowLobeCount; i++) {
     const t = i / (snowLobeCount - 1);
     const pt = roofCurveForSnow.getPoint(t);
-    const snowLobe = new THREE.Mesh(
-      new RoundedBoxGeometry(0.46, 0.18 + (i % 3) * 0.04, 0.14, 2, 0.06),
-      tonedSnowMat
-    );
-    snowLobe.position.set(pt.x, pt.y + 0.08, 0.16);
-    snowLobe.rotation.z = (0.35 - t) * 0.45;
-    houseFrame.add(snowLobe);
 
-    // CNC-routed icicle cutout mounted behind the snowy eave lobe (z = 0.11m vs snowLobe z = 0.16m)
-    const dripLen = 0.24 + (i % 3) * 0.09;
+    // Jagged crystalline icicle fang hanging down from inside the snow eave crest
+    const dripLen = 0.24 + ((i * 5 + 2) % 4) * 0.08;
     const eaveIcicle = createSculptedIcicleDrip(
       dripLen,
-      0.048,
-      tonedSnowMat,
-      ((i % 2 === 0 ? 1 : -1) * 0.032)
+      0.042 + (i % 2) * 0.008,
+      i % 3 === 1 ? crystallineIceBackMat : crystallineIceFrontMat,
+      (i % 2 === 0 ? 1 : -1) * 0.022
     );
-    eaveIcicle.position.set(pt.x, pt.y + 0.01, 0.11);
+    eaveIcicle.position.set(pt.x, pt.y + 0.05, 0.135);
     houseFrame.add(eaveIcicle);
 
     // Evergreen eave garland & red/gold ornaments every 2nd scallop

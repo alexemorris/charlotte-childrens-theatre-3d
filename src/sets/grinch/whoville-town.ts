@@ -702,6 +702,96 @@ function createHolidayWreath(
 }
 
 /**
+ * Builds a large, glossy red-and-white spiral-striped Whoville Giant Candy Cane
+ * (`media_1791675333699_107601fe.jpg`), usable both as a tall street-side candy cane
+ * planted in a snowdrift (`includeSnowBase = true`) and as a giant rooftop candy cane
+ * arching out of a snowy Whoville roof (`includeSnowBase = false`).
+ */
+function createGiantWhovilleCandyCane(
+  heightM: number,
+  tubeRadiusM: number,
+  hookRadiusM: number,
+  hookDir: -1 | 1,
+  candyCaneMat: THREE.Material,
+  snowCapMat: THREE.Material,
+  includeSnowBase = true
+): THREE.Group {
+  const caneGroup = new THREE.Group();
+  caneGroup.name = 'WhovilleGiantCandyCane';
+
+  const straightTopY = Math.max(0.35, heightM - hookRadiusM);
+  const curvePts: THREE.Vector3[] = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(hookDir * -0.025, straightTopY * 0.36, 0.015),
+    new THREE.Vector3(hookDir * 0.018, straightTopY * 0.72, -0.01),
+    new THREE.Vector3(0, straightTopY, 0),
+  ];
+
+  // Smooth 195-degree shepherd's-crook candy cane hook at the top
+  const hookSegments = 12;
+  for (let i = 1; i <= hookSegments; i++) {
+    const t = i / hookSegments;
+    const angle = Math.PI - t * Math.PI * 1.12;
+    const hx =
+      hookDir * (hookRadiusM + Math.cos(angle) * hookRadiusM);
+    const hy = straightTopY + Math.sin(angle) * hookRadiusM;
+    const hz = Math.sin(t * Math.PI) * 0.025;
+    curvePts.push(new THREE.Vector3(hx, hy, hz));
+  }
+
+  const caneCurve = new THREE.CatmullRomCurve3(curvePts);
+  const caneTubeGeo = new THREE.TubeGeometry(
+    caneCurve,
+    44,
+    tubeRadiusM,
+    18,
+    false
+  );
+  const caneMesh = new THREE.Mesh(caneTubeGeo, candyCaneMat);
+  caneMesh.castShadow = true;
+  caneMesh.receiveShadow = true;
+  caneGroup.add(caneMesh);
+
+  // Hemispherical rounded end-cap on the candy cane hook tip
+  const tipPoint = curvePts[curvePts.length - 1]!;
+  const tipCap = new THREE.Mesh(
+    new THREE.SphereGeometry(tubeRadiusM * 0.99, 14, 12),
+    candyCaneMat
+  );
+  tipCap.position.copy(tipPoint);
+  tipCap.castShadow = true;
+  caneGroup.add(tipCap);
+
+  if (includeSnowBase) {
+    // Sculpted snowdrift collar piled around the foot of the street-side candy cane
+    const snowBaseMound = new THREE.Mesh(
+      new THREE.SphereGeometry(tubeRadiusM * 2.45, 16, 12),
+      snowCapMat
+    );
+    snowBaseMound.scale.set(1.25, 0.58, 1.15);
+    snowBaseMound.position.set(0, tubeRadiusM * 0.45, 0);
+    snowBaseMound.castShadow = true;
+    snowBaseMound.receiveShadow = true;
+    caneGroup.add(snowBaseMound);
+
+    const snowSubDrift = new THREE.Mesh(
+      new THREE.SphereGeometry(tubeRadiusM * 1.85, 14, 10),
+      snowCapMat
+    );
+    snowSubDrift.scale.set(1.35, 0.52, 1.1);
+    snowSubDrift.position.set(
+      hookDir * tubeRadiusM * 1.2,
+      tubeRadiusM * 0.34,
+      tubeRadiusM * 0.5
+    );
+    snowSubDrift.receiveShadow = true;
+    caneGroup.add(snowSubDrift);
+  }
+
+  return caneGroup;
+}
+
+/**
  * Builds an ultra-detailed Seussian Whoville Round House wagon matching Model Box 1B & CAD Plan 1B.
  */
 function buildSingleWhovilleHouse(
@@ -716,6 +806,7 @@ function buildSingleWhovilleHouse(
     oliveFrameMat: THREE.MeshStandardMaterial;
     creamFrameMat: THREE.MeshStandardMaterial;
     candyFrameMat: THREE.MeshStandardMaterial;
+    giantCandyCaneMat: THREE.MeshStandardMaterial;
     brassMat: THREE.MeshStandardMaterial;
     wreathGreenMat: THREE.MeshStandardMaterial;
     crimsonBowMat: THREE.MeshStandardMaterial;
@@ -932,66 +1023,64 @@ function buildSingleWhovilleHouse(
   snowRoofCap.receiveShadow = true;
   house.add(snowRoofCap);
 
-  // Ring of Sculpted Snow-Drip Lobes + Dark Seussian Ink Shadow Rim + Organic Sculpted Icicles
-  const lobeCount = 13;
-  for (let i = 0; i < lobeCount; i++) {
-    const u = i / (lobeCount - 1);
-    const angle = (u - 0.5) * Math.PI * 1.18;
-    const lx = Math.sin(angle) * (halfW * 1.04);
-    const lz = Math.cos(angle) * (halfW * 1.04) * (cfg.depthScale + 0.08);
-    // Alternate long and short melting snow drips just like the painted model box
-    const dripLen = 0.24 + (i % 3) * 0.09 + (i === 4 || i === 8 ? 0.11 : 0);
-    const dripRad = 0.125 + (i % 2) * 0.022;
-    const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.11;
+  // Jagged Cavemouth-Style Crystalline Icicle Valance Segments & Sharp Icicle Fangs
+  // Tucked cleanly underneath the overhanging snow roof cap eaves (replaces sphere bulbs!)
+  const houseIceGlazeMat = new THREE.MeshStandardMaterial({
+    color: 0x6290c8,
+    roughness: 0.48,
+    metalness: 0.14,
+    flatShading: true,
+  });
+  const houseCrystallineIcicleMat = new THREE.MeshStandardMaterial({
+    color: 0xa4c4d8,
+    roughness: 0.45,
+    metalness: 0.16,
+    flatShading: true,
+  });
+
+  const eaveValanceSegments = 5;
+  for (let s = 0; s < eaveValanceSegments; s++) {
+    const u = (s + 0.5) / eaveValanceSegments;
+    const angle = (u - 0.5) * Math.PI * 1.06;
+    const vx = Math.sin(angle) * (halfW * 0.97);
+    const vz = Math.cos(angle) * (halfW * 0.97) * (cfg.depthScale + 0.04);
+    const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.08 + 0.02;
+    const segWidth = (cfg.widthM * 0.58) / eaveValanceSegments;
+
+    const eaveValance = createSeussianIcicleValance(
+      segWidth,
+      0.30 + (s % 2) * 0.06,
+      5,
+      houseCrystallineIcicleMat,
+      houseIceGlazeMat,
+      0.036,
+      s * 7 + 3
+    );
+    eaveValance.position.set(vx, archFollowY, vz);
+    eaveValance.rotation.y = angle * 0.72;
+    house.add(eaveValance);
+  }
+
+  const fangCount = 15;
+  for (let i = 0; i < fangCount; i++) {
+    const u = i / (fangCount - 1);
+    const angle = (u - 0.5) * Math.PI * 1.14;
+    const lx = Math.sin(angle) * (halfW * 0.99);
+    const lz = Math.cos(angle) * (halfW * 0.99) * (cfg.depthScale + 0.05);
+    const dripLen = 0.24 + ((i * 5 + 3) % 4) * 0.085 + (i === 4 || i === 10 ? 0.1 : 0);
+    const dripRad = 0.038 + (i % 3) * 0.008;
+    const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.09 + 0.03;
     const bendSign = i % 2 === 0 ? 1 : -1;
 
-    // Puffy top bulb of snow drip (envelops the flared root collar of the sculpted drip)
-    const lobeBulb = new THREE.Mesh(
-      new THREE.SphereGeometry(dripRad, 12, 10),
-      sharedMats.snowCapMat
-    );
-    lobeBulb.scale.set(1.05, 1.25, 0.72);
-    lobeBulb.position.set(lx, archFollowY, lz);
-    house.add(lobeBulb);
-
-    // Organic sculpted snow-drip extending downward from inside the bulb (y = archFollowY down to archFollowY - dripLen)
-    const lobeDrop = createSculptedIcicleDrip(
+    const icicleFang = createSculptedIcicleDrip(
       dripLen,
-      dripRad * 0.76,
-      sharedMats.snowCapMat,
-      bendSign * 0.025
+      dripRad,
+      i % 3 === 1 ? houseIceGlazeMat : houseCrystallineIcicleMat,
+      bendSign * 0.018
     );
-    lobeDrop.scale.set(1.0, 1.0, 0.68);
-    lobeDrop.position.set(lx, archFollowY, lz);
-    house.add(lobeDrop);
-
-    // Dark Seussian ink outline drop-shadow collar behind/below the snow lobe (offset -0.032m in Z)
-    const inkShadowDrop = createSculptedIcicleDrip(
-      dripLen + 0.04,
-      dripRad * 0.84,
-      sharedMats.inkMat,
-      bendSign * 0.025
-    );
-    inkShadowDrop.scale.set(1.04, 1.0, 0.52);
-    inkShadowDrop.position.set(lx, archFollowY - 0.015, lz - 0.032);
-    house.add(inkShadowDrop);
-
-    // Organic frost-blue hanging icicles tucked smoothly inside the eaves between snow lobes
-    if (i < lobeCount - 1 && i % 2 === 1) {
-      const nextU = (i + 0.5) / (lobeCount - 1);
-      const icAngle = (nextU - 0.5) * Math.PI * 1.16;
-      const ix = Math.sin(icAngle) * (halfW * 1.03);
-      const iz = Math.cos(icAngle) * (halfW * 1.03) * (cfg.depthScale + 0.075);
-      const icicleLen = 0.24 + (i % 3) * 0.06;
-      const icicle = createSculptedIcicleDrip(
-        icicleLen,
-        0.042,
-        sharedMats.icicleMat,
-        -bendSign * 0.03
-      );
-      icicle.position.set(ix, archFollowY + 0.02, iz);
-      house.add(icicle);
-    }
+    icicleFang.position.set(lx, archFollowY, lz);
+    icicleFang.rotation.y = angle * 0.65;
+    house.add(icicleFang);
   }
 
   // ==========================================================================
@@ -1415,6 +1504,49 @@ function buildSingleWhovilleHouse(
     })
   );
 
+  // ==========================================================================
+  // 7. GIANT ROOFTOP CANDY CANE & PORCH-SIDE CANDY CANE (`media_1791675333699_107601fe.jpg`)
+  // ==========================================================================
+  const caneSide: -1 | 1 = cfg.dormerSide === -1 ? 1 : -1;
+
+  // 7A. Oversized Rooftop Candy Cane sprouting from the snowy roof shoulder & curving over the street
+  const rooftopCandyCane = createGiantWhovilleCandyCane(
+    1.32,
+    0.115,
+    0.38,
+    caneSide,
+    sharedMats.giantCandyCaneMat,
+    sharedMats.snowCapMat,
+    false
+  );
+  rooftopCandyCane.position.set(
+    caneSide * (halfW * 0.48),
+    eaveY + 0.12,
+    0.04
+  );
+  rooftopCandyCane.rotation.z = caneSide * -0.24;
+  rooftopCandyCane.rotation.y = caneSide * -0.18;
+  house.add(rooftopCandyCane);
+
+  // 7B. Tall Street-Side Candy Cane planted in the snowdrift beside the house facade
+  const houseStreetCane = createGiantWhovilleCandyCane(
+    2.28,
+    0.092,
+    0.34,
+    caneSide,
+    sharedMats.giantCandyCaneMat,
+    sharedMats.snowCapMat,
+    true
+  );
+  houseStreetCane.position.set(
+    caneSide * (halfW + 0.24),
+    0.08,
+    frontSurfaceZ * 0.42
+  );
+  houseStreetCane.rotation.z = caneSide * -0.09;
+  houseStreetCane.rotation.y = caneSide * -0.22;
+  house.add(houseStreetCane);
+
   return house;
 }
 
@@ -1475,6 +1607,13 @@ export function buildGrinchWhovilleHouses(
     map: createCandyStripeTexture('#d8d0c8', '#d4283c', 10),
     roughness: 0.52,
   });
+  const giantCandyStripeTex = createCandyStripeTexture('#d8d4d0', '#d81c34', 6);
+  giantCandyStripeTex.repeat.set(4.5, 1.5);
+  const giantCandyCaneMat = new THREE.MeshStandardMaterial({
+    map: giantCandyStripeTex,
+    roughness: 0.28,
+    metalness: 0.06,
+  });
   const brassMat = new THREE.MeshStandardMaterial({
     color: 0xe6b832,
     roughness: 0.32,
@@ -1518,6 +1657,7 @@ export function buildGrinchWhovilleHouses(
     oliveFrameMat,
     creamFrameMat,
     candyFrameMat,
+    giantCandyCaneMat,
     brassMat,
     wreathGreenMat,
     crimsonBowMat,
@@ -1648,6 +1788,91 @@ export function buildGrinchWhovilleHouses(
   housesGroup.add(buildSingleWhovilleHouse(dsrConfig, sharedMats));
   housesGroup.add(buildSingleWhovilleHouse(usrConfig, sharedMats));
   housesGroup.add(buildSingleWhovilleHouse(mslConfig, sharedMats));
+
+  // Freestanding Oversized Whoville Street Candy Canes planted in snowdrifts along the town square
+  // (`media_1791675333699_107601fe.jpg`)
+  const townCandyCaneSpecs: ReadonlyArray<{
+    x: number;
+    z: number;
+    heightM: number;
+    tubeR: number;
+    hookR: number;
+    hookDir: -1 | 1;
+    rotY: number;
+    tiltZ: number;
+  }> = [
+    // Stage Right street lane between DSR & USR houses
+    {
+      x: -2.42,
+      z: -3.95,
+      heightM: 2.58,
+      tubeR: 0.105,
+      hookR: 0.38,
+      hookDir: 1,
+      rotY: 0.22,
+      tiltZ: -0.08,
+    },
+    // Stage Left street lane just upstage of MSL house
+    {
+      x: 2.32,
+      z: -4.12,
+      heightM: 2.52,
+      tubeR: 0.102,
+      hookR: 0.37,
+      hookDir: -1,
+      rotY: -0.24,
+      tiltZ: 0.09,
+    },
+    // Upstage Left avenue candy cane arch
+    {
+      x: 1.54,
+      z: -4.88,
+      heightM: 2.24,
+      tubeR: 0.094,
+      hookR: 0.33,
+      hookDir: -1,
+      rotY: -0.15,
+      tiltZ: 0.07,
+    },
+    // Upstage Center-Right village lane candy cane
+    {
+      x: -0.88,
+      z: -4.92,
+      heightM: 2.18,
+      tubeR: 0.09,
+      hookR: 0.32,
+      hookDir: 1,
+      rotY: 0.18,
+      tiltZ: -0.06,
+    },
+    // Far Stage Right avenue candy cane beside DSR house
+    {
+      x: -3.72,
+      z: -4.25,
+      heightM: 2.38,
+      tubeR: 0.096,
+      hookR: 0.35,
+      hookDir: 1,
+      rotY: 0.32,
+      tiltZ: -0.1,
+    },
+  ];
+
+  for (const spec of townCandyCaneSpecs) {
+    const streetCane = createGiantWhovilleCandyCane(
+      spec.heightM,
+      spec.tubeR,
+      spec.hookR,
+      spec.hookDir,
+      giantCandyCaneMat,
+      snowCapMat,
+      true
+    );
+    streetCane.position.set(spec.x, 0, spec.z);
+    streetCane.rotation.y = spec.rotY;
+    streetCane.rotation.z = spec.tiltZ;
+    housesGroup.add(streetCane);
+  }
 
   // 3 Expressive Whoville Carolers / Townspeople standing in open town-square lanes
   // (clear of the Center Tree Turntable, Papa Who's House in Scene 1E, Shopping Booths in 1D, and Finale Banquet in 1G)
