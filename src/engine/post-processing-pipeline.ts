@@ -67,7 +67,7 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
       vec3(-0.53108,  1.10813, -0.07276),
       vec3(-0.07367, -0.00605,  1.07602)
     );
-    color *= exposure / 0.6;
+    color *= exposure;
     color = ACESInputMat * color;
     vec3 a = color * (color + 0.0245786) - 0.000090537;
     vec3 b = color * (0.983729 * color + 0.4329510) + 0.238081;
@@ -121,7 +121,7 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
   vec3 extractBrightHighlight(vec2 uv) {
     vec3 c = texture2D(tColor, clamp(uv, 0.0, 1.0)).rgb;
     float peak = max(c.r, max(c.g, c.b));
-    float knee = smoothstep(0.88, 1.75, peak);
+    float knee = smoothstep(1.45, 2.85, peak);
     return c * knee;
   }
 
@@ -345,8 +345,8 @@ export class PostProcessingPipeline {
     u.uBloomIntensity.value =
       this.bloomEnabled && this.quality !== 'performance'
         ? this.quality === 'ultra'
-          ? 0.36
-          : 0.22
+          ? 0.15
+          : 0.09
         : 0.0;
     u.uSharpenIntensity.value =
       this.quality === 'ultra' ? 0.36 : this.quality === 'balanced' ? 0.25 : 0.0;

@@ -139,7 +139,7 @@ export class TheatreSceneController {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 0.85;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0d0e13);
@@ -149,7 +149,7 @@ export class TheatreSceneController {
     const pmremGen = new THREE.PMREMGenerator(this.renderer);
     const roomEnv = new RoomEnvironment();
     this.scene.environment = pmremGen.fromScene(roomEnv, 0.04).texture;
-    this.scene.environmentIntensity = 0.28;
+    this.scene.environmentIntensity = 0.22;
     roomEnv.dispose();
     pmremGen.dispose();
 
@@ -188,11 +188,11 @@ export class TheatreSceneController {
     this.architecture = buildMcCollTheatreArchitecture(this.seats);
     this.scene.add(this.architecture.root);
 
-    // 3. Build 6 Switchable Production Sets
+    // 3. Build 8 Switchable Production Sets
     this.productionSets = buildProductionSetsController();
     this.scene.add(this.productionSets.root);
 
-    // Apply Alice in Wonderland's painted ray stage floor texture by default
+    // Sync active stage floor texture
     this.syncStageFloorTexture();
 
     // 4. Sightline 3D Laser Frustum Group
@@ -209,7 +209,7 @@ export class TheatreSceneController {
   }
 
   private buildLightingRig(): void {
-    this.ambientLight = new THREE.HemisphereLight(0xffe6c8, 0x1b1624, 0.55);
+    this.ambientLight = new THREE.HemisphereLight(0xffe6c8, 0x1b1624, 0.45);
     this.scene.add(this.ambientLight);
 
     // Warm architectural house lights over the auditorium & proscenium frieze
@@ -231,11 +231,11 @@ export class TheatreSceneController {
     // FOH Balcony Rail Spotlights (Key lights onto proscenium frieze & stage)
     this.fohStageKeyLeft = new THREE.SpotLight(
       0xffe4bc,
-      95,
+      46,
       32,
       Math.PI * 0.26,
-      0.45,
-      1.35
+      0.48,
+      1.4
     );
     this.fohStageKeyLeft.position.set(-4.6, 4.6, 10.5);
     this.fohStageKeyLeft.target.position.set(-1.2, 1.8, -2.4);
@@ -247,11 +247,11 @@ export class TheatreSceneController {
 
     this.fohStageKeyRight = new THREE.SpotLight(
       0xffd8a8,
-      95,
+      46,
       32,
       Math.PI * 0.26,
-      0.45,
-      1.35
+      0.48,
+      1.4
     );
     this.fohStageKeyRight.position.set(4.6, 4.6, 10.5);
     this.fohStageKeyRight.target.position.set(1.2, 1.8, -2.4);
@@ -264,11 +264,11 @@ export class TheatreSceneController {
     // Overhead Stage 1st Electric Key Spotlight (casts crisp scenic shadows on stage floor)
     this.stageOverheadKey = new THREE.SpotLight(
       0xffdf9e,
-      125,
+      58,
       24,
       Math.PI * 0.34,
-      0.5,
-      1.3
+      0.52,
+      1.35
     );
     this.stageOverheadKey.position.set(0.2, 7.6, -0.6);
     this.stageOverheadKey.target.position.set(0, 0.8, -3.2);
@@ -279,18 +279,18 @@ export class TheatreSceneController {
     this.scene.add(this.stageOverheadKey.target);
 
     // Mid-stage warm fill
-    this.stageWarmFill = new THREE.PointLight(0xffcf94, 34, 18, 1.4);
+    this.stageWarmFill = new THREE.PointLight(0xffcf94, 15, 18, 1.45);
     this.stageWarmFill.position.set(0, 5.2, -3.5);
     this.scene.add(this.stageWarmFill);
 
     // Upstage Cyclorama Wash Light
-    this.cycWashLight = new THREE.PointLight(0x7c3e9c, 42, 18, 1.3);
+    this.cycWashLight = new THREE.PointLight(0x7c3e9c, 22, 18, 1.35);
     this.cycWashLight.position.set(0, 4.5, -7.6);
     this.scene.add(this.cycWashLight);
 
     // Downstage Apron Footlights
     for (const fx of [-3.4, 0, 3.4]) {
-      const foot = new THREE.PointLight(0xffd296, 12, 9, 1.5);
+      const foot = new THREE.PointLight(0xffd296, 7, 9, 1.5);
       foot.position.set(fx, 0.45, 1.35);
       this.scene.add(foot);
       this.apronFootlights.push(foot);
@@ -306,35 +306,35 @@ export class TheatreSceneController {
     const stageSpotColor = scene?.stageSpotColor ?? prod.stageSpotColor;
     const cycBottomColor = scene?.cycBottomColor ?? prod.cycBottomColor;
 
-    this.ambientLight.intensity = 0.28 + s.houseLevel * 0.85;
+    this.ambientLight.intensity = 0.22 + s.houseLevel * 0.65;
     for (const pt of this.houseSpotLights) {
-      pt.intensity = s.houseLevel * 28;
+      pt.intensity = s.houseLevel * 22;
     }
 
-    this.fohStageKeyLeft.intensity = s.fohRailLevel * 110;
-    this.fohStageKeyRight.intensity = s.fohRailLevel * 110;
+    this.fohStageKeyLeft.intensity = s.fohRailLevel * 48;
+    this.fohStageKeyRight.intensity = s.fohRailLevel * 48;
     this.fohStageKeyLeft.color.setHex(stageWashColor);
     this.fohStageKeyRight.color.setHex(stageWashColor);
 
     // Emissive FOH lenses on the Lower Balcony Rail
     for (const lens of this.architecture.fohLensMeshes) {
       const mat = lens.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.3 + s.fohRailLevel * 2.2;
+      mat.emissiveIntensity = 0.25 + s.fohRailLevel * 1.4;
     }
 
-    this.stageOverheadKey.intensity = s.stageElectricsLevel * 135;
+    this.stageOverheadKey.intensity = s.stageElectricsLevel * 60;
     this.stageOverheadKey.color.setHex(stageSpotColor);
-    this.stageWarmFill.intensity = s.stageElectricsLevel * 38;
+    this.stageWarmFill.intensity = s.stageElectricsLevel * 16;
     this.stageWarmFill.color.setHex(stageWashColor);
 
-    this.cycWashLight.intensity = s.cycWashLevel * 52;
+    this.cycWashLight.intensity = s.cycWashLevel * 24;
     this.cycWashLight.color.setHex(cycBottomColor);
 
     const cycMat = this.productionSets.cycMesh.material as THREE.MeshStandardMaterial;
-    cycMat.emissiveIntensity = 0.25 + s.cycWashLevel * 0.95;
+    cycMat.emissiveIntensity = 0.12 + s.cycWashLevel * 0.36;
 
     for (const foot of this.apronFootlights) {
-      foot.intensity = s.apronFootlightsLevel * 16;
+      foot.intensity = s.apronFootlightsLevel * 8;
       foot.color.setHex(prod.apronWashColor);
     }
   }
@@ -470,7 +470,7 @@ export class TheatreSceneController {
 
     if (grinchFloorVisible) {
       floorMat.map = this.productionSets.grinchSnowFloorTexture;
-      floorMat.color.setHex(0xffffff);
+      floorMat.color.setHex(0xb8cae4);
     } else if (schoolOfRockFloorVisible) {
       floorMat.map = this.productionSets.schoolOfRockFloorTexture;
       floorMat.color.setHex(0xffffff);

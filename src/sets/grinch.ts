@@ -140,11 +140,11 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 0.0, 2: 6.8, 3: 6.8, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xbba8ff,
-    stageSpotColor: 0xd8c8ff,
-    cycTopColor: 0x3b2878,
-    cycBottomColor: 0x7c64d4,
-    houseLevel: 0.55,
+    stageWashColor: 0x9b88e6,
+    stageSpotColor: 0xc2b0f0,
+    cycTopColor: 0x261a54,
+    cycBottomColor: 0x523e9c,
+    houseLevel: 0.45,
     modelPhotoUrl: 'reference/grinch/model_1A_preshow.jpg',
     groundPlanUrl: 'reference/grinch/plan_1A_preshow.jpg',
   },
@@ -166,10 +166,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 0.0, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xffe6f2,
-    stageSpotColor: 0xfff2d6,
-    cycTopColor: 0x8ea8f8,
-    cycBottomColor: 0xd8e0ff,
+    stageWashColor: 0xd8c6e8,
+    stageSpotColor: 0xf4dec0,
+    cycTopColor: 0x3b58a8,
+    cycBottomColor: 0x6c88d4,
     houseLevel: 0.25,
     modelPhotoUrl: 'reference/grinch/model_1B_whoville.jpg',
     groundPlanUrl: 'reference/grinch/plan_1B_whoville.jpg',
@@ -189,10 +189,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 6.8, 4: 0.0, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0x8ab8ff,
-    stageSpotColor: 0xc4dcff,
-    cycTopColor: 0x1a2448,
-    cycBottomColor: 0x9cb4f0,
+    stageWashColor: 0x6e9ce8,
+    stageSpotColor: 0x9ec0f4,
+    cycTopColor: 0x141d3b,
+    cycBottomColor: 0x4c68ac,
     houseLevel: 0.15,
     modelPhotoUrl: 'reference/grinch/model_1C_cave_vista.jpg',
     groundPlanUrl: 'reference/grinch/plan_1C_cave.jpg',
@@ -213,10 +213,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 6.8, 4: 0.0, 5: 0.0 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0x98bfff,
-    stageSpotColor: 0xffd088,
-    cycTopColor: 0x14182e,
-    cycBottomColor: 0x384678,
+    stageWashColor: 0x7aa4e8,
+    stageSpotColor: 0xe8bc72,
+    cycTopColor: 0x101426,
+    cycBottomColor: 0x2a3660,
     houseLevel: 0.14,
     modelPhotoUrl: 'reference/grinch/model_1C_cave_mylar.jpg',
     groundPlanUrl: 'reference/grinch/plan_1C_cave.jpg',
@@ -237,10 +237,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 0.0, 3: 6.8, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xffecd2,
-    stageSpotColor: 0xfff4dc,
-    cycTopColor: 0xa8bef8,
-    cycBottomColor: 0xffe4f2,
+    stageWashColor: 0xe6d2b8,
+    stageSpotColor: 0xf2dfc0,
+    cycTopColor: 0x425ca8,
+    cycBottomColor: 0x8674b8,
     houseLevel: 0.22,
     modelPhotoUrl: 'reference/grinch/model_1H_whos_house_day.jpg',
     groundPlanUrl: 'reference/grinch/plan_1H_whos_house.jpg',
@@ -264,10 +264,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 0.0, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xffdff0,
-    stageSpotColor: 0xfff0cc,
-    cycTopColor: 0x8ea8f8,
-    cycBottomColor: 0xdce4ff,
+    stageWashColor: 0xd8c2e4,
+    stageSpotColor: 0xf0dcba,
+    cycTopColor: 0x3b58a8,
+    cycBottomColor: 0x6c88d4,
     houseLevel: 0.25,
     modelPhotoUrl: 'reference/grinch/model_1D_shopping.jpg',
     groundPlanUrl: 'reference/grinch/plan_1D_shopping.jpg',
@@ -289,10 +289,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 0.0, 3: 6.8, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0x98ffb8,
-    stageSpotColor: 0xd8ff98,
-    cycTopColor: 0x6a58b8,
-    cycBottomColor: 0xd8c8ff,
+    stageWashColor: 0x72d896,
+    stageSpotColor: 0xb2e67c,
+    cycTopColor: 0x382878,
+    cycBottomColor: 0x6852ac,
     houseLevel: 0.16,
     modelPhotoUrl: 'reference/grinch/model_1E_mean_one_scrim.jpg',
     groundPlanUrl: 'reference/grinch/plan_1E_mean_one.jpg',
@@ -313,10 +313,10 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 6.8, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xa8c8ff,
-    stageSpotColor: 0xffb8c8,
-    cycTopColor: 0x7088e0,
-    cycBottomColor: 0xd4dcff,
+    stageWashColor: 0x82a8e8,
+    stageSpotColor: 0xe69cb0,
+    cycTopColor: 0x2c428c,
+    cycBottomColor: 0x5c74bc,
     houseLevel: 0.18,
     modelPhotoUrl: 'reference/grinch/model_1F_mt_crumpit_sleigh.jpg',
     groundPlanUrl: 'reference/grinch/plan_1F_cave2_crumpit.jpg',
@@ -340,11 +340,11 @@ const GRINCH_SCENES: ReadonlyArray<ProductionSceneCue> = [
     ],
     battenTrimHeightsM: { 1: 6.8, 2: 6.8, 3: 0.0, 4: 6.8, 5: 6.8 },
     grandDrapeOpenFraction: 1.0,
-    stageWashColor: 0xfff0d8,
-    stageSpotColor: 0xfff8e8,
-    cycTopColor: 0x98b4ff,
-    cycBottomColor: 0xffe2be,
-    houseLevel: 0.35,
+    stageWashColor: 0xe8d4b8,
+    stageSpotColor: 0xf4e4c8,
+    cycTopColor: 0x3b58a8,
+    cycBottomColor: 0x8c78a8,
+    houseLevel: 0.32,
     modelPhotoUrl: 'reference/grinch/model_1G_finale.jpg',
     groundPlanUrl: 'reference/grinch/plan_1G_finale.jpg',
   },
@@ -360,11 +360,11 @@ export const grinchSpec: ProductionSpec = {
     'Recreated directly from Children\'s Theatre of Charlotte\'s 22-slide Scenic Design package (Director: Jenn Poarch, Scenic Designer: Andrew Gibbon, TD: Shane Burgett). Features all 9 scene configurations (Sheets 1A–1H) with the 52-lineset counterweight schedule, Pre-Show Storybook Scrim (#1), Papa Who\'s House with backlit scrim reveal (#9), "MERRY CHRISTMAS WHOVILLE" Banner (#15), Grinch\'s Cave (#17), Mylar Curtain (#19), Whoville Round Houses, Shopping Counters, Mt. Crumpit Sleigh Cliff, and Finale Banquet.',
   scenicNotes:
     'Step through all 9 scenes (Sheets 1A–1H) using the Scene Sequencer. Each scene updates onstage wagons, counterweight batten trims (#1, #9, #15, #17, #19), stage lighting cues, and displays the corresponding 1/4" CAD Ground Plan and Model Box reference photo.',
-  cycTopColor: 0x8ea8f8,
-  cycBottomColor: 0xd8e0ff,
-  stageWashColor: 0xffe6f2,
-  stageSpotColor: 0xfff2d6,
-  apronWashColor: 0xd4dcff,
+  cycTopColor: 0x3b58a8,
+  cycBottomColor: 0x6c88d4,
+  stageWashColor: 0xd8c6e8,
+  stageSpotColor: 0xf4dec0,
+  apronWashColor: 0x9ab4e8,
   elements: GRINCH_ELEMENTS,
   scenes: GRINCH_SCENES,
 };
@@ -391,21 +391,21 @@ function createPinkWhovilleHouseWagon(
   g.add(wagonBase);
 
   const pinkMat = new THREE.MeshStandardMaterial({
-    color: 0xf45ca2,
-    roughness: 0.52,
+    color: 0xd84688,
+    roughness: 0.56,
     metalness: 0.04,
   });
   const snowRoofMat = new THREE.MeshStandardMaterial({
     map: rockTex,
-    color: 0xeaf2ff,
-    roughness: 0.55,
+    color: 0xc2d4ec,
+    roughness: 0.62,
   });
   const outlineMat = new THREE.MeshBasicMaterial({ color: 0x181422 });
   const warmWindowMat = new THREE.MeshStandardMaterial({
-    color: 0xffe878,
-    emissive: 0xffb830,
-    emissiveIntensity: 1.35,
-    roughness: 0.25,
+    color: 0xffe068,
+    emissive: 0xffa824,
+    emissiveIntensity: 0.65,
+    roughness: 0.3,
   });
   const wreathGreenMat = new THREE.MeshStandardMaterial({
     color: 0x1d8a42,
@@ -791,15 +791,15 @@ export function buildGrinchSet({
 
   const snowPortalMat = new THREE.MeshStandardMaterial({
     map: rockTex,
-    color: 0xeef5ff,
-    roughness: 0.56,
+    color: 0xb6cce8,
+    roughness: 0.62,
     metalness: 0.04,
   });
   const iceCaveMat = new THREE.MeshStandardMaterial({
     map: rockTex,
-    color: 0x90bcf4,
-    roughness: 0.52,
-    metalness: 0.08,
+    color: 0x76a2dc,
+    roughness: 0.56,
+    metalness: 0.06,
   });
 
   // ==========================================================================
@@ -824,7 +824,7 @@ export function buildGrinchSet({
     // Overhanging Snow Cap on Outer Tower
     const snowCap = new THREE.Mesh(
       new RoundedBoxGeometry(2.52, 1.15, 1.08, 3, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xf6f9ff, roughness: 0.48 })
+      new THREE.MeshStandardMaterial({ color: 0xc6d8f0, roughness: 0.56 })
     );
     snowCap.position.set(side * 5.62, 3.15, -0.1);
     snowCap.rotation.y = side * -0.18;
@@ -864,9 +864,9 @@ export function buildGrinchSet({
       map: preshowScrimTex,
       transparent: true,
       opacity: 0.9,
-      roughness: 0.65,
-      emissive: 0x3b2c6e,
-      emissiveIntensity: 0.35,
+      roughness: 0.68,
+      emissive: 0x241a46,
+      emissiveIntensity: 0.18,
     })
   );
   scrimMesh.position.set(0, 3.3, -0.35);
@@ -882,9 +882,9 @@ export function buildGrinchSet({
 
   // Left & Right rolling snow hills groundrow
   for (const [hx, hy, hz, rx, ry, col] of [
-    [-2.8, 1.25, -6.6, 2.6, 1.45, 0xd8e2f8],
-    [2.6, 1.35, -6.5, 2.8, 1.55, 0xcad8f4],
-    [0.2, 0.95, -5.9, 1.9, 1.15, 0xe4ecff],
+    [-2.8, 1.25, -6.6, 2.6, 1.45, 0x9eb6de],
+    [2.6, 1.35, -6.5, 2.8, 1.55, 0x90aad6],
+    [0.2, 0.95, -5.9, 1.9, 1.15, 0xacc2e6],
   ] as const) {
     const hill = new THREE.Mesh(
       new THREE.SphereGeometry(1.0, 20, 14),
