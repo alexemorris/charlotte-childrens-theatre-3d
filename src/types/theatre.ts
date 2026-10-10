@@ -60,6 +60,7 @@ export interface SeatSightlineMetrics {
 }
 
 export type ProductionId =
+  | 'school-of-rock'
   | 'alice-in-wonderland'
   | 'narnia-wardrobe'
   | 'charlottes-web'

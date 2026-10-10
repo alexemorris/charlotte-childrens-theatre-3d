@@ -484,3 +484,176 @@ export function createYellowBrickTexture(): THREE.CanvasTexture {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
+/**
+ * Generates the painted Horace Green Prep School tartan plaid stage floor cloth
+ * with white dotted grid lines and the angled "H G" crimson-bordered crest downstage right
+ * (matching reference photos media_1791644748140_320001e2.jpg & media_1791644779061_b9a0e65e.jpg).
+ */
+export function createSchoolOfRockFloorTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    // Deep navy-teal base
+    ctx.fillStyle = '#0e2836';
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Angled tartan plaid blocks in emerald, sea-green, and slate-blue
+    ctx.save();
+    ctx.translate(512, 512);
+    ctx.rotate(-0.14);
+    ctx.translate(-640, -640);
+
+    const cell = 84;
+    for (let r = 0; r < 18; r++) {
+      for (let c = 0; c < 18; c++) {
+        const x = c * cell;
+        const y = r * cell;
+        const pat = (r * 3 + c * 5) % 7;
+        if (pat === 0 || pat === 3) {
+          ctx.fillStyle = 'rgba(54, 146, 104, 0.55)';
+          ctx.fillRect(x + 4, y + 4, cell - 8, cell - 8);
+        } else if (pat === 1 || pat === 5) {
+          ctx.fillStyle = 'rgba(26, 86, 98, 0.65)';
+          ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+        } else if (pat === 2) {
+          ctx.fillStyle = 'rgba(92, 178, 118, 0.48)';
+          ctx.fillRect(x + 8, y + 8, cell - 16, cell - 16);
+        }
+      }
+    }
+
+    // Crisp white dotted grid lines across the plaid floor
+    ctx.strokeStyle = 'rgba(235, 245, 255, 0.68)';
+    ctx.lineWidth = 2.2;
+    ctx.setLineDash([4, 7]);
+    for (let i = 0; i <= 18; i++) {
+      const p = i * cell;
+      ctx.beginPath();
+      ctx.moveTo(p, 0);
+      ctx.lineTo(p, 18 * cell);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, p);
+      ctx.lineTo(18 * cell, p);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Downstage Right (House Left) Horace Green Prep School Shield Crest ("H G")
+    ctx.save();
+    ctx.translate(295, 795);
+    ctx.rotate(-0.18);
+
+    const drawShieldPath = (scale: number): void => {
+      ctx.beginPath();
+      ctx.moveTo(-115 * scale, -95 * scale);
+      ctx.lineTo(115 * scale, -95 * scale);
+      ctx.lineTo(110 * scale, 15 * scale);
+      ctx.quadraticCurveTo(95 * scale, 88 * scale, 0, 120 * scale);
+      ctx.quadraticCurveTo(-95 * scale, 88 * scale, -110 * scale, 15 * scale);
+      ctx.closePath();
+    };
+
+    // Outer crimson red shield border
+    drawShieldPath(1.0);
+    ctx.fillStyle = '#c82432';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#e8e4dc';
+    ctx.stroke();
+
+    // Inner off-white shield face
+    drawShieldPath(0.84);
+    ctx.fillStyle = '#e6ecf2';
+    ctx.fill();
+
+    // Navy quadrant divider cross
+    ctx.fillStyle = '#182b49';
+    ctx.fillRect(-90, -8, 180, 14);
+    ctx.fillRect(-7, -80, 14, 175);
+
+    // Bold "H" and "G" letters in the crest quadrants
+    ctx.fillStyle = '#182b49';
+    ctx.font = 'bold 54px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('H', -46, -42);
+    ctx.fillText('G', 46, 38);
+
+    // Open book icon (upper right quadrant) & torch icon (lower left quadrant)
+    ctx.fillStyle = '#243c64';
+    ctx.fillRect(24, -56, 44, 28);
+    ctx.fillStyle = '#e6ecf2';
+    ctx.fillRect(44, -56, 4, 28);
+
+    ctx.fillStyle = '#c82432';
+    ctx.beginPath();
+    ctx.arc(-46, 38, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates the Horace Green slate-green classroom chalkboard texture
+ * with dusty chalk handwriting, music notation, and cursive script header.
+ */
+export function createChalkboardTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#1d3c36');
+    grad.addColorStop(0.5, '#264c44');
+    grad.addColorStop(1, '#1b3631');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Dusty chalk eraser clouds
+    for (let i = 0; i < 28; i++) {
+      const cx = (i * 73) % 480;
+      const cy = (i * 59) % 480;
+      ctx.fillStyle = 'rgba(210, 230, 225, 0.045)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 28 + (i % 24), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Cursive alphabet / music theory lines near top of chalkboard
+    ctx.strokeStyle = 'rgba(230, 242, 238, 0.25)';
+    ctx.lineWidth = 1.2;
+    for (let row = 0; row < 5; row++) {
+      const y = 42 + row * 22;
+      ctx.beginPath();
+      ctx.moveTo(24, y);
+      ctx.lineTo(488, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(235, 245, 240, 0.34)';
+    ctx.font = 'italic 18px Georgia, serif';
+    ctx.fillText('Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn', 32, 60);
+    ctx.font = '14px monospace';
+    ctx.fillText('HISTORY OF ROCK: LED ZEPPELIN -> AC/DC -> THE WHO', 32, 180);
+    ctx.fillText('BAND ROLES: GUITAR · BASS · KEYS · DRUMS · VOCALS', 32, 220);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+

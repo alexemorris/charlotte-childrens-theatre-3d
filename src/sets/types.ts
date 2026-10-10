@@ -9,6 +9,8 @@ export type RegisterScenicElementFn = (
 
 export interface ScenicTexturesBundle {
   readonly aliceFloorTexture: THREE.CanvasTexture;
+  readonly schoolOfRockFloorTexture: THREE.CanvasTexture;
+  readonly chalkboardTex: THREE.CanvasTexture;
   readonly redVelourTex: THREE.CanvasTexture;
   readonly blackVelourTex: THREE.CanvasTexture;
   readonly barnWoodTex: THREE.CanvasTexture;

@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import {
   createAliceRayStageFloorTexture,
   createBarnWoodTexture,
+  createChalkboardTexture,
   createLibraryBooksTexture,
+  createSchoolOfRockFloorTexture,
   createVelourCurtainTexture,
   createYellowBrickTexture,
 } from '../engine/procedural-textures.ts';
@@ -17,6 +19,7 @@ import { rebuildCustomSetPiecesGroup } from './custom-set-pieces.ts';
 import { maryPoppinsSet } from './mary-poppins.ts';
 import { matildaSet } from './matilda.ts';
 import { narniaWardrobeSet } from './narnia-wardrobe.ts';
+import { schoolOfRockSet } from './school-of-rock.ts';
 import {
   buildSoftMaskingLegsAndBorders,
   DEFAULT_RIGGING_BATTENS,
@@ -27,6 +30,7 @@ import type { ProductionSetModule, ScenicTexturesBundle } from './types.ts';
 export { DEFAULT_RIGGING_BATTENS } from './shared-scenic-helpers.ts';
 
 export const PRODUCTION_SET_MODULES: ReadonlyArray<ProductionSetModule> = [
+  schoolOfRockSet,
   aliceInWonderlandSet,
   narniaWardrobeSet,
   charlottesWebSet,
@@ -43,6 +47,7 @@ export interface ProductionSetsController {
   readonly customPiecesGroup: THREE.Group;
   readonly cycMesh: THREE.Mesh;
   readonly aliceFloorTexture: THREE.CanvasTexture;
+  readonly schoolOfRockFloorTexture: THREE.CanvasTexture;
   setActiveProduction(id: ProductionId): ProductionSpec;
   getActiveProduction(): ProductionSpec;
   setElementVisibility(elementId: string, visible: boolean): void;
@@ -61,6 +66,8 @@ export function buildProductionSetsController(): ProductionSetsController {
 
   const textures: ScenicTexturesBundle = {
     aliceFloorTexture: createAliceRayStageFloorTexture(),
+    schoolOfRockFloorTexture: createSchoolOfRockFloorTexture(),
+    chalkboardTex: createChalkboardTexture(),
     redVelourTex: createVelourCurtainTexture([156, 20, 30], 14),
     blackVelourTex: createVelourCurtainTexture([22, 24, 30], 12),
     barnWoodTex: createBarnWoodTexture(),
@@ -70,8 +77,8 @@ export function buildProductionSetsController(): ProductionSetsController {
 
   // Upstage Cyclorama Screen (z = -9.1m)
   const cycMat = new THREE.MeshStandardMaterial({
-    color: 0x26143b,
-    emissive: 0x1c0d2e,
+    color: 0x3b0f4c,
+    emissive: 0x160a2c,
     emissiveIntensity: 0.85,
     roughness: 0.9,
   });
@@ -95,7 +102,7 @@ export function buildProductionSetsController(): ProductionSetsController {
     const list = elementNodes.get(id) ?? [];
     list.push(obj);
     elementNodes.set(id, list);
-    elementVisibility.set(id, true);
+    elementVisibility.set(id, obj.visible);
 
     if (battenLine !== undefined) {
       const bList = battenNodes.get(battenLine) ?? [];
@@ -112,7 +119,7 @@ export function buildProductionSetsController(): ProductionSetsController {
   // Build each modular production set from its dedicated file in src/sets/
   for (const mod of PRODUCTION_SET_MODULES) {
     const group = mod.build({ registerElement, textures });
-    group.visible = mod.spec.id === 'alice-in-wonderland';
+    group.visible = mod.spec.id === 'school-of-rock';
     root.add(group);
     productionGroups.set(mod.spec.id, group);
   }
@@ -122,13 +129,14 @@ export function buildProductionSetsController(): ProductionSetsController {
   customPiecesGroup.name = 'CustomDesignerSetPieces';
   root.add(customPiecesGroup);
 
-  let activeProductionId: ProductionId = 'alice-in-wonderland';
+  let activeProductionId: ProductionId = 'school-of-rock';
 
   return {
     root,
     customPiecesGroup,
     cycMesh,
     aliceFloorTexture: textures.aliceFloorTexture,
+    schoolOfRockFloorTexture: textures.schoolOfRockFloorTexture,
 
     setActiveProduction(id: ProductionId): ProductionSpec {
       activeProductionId = id;

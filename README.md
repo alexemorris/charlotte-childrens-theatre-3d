@@ -29,7 +29,8 @@ Interactive **Three.js + TypeScript + Vite** 3D architectural digital twin, scen
    - **Balcony Overhang & Lateral Masking Sightline Heatmap:** Instantly color-codes all 570 seats in 2D and 3D (`Optimal`, `Good`, `Balcony Overhang Trim`, `Extreme Side Angle`) and calculates maximum visible fly height at the upstage backdrop.
    - **3D Sightline Laser Rays (`L`):** Projects 3D sightline vectors from the active seat's eye point to Downstage Apron, Center Stage, Stage Left/Right Wings, and the Upstage Fly Header.
 
-2. **6 Modular Switchable Production Sets (`src/sets/`)**
+2. **7 Modular Switchable Production Sets (`src/sets/`)**
+   - `src/sets/school-of-rock.ts` — ***School of Rock (Battle of the Bands & Horace Green Prep)***: Recreated from the Children's Theatre of Charlotte production photos, featuring the painted navy/teal tartan plaid stage floor with the angled `"H G"` Horace Green shield crest (DSR), 4 vertical aluminum concert box-truss towers with LED PARs and cyan spotlight beams, stepped pyramid wall of 24 rock speaker cabinets, cherry-trimmed Horace Green chalkboard classroom wing walls, flyable Center Classroom chalkboard unit on Batten Line 3, rolling Yamaha keyboard & Roland drum risers, road cases with student performers, and Dewey Finn at Center Stage.
    - `src/sets/alice-in-wonderland.ts` — ***Alice in Wonderland (Mad Hatter's Tea Party)***: Recreated directly from the McColl Family Theatre reference photo, featuring the raked forced-perspective gothic stained-glass window, crimson velvet swag curtain, radiating geometric painted stage floor, and banquet table with cast blocking.
    - `src/sets/narnia-wardrobe.ts` — ***The Lion, the Witch and the Wardrobe***: Commemorates the October 2005 inaugural McColl Family Theatre production with the carved oak Wardrobe wagon (DSR), Lantern Waste lamppost (DSL), frozen ice-crystal arch portals, and Aslan's Stone Table.
    - `src/sets/charlottes-web.ts` — ***Charlotte's Web (Zuckerman's Barn)***: Timber-frame gambrel barn portal with `+2.45m` hayloft deck, illuminated `"SOME PIG"` silver spiderweb in the upper barn frame, and Wilbur's cedar pen.
@@ -66,12 +67,13 @@ charlotte-childrens-theatre-3d/
     │   ├── index.ts                  # Production set registry & controller barrel
     │   ├── types.ts                  # Shared set builder interfaces
     │   ├── shared-scenic-helpers.ts  # Scale figure builder, rigging battens & masking legs
-    │   ├── alice-in-wonderland.ts    # Set 1: Alice in Wonderland (Mad Hatter's Tea Party)
-    │   ├── narnia-wardrobe.ts        # Set 2: The Lion, the Witch and the Wardrobe (2005)
-    │   ├── charlottes-web.ts         # Set 3: Charlotte's Web (Zuckerman's Barn)
-    │   ├── mary-poppins.ts           # Set 4: Mary Poppins (Cherry Tree Lane & Fly Rig)
-    │   ├── matilda.ts                # Set 5: Matilda The Musical (Alphabet Portal)
-    │   ├── tech-grid-sandbox.ts      # Set 6: Technical Stage Grid & Sandbox
+    │   ├── school-of-rock.ts         # Set 1: School of Rock (Battle of the Bands & Horace Green)
+    │   ├── alice-in-wonderland.ts    # Set 2: Alice in Wonderland (Mad Hatter's Tea Party)
+    │   ├── narnia-wardrobe.ts        # Set 3: The Lion, the Witch and the Wardrobe (2005)
+    │   ├── charlottes-web.ts         # Set 4: Charlotte's Web (Zuckerman's Barn)
+    │   ├── mary-poppins.ts           # Set 5: Mary Poppins (Cherry Tree Lane & Fly Rig)
+    │   ├── matilda.ts                # Set 6: Matilda The Musical (Alphabet Portal)
+    │   ├── tech-grid-sandbox.ts      # Set 7: Technical Stage Grid & Sandbox
     │   └── custom-set-pieces.ts      # Custom modular set piece builder
     ├── theatre/
     │   ├── seating-layout.ts         # 570-seat generator & 3D sightline math engine

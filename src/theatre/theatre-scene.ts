@@ -404,12 +404,19 @@ export class TheatreSceneController {
     const floorMat = this.architecture.stageFloorMesh
       .material as THREE.MeshStandardMaterial;
     const activeProd = this.productionSets.getActiveProduction().id;
+    const schoolOfRockFloorVisible =
+      activeProd === 'school-of-rock' &&
+      this.productionSets.isElementVisible('sor-plaid-crest-floor') &&
+      !this.cadGridEnabled;
     const aliceFloorVisible =
       activeProd === 'alice-in-wonderland' &&
       this.productionSets.isElementVisible('alice-ray-floor') &&
       !this.cadGridEnabled;
 
-    if (aliceFloorVisible) {
+    if (schoolOfRockFloorVisible) {
+      floorMat.map = this.productionSets.schoolOfRockFloorTexture;
+      floorMat.color.setHex(0xffffff);
+    } else if (aliceFloorVisible) {
       floorMat.map = this.productionSets.aliceFloorTexture;
       floorMat.color.setHex(0xffffff);
     } else if (this.cadGridEnabled || activeProd === 'tech-grid-sandbox') {
@@ -424,7 +431,10 @@ export class TheatreSceneController {
 
   public setElementVisibility(elementId: string, visible: boolean): void {
     this.productionSets.setElementVisibility(elementId, visible);
-    if (elementId === 'alice-ray-floor') {
+    if (
+      elementId === 'alice-ray-floor' ||
+      elementId === 'sor-plaid-crest-floor'
+    ) {
       this.syncStageFloorTexture();
     }
   }
