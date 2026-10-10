@@ -1265,37 +1265,72 @@ export function createGrinchCharacter(
 
   g.add(headGroup);
 
-  // Optional Overstuffed Stolen Christmas Sack slung beside/behind left hip
+  // Optional Overstuffed Stolen Christmas Sack slung beside/behind left hip —
+  // built from randomly sized tilted square/rectangular box volumes pressing out
+  // the crimson sack cloth, plus wrapped square presents of varied sizes poking out the top!
   if (options.holdingSack) {
     const sackGroup = new THREE.Group();
     sackGroup.position.set(-0.34 * scale, 0.78 * scale, -0.16 * scale);
 
-    const sackBody = new THREE.Mesh(
-      new THREE.SphereGeometry(0.185 * scale, 16, 14),
-      santaRedMat
-    );
-    sackBody.scale.set(0.96, 1.22, 0.90);
-    sackBody.castShadow = true;
-    sackGroup.add(sackBody);
+    // Core faceted cloth hull stretched taut over internal square/rectangular boxes
+    const stuffedBoxBulges = [
+      { x: 0.0, y: -0.02, z: 0.0, w: 0.24, h: 0.26, d: 0.22, rx: 0.12, ry: 0.18, rz: -0.08 },
+      { x: -0.06, y: -0.08, z: 0.05, w: 0.17, h: 0.16, d: 0.18, rx: -0.22, ry: 0.35, rz: 0.18 },
+      { x: 0.07, y: -0.06, z: -0.04, w: 0.19, h: 0.18, d: 0.16, rx: 0.28, ry: -0.24, rz: -0.22 },
+      { x: -0.05, y: 0.06, z: -0.05, w: 0.16, h: 0.19, d: 0.15, rx: -0.16, ry: -0.32, rz: 0.24 },
+      { x: 0.06, y: 0.05, z: 0.06, w: 0.15, h: 0.15, d: 0.17, rx: 0.19, ry: 0.42, rz: -0.15 },
+      { x: 0.0, y: 0.12, z: 0.01, w: 0.18, h: 0.14, d: 0.16, rx: -0.14, ry: 0.12, rz: 0.16 },
+    ] as const;
+
+    for (const b of stuffedBoxBulges) {
+      const boxBulge = new THREE.Mesh(
+        new RoundedBoxGeometry(
+          b.w * scale,
+          b.h * scale,
+          b.d * scale,
+          2,
+          0.018 * scale
+        ),
+        santaRedMat
+      );
+      boxBulge.position.set(b.x * scale, b.y * scale, b.z * scale);
+      boxBulge.rotation.set(b.rx, b.ry, b.rz);
+      boxBulge.castShadow = true;
+      sackGroup.add(boxBulge);
+    }
 
     const sackNeck = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.075 * scale, 0.055 * scale, 0.09 * scale, 12),
+      new THREE.CylinderGeometry(0.085 * scale, 0.065 * scale, 0.08 * scale, 8),
       santaRedMat
     );
-    sackNeck.position.y = 0.22 * scale;
+    sackNeck.position.y = 0.21 * scale;
     sackGroup.add(sackNeck);
 
-    // Protruding stolen present corner
-    const cornerGift = new THREE.Mesh(
-      new RoundedBoxGeometry(0.075 * scale, 0.075 * scale, 0.075 * scale, 2, 0.008 * scale),
-      buckleMat
-    );
-    cornerGift.position.set(0.015 * scale, 0.27 * scale, 0.01 * scale);
-    cornerGift.rotation.set(0.3, 0.4, -0.25);
-    sackGroup.add(cornerGift);
+    // Protruding wrapped square & rectangular gift boxes of random sizes bursting from the sack mouth
+    const topGiftSpecs = [
+      { x: -0.025, y: 0.26, z: 0.015, w: 0.085, h: 0.085, d: 0.085, rx: 0.28, ry: 0.35, rz: -0.22, col: 0x2484d8 },
+      { x: 0.032, y: 0.25, z: -0.018, w: 0.062, h: 0.095, d: 0.062, rx: -0.24, ry: -0.3, rz: 0.26, col: 0xd4a828 },
+      { x: 0.005, y: 0.30, z: 0.005, w: 0.054, h: 0.054, d: 0.068, rx: 0.18, ry: 0.52, rz: 0.15, col: 0x2ca448 },
+    ] as const;
+    for (const tg of topGiftSpecs) {
+      const giftBox = new THREE.Mesh(
+        new RoundedBoxGeometry(
+          tg.w * scale,
+          tg.h * scale,
+          tg.d * scale,
+          1,
+          0.005 * scale
+        ),
+        new THREE.MeshStandardMaterial({ color: tg.col, roughness: 0.45 })
+      );
+      giftBox.position.set(tg.x * scale, tg.y * scale, tg.z * scale);
+      giftBox.rotation.set(tg.rx, tg.ry, tg.rz);
+      sackGroup.add(giftBox);
+    }
 
     g.add(sackGroup);
   }
+
 
   return g;
 }

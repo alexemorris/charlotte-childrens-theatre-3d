@@ -6,6 +6,7 @@ import {
   createSeussianRockNormalTexture,
   createStuccoPlasterNormalTexture,
   drawSeussianDisplayText,
+  normalizeExtrudeUVs,
 } from '../../engine/procedural-textures.ts';
 import {
   createGrinchCharacter,
@@ -1377,25 +1378,36 @@ export function buildGrinchMtCrumpitSleigh(
   const iceRockLowerMat = new THREE.MeshStandardMaterial({
     map: rockTex,
     normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.58, 0.58),
-    color: 0x6c92c4,
-    roughness: 0.62,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    color: 0x5c6878,
+    roughness: 0.72,
     metalness: 0.06,
+    flatShading: true,
   });
   const iceRockUpperMat = new THREE.MeshStandardMaterial({
     map: rockTex,
     normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.54, 0.54),
-    color: 0x8cb0d8,
-    roughness: 0.58,
+    normalScale: new THREE.Vector2(0.82, 0.82),
+    color: 0x6e7c8e,
+    roughness: 0.68,
     metalness: 0.06,
+    flatShading: true,
+  });
+  const rockOchreLedgeMat = new THREE.MeshStandardMaterial({
+    map: rockTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.8, 0.8),
+    color: 0x7e766c,
+    roughness: 0.74,
+    metalness: 0.05,
+    flatShading: true,
   });
   const snowLedgeMat = new THREE.MeshStandardMaterial({
     map: rockTex,
     normalMap: papierMacheNormalTex,
     normalScale: new THREE.Vector2(0.48, 0.48),
     color: 0xc8d2d8,
-    roughness: 0.6,
+    roughness: 0.58,
   });
   const icicleMat = new THREE.MeshStandardMaterial({
     color: 0xb4cce0,
@@ -1411,34 +1423,97 @@ export function buildGrinchMtCrumpitSleigh(
   wagonFrame.position.set(0, 0.06, 0);
   cliffWagon.add(wagonFrame);
 
-  // Stepped jagged rock strata ascending toward the DSL precipice crest:
-  // Strata #0 and #1 sit directly underneath the downstage snow steps (top Y < step top Y),
-  // while Strata #2 sits in the upstage plane (z = -0.32m) supporting the summit sleigh ramp!
+  // Helper to build a jagged, stepped, multi-faceted vertical rock cliff block
+  const createJaggedCliffPillar = (
+    w: number,
+    h: number,
+    d: number,
+    mat: THREE.Material,
+    seed: number
+  ): THREE.Mesh => {
+    const hw = w * 0.5;
+    const hh = h * 0.5;
+    const s = new THREE.Shape();
+    s.moveTo(-hw, -hh);
+    s.lineTo(-hw - 0.05, -hh + h * 0.28);
+    s.lineTo(-hw + 0.03, -hh + h * 0.34);
+    s.lineTo(-hw - 0.06, -hh + h * 0.68);
+    s.lineTo(-hw + 0.02, hh);
+    s.lineTo(hw - 0.02, hh);
+    s.lineTo(hw + 0.06, -hh + h * 0.72);
+    s.lineTo(hw - 0.04, -hh + h * 0.64);
+    s.lineTo(hw + 0.05, -hh + h * 0.32);
+    s.lineTo(hw, -hh);
+    s.closePath();
+
+    const geo = new THREE.ExtrudeGeometry(s, {
+      depth: d,
+      bevelEnabled: true,
+      bevelSegments: 1,
+      steps: 1,
+      bevelSize: 0.016,
+      bevelThickness: 0.016,
+    });
+    geo.translate(0, 0, -d * 0.5);
+    // Chisel front rock vertices into angular craggy facets
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const vx = pos.getX(i);
+      const vy = pos.getY(i);
+      const vz = pos.getZ(i);
+      if (vz > 0 && Math.abs(vy) < hh - 0.04) {
+        const stepOff =
+          Math.sin(vy * 9.5 + seed) * 0.028 +
+          Math.cos(vx * 7.2 - seed) * 0.022;
+        pos.setZ(i, vz + stepOff);
+      }
+    }
+    normalizeExtrudeUVs(geo, 'fit');
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+
+  // Stepped jagged rock cliff pillars ascending toward the DSL precipice crest:
+  // Pillar #0 and #1 sit directly underneath the downstage snow steps (top Y < step top Y),
+  // while Pillar #2 sits in the upstage plane (z = -0.32m) supporting the summit sleigh ramp!
   const strataSpecs = [
-    { x: -1.16, y: 0.34, z: 0.38, w: 0.72, h: 0.48, d: 0.58, rotZ: 0.0, mat: iceRockLowerMat },
-    { x: -0.52, y: 0.50, z: 0.44, w: 0.72, h: 0.76, d: 0.58, rotZ: 0.0, mat: iceRockUpperMat },
-    { x: 0.56, y: 0.96, z: -0.32, w: 1.48, h: 1.48, d: 0.72, rotZ: 0.24, mat: iceRockLowerMat },
+    { x: -1.16, y: 0.34, z: 0.38, w: 0.72, h: 0.48, d: 0.58, rotZ: 0.0, mat: iceRockLowerMat, seed: 1 },
+    { x: -0.52, y: 0.50, z: 0.44, w: 0.72, h: 0.76, d: 0.58, rotZ: 0.0, mat: iceRockUpperMat, seed: 2 },
+    { x: 0.56, y: 0.96, z: -0.32, w: 1.48, h: 1.48, d: 0.72, rotZ: 0.24, mat: iceRockLowerMat, seed: 3 },
   ] as const;
 
   for (let sIdx = 0; sIdx < strataSpecs.length; sIdx++) {
     const st = strataSpecs[sIdx];
     if (!st) continue;
 
-    const rockBlock = new THREE.Mesh(
-      new RoundedBoxGeometry(st.w, st.h, st.d, 3, 0.08),
-      st.mat
-    );
+    const rockBlock = createJaggedCliffPillar(st.w, st.h, st.d, st.mat, st.seed);
     rockBlock.position.set(st.x, st.y, st.z);
     rockBlock.rotation.z = st.rotZ;
-    rockBlock.castShadow = true;
-    rockBlock.receiveShadow = true;
     cliffWagon.add(rockBlock);
+
+    // Protruding horizontal fractured limestone/slate rock strata bands across the cliff face
+    for (const bandFrac of [-0.18, 0.16] as const) {
+      const bandMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(st.w * 0.96, 0.07, st.d + 0.05),
+        rockOchreLedgeMat
+      );
+      bandMesh.position.set(
+        st.x - Math.sin(st.rotZ) * (st.h * bandFrac),
+        st.y + Math.cos(st.rotZ) * (st.h * bandFrac),
+        st.z + 0.015
+      );
+      bandMesh.rotation.z = st.rotZ + (bandFrac > 0 ? -0.03 : 0.03);
+      cliffWagon.add(bandMesh);
+    }
   }
 
   // Horizontal Snow-Ledge Step #1 (Lower Left Terrace for Max the Dog):
   // Centered at (x = -1.16, y = 0.62, z = 0.40), height = 0.12m -> exact top surface Y = 0.68m!
   const lowerSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.76, 0.12, 0.64, 2, 0.04),
+    new RoundedBoxGeometry(0.78, 0.12, 0.64, 1, 0.025),
     snowLedgeMat
   );
   lowerSnowStep.position.set(-1.16, 0.62, 0.40);
@@ -1461,7 +1536,7 @@ export function buildGrinchMtCrumpitSleigh(
   // Horizontal Snow-Ledge Step #2 (Mid Terrace for the Grinch):
   // Centered at (x = -0.52, y = 0.94, z = 0.46), height = 0.12m -> exact top surface Y = 1.00m!
   const midSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.74, 0.12, 0.64, 2, 0.04),
+    new RoundedBoxGeometry(0.76, 0.12, 0.64, 1, 0.025),
     snowLedgeMat
   );
   midSnowStep.position.set(-0.52, 0.94, 0.46);
@@ -1491,7 +1566,7 @@ export function buildGrinchMtCrumpitSleigh(
   const upperLedgeHalfThick = 0.08;
 
   const upperSummitLedge = new THREE.Mesh(
-    new RoundedBoxGeometry(1.56, upperLedgeHalfThick * 2, 0.76, 2, 0.04),
+    new RoundedBoxGeometry(1.58, upperLedgeHalfThick * 2, 0.76, 1, 0.025),
     snowLedgeMat
   );
   upperSummitLedge.position.set(
@@ -1548,7 +1623,7 @@ export function buildGrinchMtCrumpitSleigh(
     cliffWagon.add(tread);
   }
 
-  // 3. The Grinch's Crooked Sleigh & Colossal Overstuffed Sack Resting Flush on the Summit Ledge!
+  // 3. The Grinch's Crooked Sleigh & Colossal Box-Stuffed Sack Resting Flush on the Summit Ledge!
   const sleighSurfaceX =
     upperLedgeCenterX - Math.sin(sleighTiltRad) * upperLedgeHalfThick;
   const sleighSurfaceY =
@@ -1674,76 +1749,136 @@ export function buildGrinchMtCrumpitSleigh(
   hornBell.position.set(-0.96, 0.84, 0.26);
   sleighGroup.add(hornBell);
 
-  // 4. COLOSSAL OVERSTUFFED CRIMSON SACK OF STOLEN WHOVILLE PRESENTS!
+  // 4. COLOSSAL OVERSTUFFED CRIMSON SACK STUFFED WITH SQUARE & RECTANGULAR PRESENT BOXES OF RANDOM SIZES!
+  // Instead of a spherical ball, the crimson sack fabric is stretched tightly over 16 randomly sized,
+  // tilted square and rectangular gift boxes pressing their flat sides & sharp corners outward!
   const fabricNormalTex = createFabricWeaveNormalTexture();
   const sackCrimsonMat = new THREE.MeshStandardMaterial({
     map: createStolenSackFabricTexture(false),
     normalMap: fabricNormalTex,
-    normalScale: new THREE.Vector2(0.45, 0.45),
+    normalScale: new THREE.Vector2(0.55, 0.55),
     roughness: 0.55,
     metalness: 0.05,
   });
   const sackHighlightMat = new THREE.MeshStandardMaterial({
     map: createStolenSackFabricTexture(true),
     normalMap: fabricNormalTex,
-    normalScale: new THREE.Vector2(0.42, 0.42),
+    normalScale: new THREE.Vector2(0.5, 0.5),
     roughness: 0.56,
   });
 
-  const mainSackBelly = new THREE.Mesh(
-    new THREE.SphereGeometry(0.76, 24, 20),
-    sackCrimsonMat
-  );
-  mainSackBelly.scale.set(1.22, 0.96, 0.82);
-  mainSackBelly.position.set(0.14, 0.84, 0);
-  mainSackBelly.castShadow = true;
-  mainSackBelly.receiveShadow = true;
-  sleighGroup.add(mainSackBelly);
+  const sackBoxCluster = new THREE.Group();
+  sackBoxCluster.name = 'BoxStuffedCrimsonSack';
+  sleighGroup.add(sackBoxCluster);
 
-  const lobeSpecs = [
-    { x: -0.32, y: 0.78, z: 0.14, r: 0.46 },
-    { x: 0.52, y: 0.88, z: -0.1, r: 0.5 },
-    { x: 0.18, y: 1.18, z: 0.08, r: 0.48 },
-    { x: -0.08, y: 1.06, z: -0.14, r: 0.44 },
+  const internalStuffedBoxes = [
+    // Lower tier of large & medium square/rectangular boxes inside the sack
+    { x: -0.24, y: 0.62, z: 0.08, w: 0.58, h: 0.48, d: 0.52, rx: 0.14, ry: 0.22, rz: -0.12, hi: false },
+    { x: 0.26, y: 0.64, z: -0.06, w: 0.64, h: 0.54, d: 0.56, rx: -0.16, ry: -0.28, rz: 0.18, hi: true },
+    { x: -0.46, y: 0.68, z: -0.12, w: 0.42, h: 0.44, d: 0.40, rx: 0.28, ry: -0.35, rz: 0.24, hi: true },
+    { x: 0.54, y: 0.72, z: 0.12, w: 0.46, h: 0.42, d: 0.44, rx: -0.24, ry: 0.38, rz: -0.22, hi: false },
+    { x: 0.02, y: 0.58, z: 0.22, w: 0.48, h: 0.38, d: 0.42, rx: 0.22, ry: 0.14, rz: -0.18, hi: true },
+    // Mid tier of varied square & rectangular boxes jutting out at sharp angles
+    { x: -0.34, y: 0.96, z: 0.16, w: 0.48, h: 0.46, d: 0.44, rx: -0.28, ry: 0.44, rz: 0.22, hi: true },
+    { x: 0.14, y: 0.98, z: 0.18, w: 0.54, h: 0.50, d: 0.48, rx: 0.18, ry: -0.32, rz: -0.16, hi: false },
+    { x: 0.48, y: 1.02, z: -0.14, w: 0.52, h: 0.44, d: 0.46, rx: 0.32, ry: 0.26, rz: -0.28, hi: true },
+    { x: -0.12, y: 1.04, z: -0.18, w: 0.50, h: 0.52, d: 0.44, rx: -0.22, ry: -0.42, rz: 0.19, hi: false },
+    { x: -0.52, y: 0.92, z: -0.04, w: 0.34, h: 0.36, d: 0.36, rx: 0.36, ry: 0.18, rz: 0.32, hi: true },
+    { x: 0.64, y: 0.94, z: 0.06, w: 0.36, h: 0.34, d: 0.38, rx: -0.32, ry: -0.22, rz: -0.34, hi: false },
+    // Upper tier of smaller & medium square boxes pushing up toward the sack neck
+    { x: -0.18, y: 1.28, z: 0.08, w: 0.42, h: 0.38, d: 0.40, rx: 0.26, ry: 0.38, rz: -0.24, hi: true },
+    { x: 0.28, y: 1.30, z: -0.06, w: 0.44, h: 0.42, d: 0.38, rx: -0.28, ry: -0.34, rz: 0.22, hi: false },
+    { x: 0.08, y: 1.36, z: 0.14, w: 0.32, h: 0.34, d: 0.32, rx: 0.34, ry: -0.24, rz: 0.28, hi: true },
+    { x: 0.44, y: 1.26, z: 0.12, w: 0.30, h: 0.30, d: 0.34, rx: -0.18, ry: 0.48, rz: -0.26, hi: true },
+    { x: -0.36, y: 1.22, z: -0.10, w: 0.28, h: 0.32, d: 0.28, rx: 0.22, ry: -0.36, rz: 0.30, hi: false },
   ] as const;
 
-  for (const lb of lobeSpecs) {
-    const lobe = new THREE.Mesh(
-      new THREE.SphereGeometry(lb.r, 16, 14),
-      sackHighlightMat
+  for (const bx of internalStuffedBoxes) {
+    const boxMesh = new THREE.Mesh(
+      new RoundedBoxGeometry(bx.w, bx.h, bx.d, 2, 0.032),
+      bx.hi ? sackHighlightMat : sackCrimsonMat
     );
-    lobe.position.set(lb.x, lb.y, lb.z);
-    lobe.castShadow = true;
-    sleighGroup.add(lobe);
+    boxMesh.position.set(bx.x, bx.y, bx.z);
+    boxMesh.rotation.set(bx.rx, bx.ry, bx.rz);
+    boxMesh.castShadow = true;
+    boxMesh.receiveShadow = true;
+    sackBoxCluster.add(boxMesh);
   }
 
-  // Gathered tied sack neck + flared cloth ruffle top
+  // Gathered polygonal tied sack neck + flared cloth ruffle top
   const sackNeck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.36, 0.34, 16),
+    new THREE.CylinderGeometry(0.24, 0.42, 0.28, 8),
     sackCrimsonMat
   );
-  sackNeck.position.set(0.18, 1.48, 0);
-  sackNeck.rotation.z = -0.16;
+  sackNeck.position.set(0.14, 1.52, 0.02);
+  sackNeck.rotation.z = -0.14;
   sleighGroup.add(sackNeck);
 
   const sackRuffle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.36, 0.18, 0.26, 14),
+    new THREE.CylinderGeometry(0.42, 0.24, 0.22, 8),
     sackHighlightMat
   );
-  sackRuffle.position.set(0.22, 1.68, 0);
-  sackRuffle.rotation.z = -0.16;
+  sackRuffle.position.set(0.18, 1.68, 0.02);
+  sackRuffle.rotation.z = -0.14;
   sleighGroup.add(sackRuffle);
 
   const ropeCinch = new THREE.Mesh(
-    new THREE.TorusGeometry(0.21, 0.032, 10, 20),
+    new THREE.TorusGeometry(0.26, 0.032, 8, 16),
     new THREE.MeshStandardMaterial({ color: 0xc49a48, roughness: 0.65 })
   );
   ropeCinch.rotation.x = Math.PI / 2;
-  ropeCinch.rotation.y = -0.16;
-  ropeCinch.position.set(0.2, 1.56, 0);
+  ropeCinch.rotation.y = -0.14;
+  ropeCinch.position.set(0.16, 1.58, 0.02);
   sleighGroup.add(ropeCinch);
 
-  // 5. Protruding Stolen Whoville Treasures bursting out of the top of the sack!
+  // 5. DOZENS OF WRAPPED SQUARE & RECTANGULAR GIFT BOXES OF RANDOM SIZES BURSTING OUT OF THE SACK!
+  const giftBoxSpecs = [
+    { x: -0.04, y: 1.74, z: 0.12, w: 0.28, h: 0.26, d: 0.28, rx: 0.24, ry: 0.35, rz: 0.28, col: 0x2484d8, rib: 0xd4b228 },
+    { x: 0.26, y: 1.76, z: -0.10, w: 0.22, h: 0.32, d: 0.22, rx: -0.28, ry: -0.42, rz: -0.22, col: 0x28a448, rib: 0xd82838 },
+    { x: 0.12, y: 1.88, z: 0.02, w: 0.19, h: 0.19, d: 0.19, rx: 0.36, ry: 0.18, rz: -0.32, col: 0xd4a624, rib: 0x2468c8 },
+    { x: 0.38, y: 1.68, z: 0.14, w: 0.16, h: 0.16, d: 0.24, rx: -0.18, ry: 0.52, rz: -0.36, col: 0x8e38c8, rib: 0xd8c238 },
+    { x: -0.22, y: 1.66, z: -0.08, w: 0.24, h: 0.18, d: 0.22, rx: 0.32, ry: -0.26, rz: 0.38, col: 0xd42c58, rib: 0xd8d4cc },
+    { x: 0.02, y: 1.98, z: -0.06, w: 0.14, h: 0.15, d: 0.14, rx: -0.34, ry: 0.44, rz: 0.24, col: 0x28b0b8, rib: 0xd4a624 },
+    { x: 0.28, y: 1.92, z: 0.08, w: 0.15, h: 0.13, d: 0.17, rx: 0.22, ry: -0.38, rz: -0.28, col: 0xd86824, rib: 0x289844 },
+    // Corner gift boxes poking through the side seams of the overstuffed sack
+    { x: -0.58, y: 1.12, z: 0.18, w: 0.24, h: 0.24, d: 0.24, rx: 0.42, ry: 0.28, rz: 0.48, col: 0x2484d8, rib: 0xd4b228 },
+    { x: 0.68, y: 1.16, z: -0.12, w: 0.21, h: 0.26, d: 0.21, rx: -0.38, ry: -0.32, rz: -0.44, col: 0xd4a624, rib: 0xc82238 },
+    { x: 0.18, y: 1.18, z: 0.36, w: 0.20, h: 0.18, d: 0.22, rx: 0.46, ry: -0.22, rz: 0.18, col: 0x28a448, rib: 0xd8d4cc },
+  ] as const;
+
+  for (const gb of giftBoxSpecs) {
+    const giftGrp = new THREE.Group();
+    giftGrp.position.set(gb.x, gb.y, gb.z);
+    giftGrp.rotation.set(gb.rx, gb.ry, gb.rz);
+
+    const box = new THREE.Mesh(
+      new RoundedBoxGeometry(gb.w, gb.h, gb.d, 1, 0.012),
+      new THREE.MeshStandardMaterial({ color: gb.col, roughness: 0.48 })
+    );
+    box.castShadow = true;
+    giftGrp.add(box);
+
+    const ribMat = new THREE.MeshStandardMaterial({
+      color: gb.rib,
+      roughness: 0.38,
+      metalness: 0.25,
+    });
+    const ribA = new THREE.Mesh(
+      new THREE.BoxGeometry(gb.w + 0.012, gb.h + 0.012, gb.d * 0.18),
+      ribMat
+    );
+    giftGrp.add(ribA);
+
+    const ribB = new THREE.Mesh(
+      new THREE.BoxGeometry(gb.w * 0.18, gb.h + 0.014, gb.d + 0.012),
+      ribMat
+    );
+    giftGrp.add(ribB);
+
+    sleighGroup.add(giftGrp);
+  }
+
+  // Protruding stolen Whoville Christmas tree, bicycle wheel, candy cane & stocking
   const stolenTreeMat = new THREE.MeshStandardMaterial({
     color: 0x1e8a3e,
     roughness: 0.58,
@@ -1753,7 +1888,7 @@ export function buildGrinchMtCrumpitSleigh(
       new THREE.CylinderGeometry(0.03, 0.22 - tier * 0.06, 0.32, 10),
       stolenTreeMat
     );
-    foliageTier.position.set(0.14 - tier * 0.04, 1.88 + tier * 0.18, 0.04);
+    foliageTier.position.set(0.14 - tier * 0.04, 2.04 + tier * 0.18, 0.04);
     foliageTier.rotation.z = 0.24;
     sleighGroup.add(foliageTier);
   }
@@ -1761,12 +1896,12 @@ export function buildGrinchMtCrumpitSleigh(
     new THREE.OctahedronGeometry(0.065, 0),
     goldTrimMat
   );
-  treeStar.position.set(0.06, 2.22, 0.04);
+  treeStar.position.set(0.06, 2.38, 0.04);
   sleighGroup.add(treeStar);
 
   // Protruding stolen bicycle wheel (rim + spokes)
   const wheelGroup = new THREE.Group();
-  wheelGroup.position.set(0.42, 1.76, 0.08);
+  wheelGroup.position.set(0.46, 1.84, 0.08);
   wheelGroup.rotation.z = -0.35;
   const wheelRim = new THREE.Mesh(
     new THREE.TorusGeometry(0.18, 0.018, 8, 20),
@@ -1783,20 +1918,11 @@ export function buildGrinchMtCrumpitSleigh(
   }
   sleighGroup.add(wheelGroup);
 
-  // Protruding wrapped gift boxes, giant candy cane, & Christmas stocking
-  const stolenGift = new THREE.Mesh(
-    new RoundedBoxGeometry(0.22, 0.22, 0.2, 2, 0.02),
-    new THREE.MeshStandardMaterial({ color: 0x2884d4, roughness: 0.55 })
-  );
-  stolenGift.position.set(0.02, 1.78, -0.1);
-  stolenGift.rotation.set(0.25, 0.4, 0.35);
-  sleighGroup.add(stolenGift);
-
   const candyHookCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.28, 1.68, -0.06),
-    new THREE.Vector3(0.36, 1.98, -0.08),
-    new THREE.Vector3(0.46, 2.04, -0.08),
-    new THREE.Vector3(0.52, 1.94, -0.08),
+    new THREE.Vector3(0.28, 1.78, -0.06),
+    new THREE.Vector3(0.36, 2.08, -0.08),
+    new THREE.Vector3(0.46, 2.14, -0.08),
+    new THREE.Vector3(0.52, 2.04, -0.08),
   ]);
   const stolenCandyCane = new THREE.Mesh(
     new THREE.TubeGeometry(candyHookCurve, 20, 0.026, 8, false),
@@ -1811,11 +1937,12 @@ export function buildGrinchMtCrumpitSleigh(
     new RoundedBoxGeometry(0.12, 0.28, 0.06, 2, 0.02),
     new THREE.MeshStandardMaterial({ color: 0x28a448, roughness: 0.58 })
   );
-  stockingBoot.position.set(-0.34, 1.24, 0.36);
+  stockingBoot.position.set(-0.38, 1.32, 0.36);
   stockingBoot.rotation.z = 0.28;
   sleighGroup.add(stockingBoot);
 
   cliffWagon.add(sleighGroup);
+
 
   // 6. The Grinch & Max the Dog standing firmly on the horizontal snow-ledge steps
   //    with their base discs at the exact surface Y height of those ledges (zero clipping!)

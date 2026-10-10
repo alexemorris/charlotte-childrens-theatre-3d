@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const grinchLogoUrl = new URL('../assets/grinch_logo.png', import.meta.url).href;
+
 /**
  * Generates the signature McColl Family Theatre seat upholstery tapestry texture
  * seen in the auditorium photograph: rich crimson/burgundy woven jacquard with
@@ -1203,12 +1205,9 @@ export function drawGrinchLogoGraphic(
 }
 
 /**
- * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") matching
- * `model_1A_preshow.jpg`:
- * - Lavender/violet translucent sharkstooth scrim wash with upper shadowy holiday stocking valance
- * - Left projection: "Charlotte's Web — Adapted by Joseph Robinette" (Wilbur pig, sunrise hills, web & picket fence)
- * - Center projection: Authentic Seussian "HOW THE GRINCH STOLE CHRISTMAS!" graphic logo & snowflake watermark
- * - Right projection: "BENEATH THE BAOBAB TREE" poster art (banded sunset sky, purple Baobab tree, dancer raising sun disc, campfire)
+ * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") featuring the
+ * clean violet-periwinkle sharkstooth scrim wash and the official
+ * "Dr. Seuss' HOW THE GRINCH STOLE CHRISTMAS" logo asset centered on the scrim.
  */
 export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -1216,350 +1215,77 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  if (ctx) {
-    // 1. Rich violet-periwinkle sharkstooth scrim wash matching model_1A_preshow.jpg
-    const bg = ctx.createLinearGradient(0, 0, 0, 512);
+  const drawScrimBackdrop = (c: CanvasRenderingContext2D): void => {
+    // 1. Rich violet-periwinkle sharkstooth scrim wash
+    const bg = c.createLinearGradient(0, 0, 0, 512);
     bg.addColorStop(0, '#3e2d74');
     bg.addColorStop(0.28, '#58449c');
     bg.addColorStop(0.68, '#725ec0');
     bg.addColorStop(1, '#8472d0');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, 1024, 512);
-
-    // Shadowy backlit holiday stocking & ragged border valance silhouettes along top of scrim (seen in model_1A_preshow.jpg)
-    ctx.save();
-    for (let sx = 40; sx < 980; sx += 76) {
-      const tilt = ((sx % 3) - 1) * 0.12;
-      const sh = 64 + (sx % 24);
-      ctx.save();
-      ctx.translate(sx, 36);
-      ctx.rotate(tilt);
-      ctx.fillStyle =
-        sx % 152 === 40
-          ? 'rgba(84, 24, 58, 0.42)'
-          : 'rgba(42, 28, 72, 0.38)';
-      ctx.beginPath();
-      ctx.roundRect(-18, 0, 36, sh, 8);
-      ctx.ellipse(8, sh - 6, 22, 12, 0.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-    // Horizontal batten shadow line near top of scrim
-    ctx.strokeStyle = 'rgba(22, 14, 44, 0.55)';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(0, 42);
-    ctx.lineTo(1024, 42);
-    ctx.stroke();
-    ctx.restore();
+    c.fillStyle = bg;
+    c.fillRect(0, 0, 1024, 512);
 
     // Authentic sharkstooth scrim gauze warp & weft weave
-    ctx.strokeStyle = 'rgba(230, 224, 255, 0.045)';
-    ctx.lineWidth = 1;
+    c.strokeStyle = 'rgba(230, 224, 255, 0.045)';
+    c.lineWidth = 1;
     for (let y = 0; y < 512; y += 5) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(1024, y);
-      ctx.stroke();
+      c.beginPath();
+      c.moveTo(0, y);
+      c.lineTo(1024, y);
+      c.stroke();
     }
-    ctx.strokeStyle = 'rgba(30, 18, 64, 0.05)';
+    c.strokeStyle = 'rgba(30, 18, 64, 0.05)';
     for (let x = 0; x < 1024; x += 8) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 512);
-      ctx.stroke();
+      c.beginPath();
+      c.moveTo(x, 0);
+      c.lineTo(x, 512);
+      c.stroke();
     }
 
-    // 2. Left Poster Card: "Charlotte's Web" (x = 95..285, y = 105..368)
-    ctx.save();
-    ctx.translate(190, 232);
-    ctx.rotate(-0.02);
+    // Soft center gobo spotlight halo behind the Grinch logo
+    const glow = c.createRadialGradient(512, 256, 20, 512, 256, 310);
+    glow.addColorStop(0, 'rgba(240, 234, 255, 0.34)');
+    glow.addColorStop(0.6, 'rgba(190, 174, 248, 0.14)');
+    glow.addColorStop(1, 'rgba(110, 88, 180, 0.0)');
+    c.fillStyle = glow;
+    c.beginPath();
+    c.ellipse(512, 256, 320, 210, 0, 0, Math.PI * 2);
+    c.fill();
+  };
 
-    // Poster backing & border
-    ctx.fillStyle = '#c89e72';
-    ctx.fillRect(-95, -130, 190, 260);
-    ctx.strokeStyle = '#382418';
-    ctx.lineWidth = 3.5;
-    ctx.strokeRect(-95, -130, 190, 260);
-
-    // Warm golden-ochre sunrise sky gradient inside Charlotte's Web poster
-    const cwSky = ctx.createLinearGradient(0, -126, 0, 50);
-    cwSky.addColorStop(0, '#c8b89e');
-    cwSky.addColorStop(0.55, '#d8b482');
-    cwSky.addColorStop(1, '#c48658');
-    ctx.fillStyle = cwSky;
-    ctx.fillRect(-91, -126, 182, 252);
-
-    // Warm rising sun disc behind Wilbur
-    const sunGrad = ctx.createRadialGradient(0, 8, 6, 0, 8, 52);
-    sunGrad.addColorStop(0, 'rgba(232, 152, 74, 0.85)');
-    sunGrad.addColorStop(1, 'rgba(196, 114, 58, 0)');
-    ctx.fillStyle = sunGrad;
-    ctx.beginPath();
-    ctx.arc(0, 8, 52, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Rolling countryside hills in background
-    ctx.fillStyle = '#7e6852';
-    ctx.beginPath();
-    ctx.moveTo(-91, 46);
-    ctx.quadraticCurveTo(-40, 14, 18, 38);
-    ctx.quadraticCurveTo(60, 22, 91, 42);
-    ctx.lineTo(91, 126);
-    ctx.lineTo(-91, 126);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#8c6e4e';
-    ctx.beginPath();
-    ctx.moveTo(-91, 68);
-    ctx.quadraticCurveTo(10, 42, 91, 64);
-    ctx.lineTo(91, 126);
-    ctx.lineTo(-91, 126);
-    ctx.closePath();
-    ctx.fill();
-
-    // Crisp white picket fence across lower poster (matching model_1A_preshow.jpg)
-    ctx.fillStyle = '#dcd6ce';
-    ctx.fillRect(-88, 68, 176, 5);
-    ctx.fillRect(-88, 92, 176, 5);
-    for (let px = -86; px <= 80; px += 12) {
-      ctx.beginPath();
-      ctx.moveTo(px, 56);
-      ctx.lineTo(px + 4, 46);
-      ctx.lineTo(px + 8, 56);
-      ctx.lineTo(px + 8, 108);
-      ctx.lineTo(px, 108);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // Warm earth foreground below picket fence
-    ctx.fillStyle = '#b48256';
-    ctx.fillRect(-91, 106, 182, 20);
-
-    // Wilbur the pink pig standing proudly in front of the fence
-    ctx.fillStyle = '#dc9298';
-    ctx.strokeStyle = '#381e24';
-    ctx.lineWidth = 2.0;
-    // Pig legs & cloven hooves
-    for (const lx of [-18, -6, 8, 20]) {
-      ctx.fillRect(lx - 4, 82, 8, 34);
-      ctx.strokeRect(lx - 4, 82, 8, 34);
-      ctx.fillStyle = '#2c181c';
-      ctx.fillRect(lx - 4, 111, 8, 6);
-      ctx.fillStyle = '#dc9298';
-    }
-    // Plump body & head
-    ctx.beginPath();
-    ctx.ellipse(2, 66, 32, 34, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Floppy expressive pig ears
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.ellipse(side * 26, 30, 14, 9, side * -0.35, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-    // Smiling pig face, snout & nostrils
-    ctx.fillStyle = '#e8a8ae';
-    ctx.beginPath();
-    ctx.ellipse(0, 52, 13, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#2c181c';
-    ctx.beginPath();
-    ctx.arc(-4, 52, 2, 0, Math.PI * 2);
-    ctx.arc(4, 52, 2, 0, Math.PI * 2);
-    ctx.arc(-10, 40, 2.5, 0, Math.PI * 2);
-    ctx.arc(10, 40, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    // Smile arc
-    ctx.beginPath();
-    ctx.arc(0, 58, 8, 0.2, Math.PI - 0.2);
-    ctx.stroke();
-
-    // Spiderweb hanging under the left arch of "Charlotte's Web"
-    ctx.strokeStyle = 'rgba(28, 20, 18, 0.78)';
-    ctx.lineWidth = 1.3;
-    for (let r = 12; r <= 48; r += 12) {
-      ctx.beginPath();
-      ctx.arc(-58, -58, r, 0.1, Math.PI * 0.85);
-      ctx.stroke();
-    }
-    for (let a = 0.15; a <= 2.6; a += 0.48) {
-      ctx.beginPath();
-      ctx.moveTo(-58, -58);
-      ctx.lineTo(-58 + Math.cos(a) * 52, -58 + Math.sin(a) * 52);
-      ctx.stroke();
-    }
-
-    // Header & adaptation credits matching model_1A_preshow.jpg
-    ctx.fillStyle = '#241812';
-    ctx.font = 'bold 8px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Based on the book by E.B. White', 0, -112);
-    ctx.font = 'italic 9px Georgia, serif';
-    ctx.fillText('Adapted by', 26, -42);
-    ctx.font = 'bold 9px Georgia, serif';
-    ctx.fillText('Joseph Robinette', 26, -31);
-
-    drawSeussianDisplayText(ctx, "CHARLOTTE'S WEB", 0, -82, {
-      fontSize: 18,
-      fillTopColor: '#2c1e18',
-      fillBottomColor: '#160e0a',
-      outlineColor: '#e8d5b5',
-      shadowColor: 'rgba(0,0,0,0.2)',
-      bounceAmp: 1.2,
-      tiltAmp: 0.05,
-      archCurvature: -0.08,
-      letterSpacing: 10.5,
-    });
-    ctx.restore();
-
-    // 3. Center Title Projection: Authentic "HOW THE GRINCH STOLE CHRISTMAS!" Logo
-    drawGrinchLogoGraphic(ctx, 502, 255, 0.94);
-
-    // 4. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 720..910, y = 140..395)
-    ctx.save();
-    ctx.translate(815, 268);
-    ctx.rotate(0.015);
-
-    // Banded pastel sky & ground matching model_1A_preshow.jpg (powder blue -> pink -> peach -> cream)
-    const baoGrad = ctx.createLinearGradient(0, -126, 0, 126);
-    baoGrad.addColorStop(0, '#c0d6ec');
-    baoGrad.addColorStop(0.42, '#c8d8ec');
-    baoGrad.addColorStop(0.55, '#eab8cc');
-    baoGrad.addColorStop(0.74, '#f0ccb8');
-    baoGrad.addColorStop(1, '#e8e2ec');
-    ctx.fillStyle = baoGrad;
-    ctx.fillRect(-92, -126, 184, 252);
-    ctx.strokeStyle = '#483872';
-    ctx.lineWidth = 3.5;
-    ctx.strokeRect(-92, -126, 184, 252);
-
-    // Title typography matching model_1A_preshow.jpg ("BENEATH THE" teal, "BAOBAB" coral, "TREE" olive-green)
-    drawSeussianDisplayText(ctx, 'BENEATH THE', -8, -94, {
-      fontSize: 17,
-      fillTopColor: '#68b4be',
-      fillBottomColor: '#3e8896',
-      outlineColor: '#e8eff4',
-      shadowColor: 'rgba(40,60,80,0.25)',
-      bounceAmp: 1.0,
-      tiltAmp: 0.03,
-      letterSpacing: 10.5,
-    });
-    drawSeussianDisplayText(ctx, 'BAOBAB', 16, -64, {
-      fontSize: 23,
-      fillTopColor: '#e06458',
-      fillBottomColor: '#b83e34',
-      outlineColor: '#f4e8e4',
-      shadowColor: 'rgba(60,20,20,0.25)',
-      bounceAmp: 1.4,
-      tiltAmp: 0.05,
-      letterSpacing: 15,
-    });
-    drawSeussianDisplayText(ctx, 'TREE', 28, -36, {
-      fontSize: 22,
-      fillTopColor: '#7ca856',
-      fillBottomColor: '#4e7c32',
-      outlineColor: '#eef4e8',
-      shadowColor: 'rgba(20,50,20,0.25)',
-      bounceAmp: 1.2,
-      tiltAmp: 0.04,
-      letterSpacing: 14.5,
-    });
-
-    // Purple-lavender patterned Baobab tree on the left side of the poster (matching model_1A_preshow.jpg)
-    ctx.fillStyle = '#9c7eb8';
-    ctx.strokeStyle = '#644882';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(-66, 108);
-    ctx.quadraticCurveTo(-54, 48, -56, -8);
-    ctx.lineTo(-34, -8);
-    ctx.quadraticCurveTo(-32, 48, -22, 108);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Decorative bark bands on the Baobab trunk
-    ctx.strokeStyle = 'rgba(235, 220, 250, 0.55)';
-    for (let by = 8; by <= 92; by += 14) {
-      ctx.beginPath();
-      ctx.moveTo(-54, by);
-      ctx.lineTo(-32, by + 3);
-      ctx.stroke();
-    }
-
-    // Curly Baobab branches & hanging golden weaver-bird nests
-    ctx.strokeStyle = '#8c6ea8';
-    ctx.lineWidth = 3;
-    for (const [bx, by] of [
-      [-74, -26],
-      [-52, -38],
-      [-22, -28],
-      [-10, -12],
-    ] as const) {
-      ctx.beginPath();
-      ctx.moveTo(-45, -8);
-      ctx.quadraticCurveTo(-45, by, bx, by);
-      ctx.stroke();
-
-      ctx.fillStyle = '#d89838';
-      ctx.beginPath();
-      ctx.arc(bx, by + 8, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Central figure with teal-blue hair & green tunic raising glowing coral-red sun/drum disc overhead
-    ctx.fillStyle = '#d85852';
-    ctx.beginPath();
-    ctx.arc(6, 10, 18, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ec8878';
-    ctx.beginPath();
-    ctx.arc(6, 10, 12, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Raised arms & hands holding the disc
-    ctx.strokeStyle = '#b86848';
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.moveTo(-4, 62);
-    ctx.lineTo(-10, 24);
-    ctx.moveTo(16, 62);
-    ctx.lineTo(22, 24);
-    ctx.stroke();
-
-    // Blue-teal curly hair crown & green tunic
-    ctx.fillStyle = '#486898';
-    ctx.beginPath();
-    ctx.arc(6, 48, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#5a8e48';
-    ctx.fillRect(-4, 60, 20, 28);
-
-    // Small tripod & campfire on the right side of the poster (matching model_1A_preshow.jpg)
-    ctx.strokeStyle = '#584234';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(42, 82);
-    ctx.lineTo(54, 46);
-    ctx.lineTo(66, 82);
-    ctx.moveTo(54, 46);
-    ctx.lineTo(54, 84);
-    ctx.stroke();
-    ctx.restore();
+  if (ctx) {
+    drawScrimBackdrop(ctx);
+    // Initial fallback while the PNG image decodes
+    drawGrinchLogoGraphic(ctx, 512, 256, 1.0);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
+
+  // Load and draw the actual official Grinch logo PNG asset centered on the scrim
+  if (typeof Image !== 'undefined' && ctx) {
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = () => {
+      drawScrimBackdrop(ctx);
+      const targetW = 580;
+      const aspect =
+        logoImg.naturalWidth > 0
+          ? logoImg.naturalHeight / logoImg.naturalWidth
+          : 576 / 881;
+      const targetH = targetW * aspect;
+      const dx = (1024 - targetW) * 0.5;
+      const dy = (512 - targetH) * 0.5;
+      ctx.drawImage(logoImg, dx, dy, targetW, targetH);
+      tex.needsUpdate = true;
+    };
+    logoImg.src = grinchLogoUrl;
+  }
+
   return tex;
 }
+
 
 /**
  * Converts a grayscale heightmap canvas (`R` channel = height `0..255`) into a
