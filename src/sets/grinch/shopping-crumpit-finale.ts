@@ -7,7 +7,75 @@ import {
   createSculptedIcicleDrip,
   createSeussianIcicleValance,
   createWhoCharacter,
+  createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
+
+/**
+ * Generates a Scenic Artist Hand-Painted Timber Wainscot & Trompe-l'oeil Beveled Panel
+ * texture for the Whoville Department Store Counter wagons: painted vertical woodgrain,
+ * faux recessed panel shadow lines, warm gold pin-striping, and Seussian ink cross-hatching.
+ */
+function createPaintedShopCounterTimberTexture(
+  baseHex: string,
+  highlightHex: string,
+  shadowHex: string
+): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, highlightHex);
+    grad.addColorStop(0.5, baseHex);
+    grad.addColorStop(1, shadowHex);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Painted vertical timber beadboard planks & woodgrain streaks
+    for (let x = 0; x < 512; x += 32) {
+      ctx.strokeStyle = 'rgba(12, 26, 52, 0.28)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + Math.sin(x * 0.05) * 4, 512);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(210, 240, 255, 0.18)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 3, 0);
+      ctx.lineTo(x + 3 + Math.sin(x * 0.05) * 4, 512);
+      ctx.stroke();
+    }
+
+    // Trompe-l'oeil painted recessed wainscot frame & gold pin-stripe
+    ctx.strokeStyle = 'rgba(10, 22, 46, 0.45)';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(28, 32, 456, 448);
+
+    ctx.strokeStyle = 'rgba(242, 204, 68, 0.55)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(42, 46, 428, 420);
+
+    // Seussian charcoal cross-hatching along lower kickplate and corners
+    ctx.strokeStyle = 'rgba(14, 20, 36, 0.34)';
+    ctx.lineWidth = 2.2;
+    for (let i = 0; i < 64; i++) {
+      const hx = (i * 47) % 490;
+      const hy = i % 2 === 0 ? 430 + (i % 7) * 9 : 24 + (i % 6) * 9;
+      ctx.beginPath();
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(hx + 18, hy - 8);
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 /**
  * Helper to generate a procedural Seussian shop sign texture on a high-res 512×192 canvas
@@ -344,14 +412,12 @@ export function buildGrinchShoppingCounters(
   const candyStripeTex = createCandyCaneStripeTexture();
 
   const counterBlueMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0x1c78d8,
+    map: createPaintedShopCounterTimberTexture('#1c78d8', '#3896f2', '#104a8e'),
     roughness: 0.56,
     metalness: 0.06,
   });
   const counterTurquoiseMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0x2698c8,
+    map: createPaintedShopCounterTimberTexture('#249cc8', '#42bde8', '#146488'),
     roughness: 0.56,
     metalness: 0.06,
   });
@@ -660,7 +726,58 @@ export function buildGrinchShoppingCounters(
       }
     }
 
+    // Multi-Colored Emissive Who-Land Fairy Lights framing the shop marquee sign & draped in a catenary swag
+    const signMarqueeTopPts = [
+      new THREE.Vector3(-0.78, 0.26, 0.05),
+      new THREE.Vector3(0, 0.28, 0.055),
+      new THREE.Vector3(0.78, 0.26, 0.05),
+    ];
+    signGroup.add(
+      createWhoLandFairyLightStrand(signMarqueeTopPts, {
+        bulbCount: 11,
+        bulbRadiusM: 0.028,
+        emissiveIntensity: 0.95,
+      })
+    );
+
+    const signUnderSwagPts = [
+      new THREE.Vector3(-0.76, -0.25, 0.055),
+      new THREE.Vector3(-0.38, -0.38, 0.06),
+      new THREE.Vector3(0, -0.28, 0.065),
+      new THREE.Vector3(0.38, -0.38, 0.06),
+      new THREE.Vector3(0.76, -0.25, 0.055),
+    ];
+    signGroup.add(
+      createWhoLandFairyLightStrand(signUnderSwagPts, {
+        bulbCount: 14,
+        bulbRadiusM: 0.032,
+        emissiveIntensity: 0.95,
+        pointLightCount: 1,
+        pointLightIntensity: 0.72,
+        pointLightDistance: 2.6,
+      })
+    );
+
     unit.add(signGroup);
+
+    // Multi-Colored Emissive Who-Land Fairy Lights draped along the front counter edge
+    const counterFrontFairyPts = [
+      new THREE.Vector3(-0.92, 0.84, 0.365),
+      new THREE.Vector3(-0.46, 0.76, 0.375),
+      new THREE.Vector3(0, 0.83, 0.38),
+      new THREE.Vector3(0.46, 0.76, 0.375),
+      new THREE.Vector3(0.92, 0.84, 0.365),
+    ];
+    unit.add(
+      createWhoLandFairyLightStrand(counterFrontFairyPts, {
+        bulbCount: 15,
+        bulbRadiusM: 0.028,
+        emissiveIntensity: 0.95,
+        pointLightCount: 1,
+        pointLightIntensity: 0.65,
+        pointLightDistance: 2.4,
+      })
+    );
 
     // 6. Countertop Merchandise: Seussian Cash Register, Tiered Hatboxes, & Gift Stacks
     const cashRegister = createSeussianCashRegister(spec.registerColor);
@@ -1490,6 +1607,34 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
       goldFestoonMat
     );
     segGroup.add(goldSwag);
+
+    // Multi-colored emissive Who-land fairy lights along the banquet table festoon swag
+    const banquetFairyStrand = createWhoLandFairyLightStrand(
+      [
+        new THREE.Vector3(-0.19, 0.68, 0.305),
+        new THREE.Vector3(0, 0.57, 0.315),
+        new THREE.Vector3(0.19, 0.68, 0.305),
+      ],
+      {
+        bulbCount: 3,
+        bulbRadiusM: 0.025,
+        emissiveIntensity: 0.95,
+        cordColor: 0x1a3b22,
+        includePointLight: i % 4 === 2,
+        pointLightIntensity: 0.4,
+        pointLightDistance: 1.8,
+        palette: [
+          0xff0c2e,
+          0x00e848,
+          0x00a8ff,
+          0xffc400,
+          0xff14b8,
+          0xff6200,
+          0x8c1eff,
+        ].slice((i * 2) % 4),
+      }
+    );
+    segGroup.add(banquetFairyStrand);
 
     const redBow = new THREE.Mesh(
       new RoundedBoxGeometry(0.08, 0.055, 0.028, 1, 0.01),

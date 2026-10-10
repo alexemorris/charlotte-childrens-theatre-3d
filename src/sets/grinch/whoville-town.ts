@@ -5,11 +5,14 @@ import {
   createSculptedIcicleDrip,
   createSeussianIcicleValance,
   createWhoCharacter,
+  createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
 
 /**
- * Generates a painted Seussian pink stucco canvas texture with vertical shading,
- * whimsical hand-painted contour stripes, and subtle Tim Parati scenic hatch lines.
+ * Generates a richly hand-painted Scenic Artist Seussian pink stucco & kerf-bent
+ * timber canvas texture with trompe-l'oeil vertical rib bevels, painted horizontal
+ * clapboard/stucco courses, warm sponge-stipple highlights, and dense Tim Parati
+ * Seussian charcoal ink cross-hatching.
  */
 function createWhovilleStuccoTexture(
   baseHex: string,
@@ -31,30 +34,66 @@ function createWhovilleStuccoTexture(
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Subtle horizontal Seussian contour bands
+    // Scenic artist sponge-stipple plaster texture
+    for (let i = 0; i < 160; i++) {
+      const sx = (i * 79) % 512;
+      const sy = (i * 113) % 512;
+      const sr = 14 + (i % 26);
+      ctx.fillStyle =
+        i % 2 === 0 ? 'rgba(255, 220, 238, 0.12)' : 'rgba(92, 18, 54, 0.11)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, sr * 1.4, sr * 0.8, (i % 5) * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Trompe-l'oeil painted vertical Seussian rib bevels (replaces expensive 3D-bent rib pipes!)
+    for (const rx of [64, 168, 256, 344, 448]) {
+      const ribGrad = ctx.createLinearGradient(rx - 14, 0, rx + 14, 0);
+      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.28)');
+      ribGrad.addColorStop(0.45, 'rgba(255, 210, 232, 0.36)');
+      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.28)');
+      ctx.fillStyle = ribGrad;
+      ctx.fillRect(rx - 14, 0, 28, 512);
+    }
+
+    // Hand-painted horizontal Seussian clapboard & contour shadow bands
     ctx.strokeStyle = stripeHex;
     ctx.lineWidth = 6;
-    ctx.globalAlpha = 0.32;
-    for (let y = 48; y < 480; y += 56) {
+    ctx.globalAlpha = 0.42;
+    for (let y = 38; y < 486; y += 44) {
       ctx.beginPath();
-      for (let x = 0; x <= 512; x += 32) {
+      for (let x = 0; x <= 512; x += 24) {
         const wave = Math.sin((x / 512) * Math.PI * 4 + y * 0.05) * 6;
         if (x === 0) ctx.moveTo(x, y + wave);
         else ctx.lineTo(x, y + wave);
       }
       ctx.stroke();
+
+      // Painted underside highlight line on each course for trompe-l'oeil relief
+      ctx.strokeStyle = 'rgba(255, 232, 244, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.strokeStyle = stripeHex;
+      ctx.lineWidth = 6;
     }
 
-    // Fine scenic artist cross-hatch ink marks near lower and upper edges
+    // Dense scenic artist cross-hatch ink marks along lower skirt, eaves, and seams
     ctx.strokeStyle = inkHex;
-    ctx.lineWidth = 2.2;
-    ctx.globalAlpha = 0.28;
-    for (let i = 0; i < 42; i++) {
+    ctx.lineWidth = 2.4;
+    ctx.globalAlpha = 0.36;
+    for (let i = 0; i < 96; i++) {
       const hx = (i * 37) % 512;
-      const hy = i % 2 === 0 ? 430 + (i % 7) * 10 : 50 + (i % 5) * 12;
+      const hy =
+        i % 3 === 0
+          ? 410 + (i % 9) * 10
+          : i % 3 === 1
+            ? 36 + (i % 7) * 12
+            : 180 + (i % 11) * 16;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 18, hy - 8);
+      ctx.lineTo(hx + 22, hy - 9);
+      ctx.moveTo(hx + 4, hy - 11);
+      ctx.lineTo(hx + 18, hy + 5);
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
@@ -101,8 +140,8 @@ function createCandyStripeTexture(
 }
 
 /**
- * Generates a warm amber-gold interior window texture with cozy radial glow
- * and subtle painted Seussian drape silhouettes.
+ * Generates a warm amber-gold interior window texture with cozy radial candle glow,
+ * painted diamond lead-came glazing lines, and painted Seussian drape silhouettes.
  */
 function createAmberWindowTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -110,22 +149,35 @@ function createAmberWindowTexture(): THREE.CanvasTexture {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const grad = ctx.createRadialGradient(128, 136, 16, 128, 128, 140);
-    grad.addColorStop(0, '#fff3a8');
-    grad.addColorStop(0.55, '#ffd24c');
-    grad.addColorStop(1, '#e08218');
+    const grad = ctx.createRadialGradient(128, 136, 14, 128, 128, 144);
+    grad.addColorStop(0, '#fff9c4');
+    grad.addColorStop(0.48, '#ffd858');
+    grad.addColorStop(0.85, '#f09422');
+    grad.addColorStop(1, '#c86412');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 256, 256);
 
+    // Painted diamond cottage lead-came mullions
+    ctx.strokeStyle = 'rgba(120, 58, 18, 0.28)';
+    ctx.lineWidth = 3;
+    for (let d = -256; d <= 256; d += 48) {
+      ctx.beginPath();
+      ctx.moveTo(d, 0);
+      ctx.lineTo(d + 256, 256);
+      ctx.moveTo(d + 256, 0);
+      ctx.lineTo(d, 256);
+      ctx.stroke();
+    }
+
     // Subtle painted curtain swags in upper corners
-    ctx.fillStyle = 'rgba(180, 52, 38, 0.35)';
+    ctx.fillStyle = 'rgba(180, 42, 34, 0.42)';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(90, 40, 0, 140);
+    ctx.quadraticCurveTo(96, 44, 0, 148);
     ctx.fill();
     ctx.beginPath();
     ctx.moveTo(256, 0);
-    ctx.quadraticCurveTo(166, 40, 256, 140);
+    ctx.quadraticCurveTo(160, 44, 256, 148);
     ctx.fill();
   }
   const tex = new THREE.CanvasTexture(canvas);
@@ -934,7 +986,7 @@ function buildSingleWhovilleHouse(
     house.add(winGroup);
   }
 
-  // Festive Pine Garland Swag draped between the eaves (offset +0.055m proud of front wall)
+  // Festive Pine Garland Swag + Emissive Who-Land Fairy Lights draped between the eaves
   const swagPts: THREE.Vector3[] = [];
   const swagCount = 14;
   for (let i = 0; i <= swagCount; i++) {
@@ -951,6 +1003,29 @@ function buildSingleWhovilleHouse(
     sharedMats.wreathGreenMat
   );
   house.add(garlandSwag);
+
+  // Emissive Who-Land Fairy Lights woven along the house eave garland + warm doorway light
+  const eaveFairyLights = createWhoLandFairyLightStrand(swagPts, {
+    bulbCount: 16,
+    bulbRadiusM: 0.032,
+    emissiveIntensity: 3.0,
+    pointLightCount: 1,
+    pointLightIntensity: 0.65,
+    pointLightDistance: 2.8,
+  });
+  eaveFairyLights.position.z = 0.028;
+  house.add(eaveFairyLights);
+
+  const doorFairyPts = archFramePts.map(
+    (p) => new THREE.Vector3(p.x, p.y, p.z + 0.032)
+  );
+  doorArchGroup.add(
+    createWhoLandFairyLightStrand(doorFairyPts, {
+      bulbCount: 11,
+      bulbRadiusM: 0.025,
+      emissiveIntensity: 2.8,
+    })
+  );
 
   return house;
 }
@@ -1653,22 +1728,56 @@ export function buildGrinchWhovilleTree(
     treeWagonGroup.add(candleGroup);
   }
 
+  // Spiraling 68-Bulb Strand of Emissive Who-Land Fairy Lights winding up all 7 tiers of the 3D Showpiece Tree
+  const treeFairyHelixPts: THREE.Vector3[] = [];
+  const fairyHelixSteps = 56;
+  const fairyTurns = 6.2;
+  for (let i = 0; i <= fairyHelixSteps; i++) {
+    const t = i / fairyHelixSteps;
+    const y = 0.62 + t * 2.92;
+    const spine = getSpineOffset(y);
+    const outerRadius = 1.06 - t * 0.83 + Math.cos(t * Math.PI * 14) * 0.03;
+    const theta = t * Math.PI * 2 * fairyTurns + Math.PI * 0.5;
+    treeFairyHelixPts.push(
+      new THREE.Vector3(
+        spine.x + Math.cos(theta) * outerRadius,
+        y,
+        spine.z + Math.sin(theta) * outerRadius
+      )
+    );
+  }
+  const treeFairyStrand = createWhoLandFairyLightStrand(treeFairyHelixPts, {
+    bulbCount: 68,
+    bulbRadiusM: 0.034,
+    emissiveIntensity: 0.95,
+    pointLightCount: 3,
+    pointLightIntensity: 0.95,
+    pointLightDistance: 3.6,
+  });
+  treeWagonGroup.add(treeFairyStrand);
+
   // ==========================================================================
   // 5. RADIANT MULTI-POINT 3D GOLD STAR TOPPER WITH WHIMSICAL SEUSSIAN CURL
   //    (Topper apex reaches y = 4.22m <= 4.25m, leaving > 0.70m clearance below banner)
   // ==========================================================================
   const starTopMat = new THREE.MeshStandardMaterial({
-    color: 0xffd832,
-    emissive: 0xffa414,
-    emissiveIntensity: 0.88,
-    roughness: 0.22,
+    color: 0xffdf48,
+    emissive: 0xffb418,
+    emissiveIntensity: 1.85,
+    roughness: 0.18,
     metalness: 0.45,
+    toneMapped: false,
   });
 
   const topSpine = getSpineOffset(3.74);
   const starGroup = new THREE.Group();
   starGroup.position.set(topSpine.x, 3.74, topSpine.z);
   starGroup.rotation.z = -0.08;
+
+  // Warm radiant PointLight inside the 3D star topper
+  const starBeaconLight = new THREE.PointLight(0xffe070, 0.9, 3.5, 1.8);
+  starBeaconLight.position.set(0, 0.05, 0.14);
+  starGroup.add(starBeaconLight);
 
   // Central faceted gold star core
   const starCore = new THREE.Mesh(
@@ -2172,6 +2281,21 @@ export function buildGrinchChristmasSign(): THREE.Group {
       ),
       goldTrimMat
     )
+  );
+
+  // Emissive Who-Land Fairy Lights draped along the upper scroll border of the Christmas Banner
+  const bannerFairyPts = topRopePts.map(
+    (p) => new THREE.Vector3(p.x, p.y - 0.02, p.z + 0.028)
+  );
+  bannerAssembly.add(
+    createWhoLandFairyLightStrand(bannerFairyPts, {
+      bulbCount: 18,
+      bulbRadiusM: 0.028,
+      emissiveIntensity: 3.0,
+      pointLightCount: 2,
+      pointLightIntensity: 0.55,
+      pointLightDistance: 2.6,
+    })
   );
 
   // Curled 3D Scroll Ends + Corner Ribbons + Holly Leaf & Berry Clusters on Left & Right Ends

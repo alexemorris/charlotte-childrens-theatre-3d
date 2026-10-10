@@ -7,6 +7,7 @@ import {
   createSculptedIcicleDrip,
   createSeussianIcicleValance,
   createWhoCharacter,
+  createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
 
 /**
@@ -358,52 +359,25 @@ function createSeussianArchedWindow(
 }
 
 /**
- * Helper to build a catenary string of festive Who holiday lights draped across the wall bays.
+ * Helper to build a catenary string of festive multi-colored emissive Who-land
+ * holiday fairy lights draped across the wall bays.
  */
 function createHolidayLightGarland(
   start: THREE.Vector3,
   mid: THREE.Vector3,
   end: THREE.Vector3,
-  cordMat: THREE.Material,
+  _cordMat: THREE.Material,
   bulbCount: number
 ): THREE.Group {
-  const g = new THREE.Group();
-  const curve = new THREE.CatmullRomCurve3([start, mid, end]);
-  const cord = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 28, 0.016, 6, false),
-    cordMat
-  );
-  g.add(cord);
-
-  const bulbPalette = [0xff2e44, 0xffc824, 0x28b8ff, 0x38d864, 0xe848c8];
-  for (let i = 1; i < bulbCount; i++) {
-    const t = i / bulbCount;
-    const pt = curve.getPoint(t);
-    const col = bulbPalette[i % bulbPalette.length] ?? 0xffc824;
-
-    const socket = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.016, 0.018, 0.035, 6),
-      cordMat
-    );
-    socket.position.set(pt.x, pt.y - 0.02, pt.z);
-    g.add(socket);
-
-    const bulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.036, 10, 8),
-      new THREE.MeshStandardMaterial({
-        color: col,
-        emissive: col,
-        emissiveIntensity: 0.75,
-        roughness: 0.25,
-      })
-    );
-    bulb.scale.set(0.75, 1.35, 0.75);
-    bulb.position.set(pt.x, pt.y - 0.06, pt.z + 0.01);
-    bulb.rotation.z = ((i % 3) - 1) * 0.18;
-    g.add(bulb);
-  }
-
-  return g;
+  return createWhoLandFairyLightStrand([start, mid, end], {
+    bulbCount,
+    bulbRadiusM: 0.035,
+    emissiveIntensity: 0.98,
+    cordColor: 0x1a3b22,
+    includePointLight: true,
+    pointLightIntensity: 0.55,
+    pointLightDistance: 2.6,
+  });
 }
 
 /**
@@ -827,7 +801,7 @@ export function buildPapaWhosHouseUnit(
     snowLobe.rotation.z = (0.35 - t) * 0.45;
     houseFrame.add(snowLobe);
 
-    // Organic sculpted melting icicle drips hanging along the snowy gable eaves (y ≈ 3.8m–4.5m)
+    // CNC-routed icicle cutout mounted behind the snowy eave lobe (z = 0.11m vs snowLobe z = 0.16m)
     const dripLen = 0.24 + (i % 3) * 0.09;
     const eaveIcicle = createSculptedIcicleDrip(
       dripLen,
@@ -835,7 +809,7 @@ export function buildPapaWhosHouseUnit(
       tonedSnowMat,
       ((i % 2 === 0 ? 1 : -1) * 0.032)
     );
-    eaveIcicle.position.set(pt.x, pt.y + 0.01, 0.2);
+    eaveIcicle.position.set(pt.x, pt.y + 0.01, 0.11);
     houseFrame.add(eaveIcicle);
 
     // Evergreen eave garland & red/gold ornaments every 2nd scallop
@@ -848,6 +822,25 @@ export function buildPapaWhosHouseUnit(
       houseFrame.add(ornament);
     }
   }
+
+  // Multi-colored emissive Who-land fairy light strand along the gable roof eaves
+  const roofEaveFairyPts: THREE.Vector3[] = [];
+  for (let i = 0; i <= 14; i++) {
+    const t = i / 14;
+    const pt = roofCurveForSnow.getPoint(t);
+    roofEaveFairyPts.push(new THREE.Vector3(pt.x, pt.y + 0.02, 0.23));
+  }
+  houseFrame.add(
+    createWhoLandFairyLightStrand(roofEaveFairyPts, {
+      bulbCount: 16,
+      bulbRadiusM: 0.032,
+      emissiveIntensity: 0.96,
+      cordColor: 0x1a3b22,
+      includePointLight: true,
+      pointLightIntensity: 0.65,
+      pointLightDistance: 3.2,
+    })
+  );
 
   // Draped Holiday String Lights across Left & Right Wall Bays (z = +0.20m)
   houseFrame.add(
@@ -1516,6 +1509,19 @@ export function buildPapaWhosHouseUnit(
       goldBowMat
     );
     treeGroup.add(spiralGarland);
+
+    // Multi-colored emissive Who-land fairy lights spiraling up the interior potted tree
+    treeGroup.add(
+      createWhoLandFairyLightStrand(garlandPts, {
+        bulbCount: 16,
+        bulbRadiusM: 0.026,
+        emissiveIntensity: 0.96,
+        cordColor: 0x1a3b22,
+        includePointLight: true,
+        pointLightIntensity: 0.5,
+        pointLightDistance: 2.2,
+      })
+    );
 
     const ornColors = [0xff2e44, 0xffd228, 0x28a8ff, 0xf258c8];
     for (let o = 0; o < 14; o++) {

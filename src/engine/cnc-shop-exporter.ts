@@ -105,24 +105,24 @@ interface ElementFabricationProfile {
 const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfile>> = {
   'grinch-snow-portals': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC ROUTER + HOT-WIRE EPS FOAM',
+    badgeLabel: 'TIMBER CARPENTRY + 3-AXIS CNC PLYWOOD + SCENIC PAINT',
     primaryConstructionNote:
-      '3/4" Baltic Birch CNC contour ribs at 24" O.C. skinned with 1/4" bending Luan and laminated with 2" CNC-carved high-density EPS snow-drift & fluted icicle profiles.',
+      'Budget-optimized 1"×4" & 2"×4" timber-framed Hollywood flats faced with 3-axis 4\'×8\' CNC-routed 1/2" & 3/4" Baltic Birch profile cutouts and kerf-bent 1/4" Luan skins. Rear-mounted 18mm plywood icicle cutouts poke through behind the rock edges; Scenic Artists paint trompe-l\'oeil snow bevels, ice facets, and Seussian cross-hatching.',
     departments: [
-      {
-        department: 'CNC Router & EPS Foam Mill',
-        roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'All S-curved ice-wave wing profiles, stacked snow-cliff contour ribs, and sculpted Lathe/Extrude icicle valances.',
-      },
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Internal 1.5" square steel tower book-frames, stage-jack braces, and lineset header battens.',
+        scopeSummary: '1"×4" and 2"×4" dimensional timber Hollywood flat framing, kerf-bent Luan skin assembly, wooden stage-jack braces, and lineset battens.',
+      },
+      {
+        department: 'CNC Router & EPS Foam Mill',
+        roleBadge: 'PRIMARY CNC',
+        scopeSummary: '3-axis 4\'×8\' flat-bed CNC routing of S-curved ice-wave wing profiles, stacked snow-cliff contour ribs, and 18mm plywood rear icicle valance cutouts.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Cheesecloth/Rosco Foamcoat hard-coating and airbrushed Seussian blue-violet cross-hatching.',
+        scopeSummary: 'Scenic Artist hand-painted trompe-l\'oeil snow-drift highlights, faceted ice bevels, and airbrushed Seussian blue-violet cross-hatching on primed timber.',
       },
     ],
   },
@@ -146,101 +146,131 @@ const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfi
   },
   'grinch-whoville-hills-cyc': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC GROUNDROW PROFILES + FOAM PEAK',
+    badgeLabel: 'TIMBER GROUNDROWS + 3-AXIS CNC PLYWOOD PROFILES',
     primaryConstructionNote:
-      'Staggered 3/4" Baltic Birch & 1/4" Luan CNC-profiled rolling snow hill groundrows (Linesets #39 & #45) paired with a 3D CNC-milled EPS foam crooked Mt. Crumpit horn summit.',
+      'Staggered 1"×4" timber-framed groundrows (Linesets #39 & #45) faced with 3-axis CNC-profiled 1/2" Baltic Birch & 1/4" Luan rolling snow hills and a layered timber-framed crooked Mt. Crumpit silhouette, richly shaded by Scenic Artists with forced-perspective snow contours and Seussian ink linework.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'CNC-routed sinusoidal hill groundrow face sheets, crooked Mt. Crumpit S-curve spine ribs, and forced-perspective pine tree silhouettes.',
+        scopeSummary: '3-axis 4\'×8\' CNC-routed sinusoidal hill groundrow face sheets, crooked Mt. Crumpit S-curve plywood spine profiles, and miniature pine silhouettes.',
+      },
+      {
+        department: 'Carpentry & Structural Welding',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '1"×4" dimensional pine groundrow frames, hinged wooden stage jacks, and stiffener battens.',
+      },
+      {
+        department: 'Soft Goods & Scenic Paint Shop',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Scenic Artist trompe-l\'oeil snow-drift shading, winding path forced perspective, and painted Seussian cross-hatching.',
       },
       {
         department: 'Rigging & Electrics',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Low-profile LED cyc groundrow striplights concealed between hill layers at z = -5.9m and z = -6.4m.',
+        scopeSummary: 'Low-profile LED cyc groundrow striplights and miniature practical glowing window LEDs concealed on Mt. Crumpit.',
       },
     ],
   },
   'grinch-whoville-houses': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC RADIAL RIBS + SCULPTED FOAM DOMES',
+    badgeLabel: 'CARPENTRY RIB WAGONS + PAINTED LUAN + FAIRY LIGHTS',
     primaryConstructionNote:
-      'Three rolling wagon units framed with CNC-cut 3/4" Baltic Birch radial lathe ribs at 15° intervals, kerf-bent 1/4" Luan skins, and 3-axis CNC-milled EPS foam snow roof caps & icicle eaves.',
+      'Three rolling carpenter-built timber wagon units framed with 3-axis CNC-cut 3/4" Baltic Birch rib formers and kerf-bent 1/4" Luan skins. Scenic Artists paint trompe-l\'oeil stucco ribs, clapboard shadow lines, and diamond-mullion window glows; Electrics & Props dress the eaves with multi-colored emissive Who-land LED fairy light festoons and 3D wreaths.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Bulbous pear-shaped house rib cages, arched window/door trim frames, scalloped snow roof caps, and fluted icicle drips.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut pear-shaped plywood rib formers, arched door/window trim cutouts, scalloped snow eave profiles, and flat plywood icicle cutouts.',
       },
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Welded 1.5"×1.5" steel wagon bases on 4" triple-swivel casters and internal S-bent steel pipe chimney cores.',
+        scopeSummary: '2"×4" & 1"×4" timber wagon bases on 4" swivel casters, kerf-bent 1/4" Luan skinning, and timber chimney cores.',
       },
       {
-        department: 'Props & Set Dressing',
+        department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Evergreen wreaths, velvet bows, brass door knockers, and frosted amber acrylic window glazing.',
+        scopeSummary: 'Scenic Artist sponge-stippled coral/pink stucco, trompe-l\'oeil vertical rib bevels, painted shadow moldings, and Seussian ink cross-hatching.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '12V multi-colored emissive Who-land LED fairy light festoons (ruby, emerald, cyan, gold, magenta, purple) along roof eaves and doorways + warm window backlights.',
       },
     ],
   },
   'grinch-whoville-tree': {
     method: 'hybrid-cnc-carpentry',
-    badgeLabel: 'HYBRID: CNC TURNTABLE & STAR + STEEL MAST',
+    badgeLabel: '3D HERO SHOWPIECE: CNC TURNTABLE + 3D ORNAMENTS & LEDS',
     primaryConstructionNote:
-      'CNC-routed 8\'-2" diameter 3/4" Baltic Birch dual-disc revolving turntable base and CNC-cut 3D Seussian star topper; central S-curved 2" steel pipe mast dressed with flame-retardant foliage tiers.',
+      'Hero 3D Showpiece Unit: CNC-routed 8\'-2" diameter 3/4" Baltic Birch dual-disc revolving timber turntable base and 7 stacked 3D foliage tiers on a curved central mast, lavishly dressed with 3D glossy spherical ornaments, candy canes, 68-bulb multi-colored emissive Who-land LED fairy light spirals, a glowing 3D star topper, and 18+ wrapped gift boxes.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'CNC SUB-ASSEMBLY',
-        scopeSummary: 'Circular turntable base discs, scalloped snow plinth rim, branch tier plywood spider rings, and Seussian star topper.',
+        scopeSummary: 'Circular 3/4" Baltic Birch turntable base discs, scalloped snow plinth rim, branch tier plywood spider rings, and 3D Seussian star topper.',
       },
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Bent 2" Schedule-40 steel central tree mast welded to center slewing-ring bearing.',
+        scopeSummary: '2"×4" timber revolving platform base on heavy-duty casters and central S-curved structural tree mast.',
       },
       {
         department: 'Props & Set Dressing',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Spiral tinsel garlands, oversized ornaments, candy canes, and 18+ wrapped Seussian gift boxes at the base.',
+        scopeSummary: 'Hero 3D sculpted glossy ornaments, spiral tinsel garlands, oversized candy canes, and 18+ wrapped Seussian gift boxes at the base.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Slip-ring 12V power feed driving 68 multi-colored emissive Who-land LED fairy bulbs spiraling up all 7 tiers plus high-output star topper beacon.',
       },
     ],
   },
   'grinch-christmas-sign': {
     method: 'hybrid-cnc-carpentry',
-    badgeLabel: 'HYBRID: CNC SCROLL PROFILE + PAINTED BANNER',
+    badgeLabel: 'CNC PLYWOOD SCROLL + SCENIC LETTERING + FAIRY LIGHTS',
     primaryConstructionNote:
-      'CNC-routed 1/2" Ultralight MDF scrolled banner silhouette and 3D holly leaf clusters rigged to Lineset #15 (10\'-6"), finished with hand-lettered Seussian graphic artwork.',
+      '3-axis CNC-routed 1/2" Baltic Birch scrolled banner silhouette rigged to Lineset #15 (10\'-6"), hand-painted by Scenic Artists with Seussian "MERRY CHRISTMAS WHOVILLE" typography and outlined with an 18-bulb multi-colored emissive Who-land LED fairy light festoon.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'CNC SUB-ASSEMBLY',
-        scopeSummary: 'Curved ribbon perimeter profile, 3D scroll end-caps, and layered holly leaf corner medallions.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut curved ribbon perimeter profile, scroll end-caps, and layered holly leaf corner medallions.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Hand-lettered Seussian "MERRY CHRISTMAS WHOVILLE" banner face and gold rope border trim.',
+        scopeSummary: 'Scenic Artist hand-lettered Seussian "MERRY CHRISTMAS WHOVILLE" banner face, painted scroll shading, and gold rope trim.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '18-bulb multi-colored emissive Who-land LED fairy light border strand and Lineset #15 aircraft cable rigging.',
       },
     ],
   },
   'grinch-cave-portal': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC CRAGGY ARCH + FOAM STALACTITES',
+    badgeLabel: 'TIMBER FLATS + CNC PLYWOOD ROCK & REAR ICICLE CUTOUTS',
     primaryConstructionNote:
-      'Three staggered planes of CNC-routed 3/4" Baltic Birch & 2" EPS foam jagged cavern wings (Lineset #17 at 11\'-10"), CNC-turned fluted stalactites, and forced-perspective miniature Whoville vista.',
+      'Three staggered planes of 1"×4" timber-framed Hollywood flats faced with 3-axis CNC-routed 1/2" Baltic Birch jagged cavern profiles (Lineset #17 at 11\'-10"). Flat CNC-cut 18mm plywood icicle valances are mounted on the rear face (z = -3.89m to -3.96m) so only their painted tips poke through the cave opening; Scenic Artists paint dramatic faceted rock strata and forced-perspective miniature Whoville cottages.',
     departments: [
+      {
+        department: 'Carpentry & Structural Welding',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '1"×4" & 2"×4" dimensional timber Hollywood flat framing, boulder wagon frames, and rear icicle mounting battens.',
+      },
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Jagged cavern arch profiles, striated rock ledges, 24 fluted icicle/stalactite drips, and miniature forced-perspective Whoville cottages.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut jagged cavern arch profiles, striated rock ledges, 24 flat plywood rear-mounted icicle teeth, and miniature Whoville vista cutouts.',
       },
       {
-        department: 'Props & Set Dressing',
+        department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Crooked brass/copper Seussian spyglass listening horn and Max\'s upholstered rocky perch cushion.',
+        scopeSummary: 'Scenic Artist hand-painted slate rock facets, trompe-l\'oeil ice highlights on rear icicle cutouts, and miniature Whoville cottage detailing.',
       },
       {
         department: 'Stage Management (Cast Blocking)',
@@ -269,19 +299,29 @@ const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfi
   },
   'grinch-papa-whos-house': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC SEUSSIAN TIMBER RIBS + HEARTH',
+    badgeLabel: 'TIMBER & CNC PLYWOOD RIBS + PAINTED HEARTH + FAIRY LIGHTS',
     primaryConstructionNote:
-      'CNC-routed 3/4" Baltic Birch curved olive-green Seussian gable ribs, radiating roof fan struts, and sculpted stone chimney breast (Lineset #9 at 6\'-6"), paired with DSR Kitchen & DSL Daybed wagons.',
+      '1"×4" timber-backed Seussian gable wall faced with 3-axis CNC-routed 3/4" Baltic Birch curved olive-green ribs, rear-mounted plywood eave icicles, and painted stone chimney breast (Lineset #9 at 6\'-6"), paired with carpenter-built DSR Kitchen & DSL Daybed wagons and multi-colored emissive Who-land LED fairy light garlands.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Asymmetrical Seussian gable posts, arched window/door frames, stone fireplace hearth, crooked refrigerator body, and scrolled daybed frame.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut asymmetrical Seussian gable ribs, arched window/door frames, rear-mounted eave icicle cutouts, crooked fridge panels, and scrolled daybed sides.',
+      },
+      {
+        department: 'Carpentry & Structural Welding',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '1"×4" & 2"×4" timber flat backing, castered kitchen and daybed wagon bases, and kerf-bent Luan furniture skins.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Lavender-rose plaster wall panels, royal-blue velvet daybed upholstery, and Christmas stockings.',
+        scopeSummary: 'Scenic Artist painted olive woodgrain, trompe-l\'oeil stone hearth blocks, lavender-rose plaster panels, and royal-blue daybed upholstery.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Multi-colored emissive Who-land LED fairy light garlands along the roof eaves, wall bays, and interior potted Christmas trees + glowing hearth fire.',
       },
       {
         department: 'Stage Management (Cast Blocking)',
@@ -292,19 +332,24 @@ const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfi
   },
   'grinch-papa-whos-house-scrim': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC TIMBER SKELETON + BACKLIT SCRIM WALLS',
+    badgeLabel: 'TIMBER & CNC SKELETON + BACKLIT SCRIM + FAIRY LIGHTS',
     primaryConstructionNote:
-      'Identical CNC-routed 3/4" Baltic Birch curved Seussian gable frame on Lineset #9, with solid wall bays replaced by sheer lavender Sharkstooth Scrim for the Scene 1E "Mean One" reveal.',
+      'Identical 1"×4" timber-backed & 3-axis CNC-routed 3/4" Baltic Birch curved Seussian gable frame on Lineset #9, with solid wall bays replaced by sheer lavender Sharkstooth Scrim and dressed with multi-colored emissive Who-land LED fairy lights for the Scene 1E "Mean One" reveal.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Curved olive-green structural timber ribs, arched mullions, fireplace hearth, and interior furniture carcasses.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut curved olive-green timber ribs, arched mullions, fireplace hearth profiles, and interior furniture carcasses.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Translucent Sharkstooth Scrim wall infill panels stapled into rear rabbet grooves of the CNC timber ribs.',
+        scopeSummary: 'Translucent Sharkstooth Scrim wall infill panels stapled into rear rabbet grooves + Scenic Artist woodgrain & stone paint finish.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Multi-colored emissive Who-land LED fairy light strands on roof eaves, wall bays, and potted trees + scrim bleed-through lighting.',
       },
       {
         department: 'Stage Management (Cast Blocking)',
@@ -315,42 +360,52 @@ const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfi
   },
   'grinch-shopping-counters': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC COUNTER CARCASSES + SIGN ARCHES',
+    badgeLabel: 'TIMBER & KERF-LUAN WAGONS + PAINTED TRIM + FAIRY LIGHTS',
     primaryConstructionNote:
-      'Three rolling department-store counter wagons built from CNC-routed 3/4" Baltic Birch curved ribs and kerf-bent 1/4" Luan skins, topped with scalloped CNC-cut overhead shop signs.',
+      'Three rolling carpenter-built timber counter wagons framed with 3-axis CNC-routed 3/4" Baltic Birch curved ribs and kerf-bent 1/4" Luan skins. Scenic Artists paint trompe-l\'oeil recessed panel moldings, woodgrain, and Seussian sign lettering; Electrics dresses the marquee signs and counter edges with multi-colored emissive Who-land LED fairy lights.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Curved counter ribs, display niche cutouts, and scalloped lime-green overhead shop sign blanks.',
+        scopeSummary: '3-axis 4\'×8\' CNC-routed curved counter formers, display niche frames, and scalloped lime-green overhead shop sign blanks.',
       },
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Spiral-painted PVC/steel candy-cane support posts and castered wagon bases.',
+        scopeSummary: '2"×4" timber castered wagon bases, kerf-bent 1/4" Luan counter skins, and spiral-painted PVC/timber candy-cane sign posts.',
       },
       {
-        department: 'Props & Set Dressing',
+        department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Whimsical cash registers, gift box stacks, and hand-lettered Seussian sign graphics.',
+        scopeSummary: 'Scenic Artist trompe-l\'oeil bevel & shadow-line panel painting, woodgrain glazing, and hand-lettered Seussian shop signs.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '12V battery-powered multi-colored emissive Who-land LED fairy light strands outlining all 3 overhead shop signs, catenary swags, and counter edges.',
       },
     ],
   },
   'grinch-mt-crumpit-sleigh': {
     method: 'cnc-primary',
-    badgeLabel: 'CNC SLEIGH RIBS + FOAM PRECIPICE WAGON',
+    badgeLabel: 'TIMBER CLIFF WAGON + CNC PLYWOOD SLEIGH & REAR ICICLES',
     primaryConstructionNote:
-      'Steep Mt. Crumpit cliff wagon framed in 3/4" CNC plywood & 2" carved EPS rock strata, supporting the CNC-routed crooked wooden sleigh carcass on bent steel runners.',
+      'Carpenter-framed 2"×4" timber precipice wagon faced with stepped 3-axis CNC-routed 1/2" Baltic Birch rock-strata flats and rear-mounted plywood icicle cutouts, supporting the CNC-routed 3/4" plywood crooked sleigh carcass and stuffed prop gift sack.',
     departments: [
-      {
-        department: 'CNC Router & EPS Foam Mill',
-        roleBadge: 'PRIMARY CNC',
-        scopeSummary: 'Curved sleigh side panels, dashboard scroll profiles, and stepped Mt. Crumpit rock precipice ribs.',
-      },
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Structural canted steel cliff truss, sleigh runner pipes, and safety locking floor brakes.',
+        scopeSummary: 'Structural canted 2"×4" & 2"×6" timber cliff truss frame, castered wagon base, and bent sleigh runner pipes.',
+      },
+      {
+        department: 'CNC Router & EPS Foam Mill',
+        roleBadge: 'PRIMARY CNC',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut curved sleigh side panels, dashboard scroll profiles, stepped rock-strata face sheets, and rear-mounted plywood icicles.',
+      },
+      {
+        department: 'Soft Goods & Scenic Paint Shop',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Scenic Artist painted craggy slate strata, trompe-l\'oeil snow-drift highlights, and distressed crimson sleigh finish with gold pinstripe.',
       },
       {
         department: 'Props & Set Dressing',
@@ -361,19 +416,29 @@ const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfi
   },
   'grinch-finale-banquet': {
     method: 'hybrid-cnc-carpentry',
-    badgeLabel: 'HYBRID: CNC CURVED TABLE TOP + DRAPERY/PROPS',
+    badgeLabel: 'CARPENTRY CURVED TABLE WAGON + FAIRY LIGHT FESTOONS',
     primaryConstructionNote:
-      '16\'-0" curved banquet table wagon with CNC-routed 3/4" Baltic Birch arc top segments on folding steel legs, dressed with sewn damask drapery and Roast Beast prop centerpiece.',
+      '16\'-0" curved carpenter-built banquet table wagon with 3-axis CNC-routed 3/4" Baltic Birch arc top segments on folding timber/steel legs, dressed with painted scalloped apron panels, multi-colored emissive Who-land LED fairy light festoons, and Roast Beast prop centerpiece.',
     departments: [
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'CNC SUB-ASSEMBLY',
-        scopeSummary: 'Interlocking curved banquet tabletop arc segments and scalloped apron valance backers.',
+        scopeSummary: '3-axis 4\'×8\' CNC-cut interlocking curved banquet tabletop arc segments and scalloped apron valance backers.',
+      },
+      {
+        department: 'Carpentry & Structural Welding',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: 'Curved 2"×4" timber apron framing, folding leg frames, and castered rolling wagon base.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Floor-length white scalloped tablecloth and royal-blue/gold festooned swags.',
+        scopeSummary: 'Painted royal-blue arched apron panels, white scalloped tablecloth overhang, and royal-blue/gold festooned swags.',
+      },
+      {
+        department: 'Rigging & Electrics',
+        roleBadge: 'TRADITIONAL SHOP',
+        scopeSummary: '12V battery-powered multi-colored emissive Who-land LED fairy light festoons draped along the front banquet table swags.',
       },
       {
         department: 'Props & Set Dressing',
@@ -781,21 +846,21 @@ function classifyMeshFabricationProcess(
     };
   }
 
-  // Small spherical ornaments or tiny prop details (< 140mm) -> Props Shop
+  // Small spherical ornaments, fairy light bulbs, or tiny prop details (< 150mm) -> Props / Electrics Shop
   if (widthMm < 150 && heightMm < 150) {
     return {
       isCncRouted: false,
       process: 'Traditional Shop / Non-CNC',
-      materialSpec: 'Turned / Molded Scenic Prop Hardware (Props Shop)',
+      materialSpec: '3D Ornament / 12V Multi-Colored LED Fairy Bulb / Prop Detail (Props & Electrics)',
     };
   }
 
-  // Thick 3D sculpted volume (> 140mm thickness) -> CNC EPS Foam Carve + Birch Core
+  // Deep 3D curved carcass (> 140mm depth) -> CNC Plywood Rib Formers + 1x4 Timber Framing + Kerf-Bent 1/4" Luan
   if (thicknessMm >= 140) {
     return {
       isCncRouted: true,
-      process: 'CNC EPS Foam Carve',
-      materialSpec: '3/4" Birch Internal Rib + 2" (50mm) CNC-Carved EPS Foam Lamination',
+      process: 'CNC Router (4×8 Sheet)',
+      materialSpec: '3/4" (18mm) CNC Plywood Rib Formers + 1"×4" Timber Framing & Painted 1/4" Luan Skin',
     };
   }
 
@@ -803,14 +868,14 @@ function classifyMeshFabricationProcess(
     return {
       isCncRouted: true,
       process: 'CNC Router (4×8 Sheet)',
-      materialSpec: '1/4" (6mm) Luan Mahogany Scenic Skin (CNC Profile)',
+      materialSpec: '1/4" (6mm) Kerf-Bent Luan Mahogany Skin (Scenic Artist Trompe-l\'oeil Painted)',
     };
   }
 
   return {
     isCncRouted: true,
     process: 'CNC Router (4×8 Sheet)',
-    materialSpec: '3/4" (18mm) Baltic Birch CNC Structural Plywood',
+    materialSpec: '3/4" (18mm) Baltic Birch 3-Axis CNC Profile Cutout + 1"×4" Timber Stiffener',
   };
 }
 
@@ -970,7 +1035,7 @@ export function getElementGranularSubUnits(
           label: 'House #1 · DSR Pink Whoville Cottage',
           shortLabel: 'DSR Pink House #1',
           description:
-            'Downstage Right bulbous pink stucco Who cottage with S-bent chimney, snow dome, and arched doorway.',
+            'Downstage Right timber & kerf-Luan Who cottage with painted stucco ribs, rear-mounted plywood icicles, and multi-colored Who-land fairy lights.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_DSR']),
         },
@@ -979,7 +1044,7 @@ export function getElementGranularSubUnits(
           label: 'House #2 · USR Coral Whoville Cottage',
           shortLabel: 'USR Coral House #2',
           description:
-            'Upstage Right coral-rose onion-domed Who cottage with crooked shutters and scalloped snow eaves.',
+            'Upstage Right coral-rose timber & kerf-Luan Who cottage with trompe-l\'oeil painted moldings, crooked shutters, and multi-colored fairy lights.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_USR']),
         },
@@ -988,7 +1053,7 @@ export function getElementGranularSubUnits(
           label: 'House #3 · MSL Rose Whoville Cottage',
           shortLabel: 'MSL Rose House #3',
           description:
-            'Midstage Left warm rose Who cottage with side bay alcove, garland swags, and rolling snow plinth.',
+            'Midstage Left warm rose timber & kerf-Luan Who cottage with side bay alcove, multi-colored emissive fairy light festoons, and castered snow plinth.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_MSL']),
         },
@@ -1004,7 +1069,7 @@ export function getElementGranularSubUnits(
           label: 'Line #9 Seussian Gable Wall & Stone Hearth',
           shortLabel: 'Gable Wall & Hearth',
           description:
-            'Flown olive-green Seussian timber skeleton, sculpted stone fireplace hearth, mantel stockings, and arched front door.',
+            '1"×4" timber-backed & 3/4" CNC plywood olive-green Seussian gable wall, painted stone hearth, rear-mounted eave icicles, and multi-colored fairy lights.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['PapaWhosHouseFrame_Line9']),
         },
@@ -1013,7 +1078,7 @@ export function getElementGranularSubUnits(
           label: 'DSR Who Kitchen Wagon & Crooked Fridge',
           shortLabel: 'DSR Kitchen & Fridge',
           description:
-            'Rolling Downstage Right kitchen unit with bulbous Seussian refrigerator, spiral coils, and prep counter.',
+            'Rolling carpenter-built DSR kitchen wagon with CNC plywood & kerf-Luan Seussian refrigerator, spiral coils, and prep counter.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhoKitchenWagon_DSR']),
         },
@@ -1022,7 +1087,7 @@ export function getElementGranularSubUnits(
           label: 'Interior Potted Who Christmas Trees',
           shortLabel: 'Interior Who Trees',
           description:
-            'S-curved potted Who family Christmas tree in bulbous red/gold planter with ornaments and gift boxes.',
+            'S-curved potted Who family Christmas trees with 3D ornaments, multi-colored emissive fairy light spirals, and wrapped gift boxes.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, [
               'WhoFamilyChristmasTree_Main',
@@ -1034,7 +1099,7 @@ export function getElementGranularSubUnits(
           label: 'DSL Royal-Blue Daybed & Crooked Lamp',
           shortLabel: 'DSL Blue Daybed',
           description:
-            'Downstage Left sinuous royal-blue velvet Seussian fainting couch with scrolled bolsters and crooked end-table lamp.',
+            'Downstage Left CNC-profiled plywood & timber royal-blue Seussian fainting couch with scrolled bolsters and crooked end-table lamp.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, [
               'WhoRoyalBlueDaybed_DSL',
@@ -1051,7 +1116,7 @@ export function getElementGranularSubUnits(
           label: 'Booth #1 · DSR Who Dept. Store Counter',
           shortLabel: 'DSR Booth #1',
           description:
-            'Downstage Right curved turquoise counter wagon with candy-cane posts and "WHO DEPT. STORE" sign.',
+            'DSR timber & kerf-Luan counter wagon with trompe-l\'oeil painted panel bevels, "WHO DEPT. STORE" marquee, and multi-colored emissive fairy lights.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_1']),
         },
@@ -1060,7 +1125,7 @@ export function getElementGranularSubUnits(
           label: 'Booth #2 · Center Tinsel & Trimmings Counter',
           shortLabel: 'Center Booth #2',
           description:
-            'Center stage curved department booth with Seussian cash register and "TINSEL & TRIMMINGS" sign.',
+            'Center timber & kerf-Luan booth wagon with Seussian cash register, "TINSEL & TRIMMINGS" sign, and multi-colored emissive fairy light festoons.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_2']),
         },
@@ -1069,7 +1134,7 @@ export function getElementGranularSubUnits(
           label: 'Booth #3 · DSL Floo-Floobers & Toys Counter',
           shortLabel: 'DSL Booth #3',
           description:
-            'Downstage Left curved toy booth wagon with stacked gift hatboxes and "FLOO-FLOOBERS & TOYS" sign.',
+            'DSL timber & kerf-Luan toy booth wagon with stacked gift hatboxes, "FLOO-FLOOBERS & TOYS" sign, and multi-colored emissive fairy lights.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovilleShoppingBooth_3']),
         },
@@ -1083,7 +1148,7 @@ export function getElementGranularSubUnits(
           label: 'Stage Right Snow-Cliff & Ice-Wave Portal',
           shortLabel: 'SR Snow Portal',
           description:
-            'Downstage Right sculpted snow-cliff tormentor tower and S-curved blue ice-wave wing flats.',
+            'DSR 1"×4" timber-framed Hollywood flats faced with 3-axis CNC plywood snow-cliff profiles, S-curved ice-wave wings, and trompe-l\'oeil scenic paint.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['SnowPortal_DSR']),
         },
@@ -1092,7 +1157,7 @@ export function getElementGranularSubUnits(
           label: 'Stage Left Snow-Cliff & Ice-Wave Portal',
           shortLabel: 'SL Snow Portal',
           description:
-            'Downstage Left sculpted snow-cliff tormentor tower and S-curved blue ice-wave wing flats.',
+            'DSL 1"×4" timber-framed Hollywood flats faced with 3-axis CNC plywood snow-cliff profiles, S-curved ice-wave wings, and trompe-l\'oeil scenic paint.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['SnowPortal_DSL']),
         },
@@ -1101,7 +1166,7 @@ export function getElementGranularSubUnits(
           label: 'Upper Proscenium Snow Teaser Arch',
           shortLabel: 'Upper Teaser Arch',
           description:
-            'Overhead sculpted snow-drift teaser border and translucent hanging icicle valance.',
+            'Overhead timber-framed snow-drift teaser border with rear-mounted 3-axis CNC-cut 18mm plywood icicle valance.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['SnowPortal_UpperTeaserArch']),
         },
@@ -1115,7 +1180,7 @@ export function getElementGranularSubUnits(
           label: 'Line #39 Foreground Snow Hill Groundrow',
           shortLabel: 'Foreground Hill #1',
           description:
-            'Downstage rolling snow-hill groundrow profile on Lineset #39 with winding snowy path.',
+            '1"×4" timber-framed & CNC-profiled plywood rolling snow-hill groundrow on Lineset #39 with painted winding snowy path.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['HillGroundrow_1_Line39']),
         },
@@ -1124,7 +1189,7 @@ export function getElementGranularSubUnits(
           label: 'Midground Snow Ridge & Crooked Pines',
           shortLabel: 'Midground Hill #2',
           description:
-            'Midstage scalloped snow ridge with miniature crooked streetlamps and forced-perspective pines.',
+            'Midstage CNC-routed plywood snow ridge with miniature crooked streetlamps and forced-perspective pine cutouts.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['HillGroundrow_2_Mid']),
         },
@@ -1133,7 +1198,7 @@ export function getElementGranularSubUnits(
           label: 'Mt. Crumpit Horn Summit & Rear Ridge (Line #45)',
           shortLabel: 'Mt. Crumpit Peak',
           description:
-            'Towering S-curved EPS foam peak of Mt. Crumpit with glowing cave mouth and overhanging snow cap.',
+            'Layered timber-framed & 3-axis CNC plywood S-curved peak of Mt. Crumpit with Scenic Artist shading and glowing cave mouth.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, [
               'HillGroundrow_3_Line45',
@@ -1150,7 +1215,7 @@ export function getElementGranularSubUnits(
           label: 'Mt. Crumpit Precipice Cliff Wagon',
           shortLabel: 'Crumpit Cliff Wagon',
           description:
-            'Steep rolling rock-strata cliff wagon with stepped snow ledges and internal structural steel truss.',
+            'Carpenter-built 2"×4" timber cliff wagon faced with stepped CNC plywood rock-strata flats and rear-mounted plywood icicles.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['MtCrumpitCliffWagon']) &&
             getObjectWorldCenter(obj).y < 1.55,
@@ -1160,7 +1225,7 @@ export function getElementGranularSubUnits(
           label: "Grinch's Crooked Sleigh & Overstuffed Sack",
           shortLabel: 'Sleigh & Toy Sack',
           description:
-            'Tilted crimson wooden sleigh on bent steel runners with colossal stuffed gift sack perched on the crest.',
+            '3-axis CNC-routed 3/4" Baltic Birch crimson sleigh carcass on bent runner pipes with colossal stuffed prop gift sack.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['MtCrumpitCliffWagon']) &&
             getObjectWorldCenter(obj).y >= 1.55,
@@ -1170,7 +1235,7 @@ export function getElementGranularSubUnits(
           label: 'DSR Snow Cottage Anchor (Scene 1F)',
           shortLabel: 'DSR Snow Cottage',
           description:
-            'Downstage Right Whoville snow cottage anchoring the opposite side of the stage during Scene 1F.',
+            'Downstage Right timber & kerf-Luan Whoville snow cottage anchoring the opposite side of the stage during Scene 1F.',
           matchesObject: (obj) =>
             hasAncestorNamed(obj, rootGroup, ['WhovillePinkHouse_DSR_1F']),
         },
@@ -1184,15 +1249,15 @@ export function getElementGranularSubUnits(
           label: 'Revolving Snow Turntable Base & Gift Pile',
           shortLabel: 'Turntable & Gifts',
           description:
-            '8\'-2" diameter dual-disc Baltic Birch revolving turntable, snow rim, and 18+ wrapped Seussian gift boxes.',
+            '8\'-2" diameter dual-disc Baltic Birch revolving timber turntable, scalloped snow rim, and 18+ wrapped Seussian gift boxes.',
           matchesObject: (obj) => getObjectWorldCenter(obj).y < 0.75,
         },
         {
           id: 'tree-foliage',
-          label: 'S-Curved Foliage Tiers & 3D Star Topper',
-          shortLabel: 'Tree Tiers & Star',
+          label: '3D Showpiece Foliage Tiers, Ornaments & Fairy Lights',
+          shortLabel: '3D Tree & Lights',
           description:
-            '7 stacked tilted foliage tiers on bent steel mast with spiral tinsel garland and CNC-cut gold star.',
+            'Hero 3D Showpiece: 7 stacked 3D foliage tiers with glossy 3D ornaments, 68-bulb multi-colored emissive Who-land fairy light spiral, and glowing 3D star.',
           matchesObject: (obj) => getObjectWorldCenter(obj).y >= 0.75,
         },
       ];
@@ -1205,7 +1270,7 @@ export function getElementGranularSubUnits(
           label: 'Stage Right Cavern Wing & Snow Boulders',
           shortLabel: 'SR Cavern Wing',
           description:
-            'Stage Right jagged blue-slate cavern wing flats and sculpted snow boulder outcrops.',
+            'Stage Right 1"×4" timber-framed Hollywood flats faced with CNC plywood jagged cavern profiles and painted slate facets.',
           matchesObject: (obj) => {
             const c = getObjectWorldCenter(obj);
             return c.z > -4.6 && c.x < -1.15;
@@ -1213,10 +1278,10 @@ export function getElementGranularSubUnits(
         },
         {
           id: 'cave-arch',
-          label: 'Upper Jagged Cave Mouth & Stalactite Valance',
+          label: 'Upper Jagged Cave Mouth & Rear Icicle Valance',
           shortLabel: 'Upper Cave Arch',
           description:
-            'Central overhead cavern arch header and 18+ CNC-turned translucent icicle/stalactite teeth.',
+            'Central overhead timber-framed cavern arch with 24 rear-mounted 18mm CNC plywood icicle cutouts (z = -3.89m to -3.96m) poking through behind the rock rim.',
           matchesObject: (obj) => {
             const c = getObjectWorldCenter(obj);
             return c.z > -4.6 && c.x >= -1.15 && c.x <= 1.15;
@@ -1227,7 +1292,7 @@ export function getElementGranularSubUnits(
           label: 'Stage Left Cavern Wing & Listening Horn',
           shortLabel: 'SL Wing & Horn Rig',
           description:
-            'Stage Left jagged cavern wing, rocky perch, and crooked brass Seussian listening horn.',
+            'Stage Left timber-framed jagged cavern wing flat, rocky perch, and crooked brass Seussian listening horn.',
           matchesObject: (obj) => {
             const c = getObjectWorldCenter(obj);
             return c.z > -4.6 && c.x > 1.15;
@@ -1238,7 +1303,7 @@ export function getElementGranularSubUnits(
           label: 'Forced-Perspective Miniature Whoville Vista',
           shortLabel: 'Mini Whoville Vista',
           description:
-            'Upstage forced-perspective snow hill with 7 miniature Who cottages and town tree seen through the cave mouth.',
+            'Upstage forced-perspective CNC plywood snow hill with 7 miniature painted Who cottages and glowing town tree seen through the cave mouth.',
           matchesObject: (obj) => getObjectWorldCenter(obj).z <= -4.6,
         },
       ];

@@ -1014,11 +1014,82 @@ export function buildSoftMaskingLegsAndBorders(
   return maskingGroup;
 }
 
+let cachedPaintedIcicleTex: THREE.CanvasTexture | null = null;
+
 /**
- * Builds an organic, fluted Seussian melting icicle / snow-drip (`LatheGeometry`)
- * hanging downward from `y = 0` to `y = -lengthM`, with a flared root collar,
- * 3 frozen ring bulges along its shaft, a rounded droplet tip, and a gentle
- * Seussian S-curve bend — replacing primitive `ConeGeometry` cones.
+ * Generates a cached Scenic Artist Trompe-l'oeil Painted Ice & Snow-Drip Texture
+ * for 3-axis CNC-routed 15mm–18mm plywood icicle cutouts: painted glacier-blue
+ * bevel facets, crisp central specular white highlights, and Seussian charcoal
+ * ink cross-hatching that gives flat timber cutouts convincing 3D depth.
+ */
+export function getPaintedIcicleCutoutTexture(): THREE.CanvasTexture {
+  if (cachedPaintedIcicleTex) {
+    return cachedPaintedIcicleTex;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Vertical glacier-blue to frost-white scenic paint wash
+    const vGrad = ctx.createLinearGradient(0, 0, 0, 512);
+    vGrad.addColorStop(0, '#8cb4d8');
+    vGrad.addColorStop(0.38, '#b8d2e6');
+    vGrad.addColorStop(0.78, '#cde0ee');
+    vGrad.addColorStop(1, '#98bfe0');
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Trompe-l'oeil vertical painted ice facets & specular highlight ribbons
+    for (let x = 24; x < 512; x += 48) {
+      const facetGrad = ctx.createLinearGradient(x - 18, 0, x + 22, 0);
+      facetGrad.addColorStop(0, 'rgba(72, 112, 164, 0.36)');
+      facetGrad.addColorStop(0.45, 'rgba(232, 245, 255, 0.52)');
+      facetGrad.addColorStop(1, 'rgba(84, 128, 178, 0.34)');
+      ctx.fillStyle = facetGrad;
+      ctx.fillRect(x - 18, 0, 40, 512);
+    }
+
+    // Horizontal painted melt-ring glazes
+    ctx.strokeStyle = 'rgba(236, 248, 255, 0.45)';
+    ctx.lineWidth = 5;
+    for (let y = 52; y < 480; y += 68) {
+      ctx.beginPath();
+      for (let x = 0; x <= 512; x += 32) {
+        const wave = Math.sin((x / 512) * Math.PI * 6 + y * 0.04) * 7;
+        if (x === 0) ctx.moveTo(x, y + wave);
+        else ctx.lineTo(x, y + wave);
+      }
+      ctx.stroke();
+    }
+
+    // Scenic artist Seussian charcoal-blue ink cross-hatching
+    ctx.strokeStyle = 'rgba(26, 44, 72, 0.34)';
+    ctx.lineWidth = 2.2;
+    for (let i = 0; i < 84; i++) {
+      const hx = (i * 59) % 496;
+      const hy = (i * 43) % 496;
+      ctx.beginPath();
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(hx + 22, hy - 9);
+      ctx.stroke();
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.2, 1.2);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  cachedPaintedIcicleTex = tex;
+  return tex;
+}
+
+/**
+ * Builds a 3-axis CNC-routed 15mm (5/8") painted plywood icicle profile cutout
+ * (`ExtrudeGeometry`) hanging downward from `y = 0` to `y = -lengthM`, with
+ * Seussian wavy side scallops, a gentle S-curve bend, and scenic-artist painted
+ * trompe-l'oeil ice shading — avoiding expensive 4-axis foam turning.
  */
 export function createSculptedIcicleDrip(
   lengthM: number,
@@ -1026,43 +1097,67 @@ export function createSculptedIcicleDrip(
   material: THREE.Material,
   curveBendM = 0.035
 ): THREE.Mesh {
-  const steps = 16;
-  const pts: THREE.Vector2[] = [];
+  const steps = 12;
+  const shape = new THREE.Shape();
+
+  // Top mounting tab (tucked behind the rock/snow eave)
+  shape.moveTo(-topRadiusM * 1.15, 0.015);
+  shape.lineTo(topRadiusM * 1.15, 0.015);
+
+  // Right scalloped profile descending from y = 0 down to y = -lengthM
   for (let i = 0; i <= steps; i++) {
-    const t = i / steps; // 0 (top root at y=0) -> 1 (bottom tip at y=-lengthM)
+    const t = i / steps;
     const y = -t * lengthM;
-    // Flared root collar at t=0, 3 organic melt-ring ripples, rounded droplet tip at t=1
-    const rootFlare = Math.exp(-t * 7.5) * 0.42;
-    const taper = Math.pow(1 - t, 0.72);
-    const ripple = 1.0 + 0.14 * Math.sin(t * Math.PI * 5.0);
-    const tipRound = t > 0.92 ? Math.sqrt(Math.max(0, 1 - (t - 0.92) / 0.08)) : 1.0;
-    const r = Math.max(0.002, topRadiusM * (taper * ripple + rootFlare) * tipRound);
-    pts.push(new THREE.Vector2(r, y));
+    const taper = Math.pow(1 - t, 0.76);
+    const ripple = 1.0 + 0.14 * Math.sin(t * Math.PI * 4.0);
+    const bendX = Math.sin(t * Math.PI * 1.1) * t * curveBendM;
+    const halfWidth = Math.max(0.005, topRadiusM * taper * ripple);
+    shape.lineTo(bendX + halfWidth, y);
   }
 
-  const geom = new THREE.LatheGeometry(pts, 14);
-  const pos = geom.attributes.position;
-  if (pos && Math.abs(curveBendM) > 1e-4) {
-    for (let i = 0; i < pos.count; i++) {
-      const py = pos.getY(i);
-      const frac = Math.min(1, Math.max(0, -py / Math.max(0.05, lengthM)));
-      const bendX = Math.sin(frac * Math.PI * 1.15) * frac * curveBendM;
-      pos.setX(i, pos.getX(i) + bendX);
-    }
-    pos.needsUpdate = true;
-    geom.computeVertexNormals();
+  // Left scalloped profile ascending from y = -lengthM back to y = 0
+  for (let i = steps; i >= 0; i--) {
+    const t = i / steps;
+    const y = -t * lengthM;
+    const taper = Math.pow(1 - t, 0.76);
+    const ripple = 1.0 + 0.14 * Math.cos(t * Math.PI * 4.0);
+    const bendX = Math.sin(t * Math.PI * 1.1) * t * curveBendM;
+    const halfWidth = Math.max(0.005, topRadiusM * taper * ripple);
+    shape.lineTo(bendX - halfWidth, y);
   }
+  shape.closePath();
 
-  const mesh = new THREE.Mesh(geom, material);
+  const plyThicknessM = 0.015; // Standard 5/8" (15mm) CNC-routed scenic plywood
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: plyThicknessM,
+    bevelEnabled: true,
+    bevelThickness: 0.003,
+    bevelSize: 0.003,
+    bevelSegments: 1,
+    curveSegments: 8,
+  });
+  geom.translate(0, 0, -plyThicknessM * 0.5);
+
+  const paintedMat =
+    material instanceof THREE.MeshStandardMaterial
+      ? new THREE.MeshStandardMaterial({
+          map: getPaintedIcicleCutoutTexture(),
+          color: material.color,
+          roughness: Math.max(0.55, material.roughness),
+          metalness: material.metalness,
+        })
+      : material;
+
+  const mesh = new THREE.Mesh(geom, paintedMat);
   mesh.castShadow = true;
   return mesh;
 }
 
 /**
- * Builds a continuous, sculpted Seussian wavy snow-drip & icicle valance curtain
- * (`ExtrudeGeometry`) spanning `[-widthM/2, +widthM/2]` and hanging from `y = 0`
- * down to `-maxDropM`, with smooth rounded drip fingers, a continuous top snow
- * header bolster, and a stepped blue-ice glaze backing layer (`-0.035m` Z offset).
+ * Builds a continuous 3-axis CNC-routed 18mm (3/4") plywood Seussian wavy
+ * snow-drip & icicle valance flat (`ExtrudeGeometry`) spanning `[-widthM/2, +widthM/2]`
+ * and hanging from `y = 0` down to `-maxDropM`, painted by scenic artists with
+ * trompe-l'oeil ice facets and a dark Seussian ink shadow backing outline.
  */
 export function createSeussianIcicleValance(
   widthM: number,
@@ -1070,7 +1165,7 @@ export function createSeussianIcicleValance(
   fingerCount: number,
   frontMaterial: THREE.Material,
   glazeBackMaterial?: THREE.Material,
-  depthM = 0.055,
+  depthM = 0.018,
   seed = 1
 ): THREE.Group {
   const group = new THREE.Group();
@@ -1090,7 +1185,7 @@ export function createSeussianIcicleValance(
     const hash = Math.abs(Math.sin((i + 1) * 12.9898 + seed * 78.233));
     const fingerLen = maxDropM * (0.48 + 0.52 * hash);
     const valleyY = -maxDropM * (0.16 + 0.12 * ((i + seed) % 2));
-    const tipSkew = ((i % 2 === 0 ? 1 : -1) * stepW * 0.08);
+    const tipSkew = (i % 2 === 0 ? 1 : -1) * stepW * 0.08;
 
     // Smooth curve from right valley down to rounded icicle tip and back up to left valley
     shape.quadraticCurveTo(
@@ -1109,27 +1204,219 @@ export function createSeussianIcicleValance(
 
   shape.closePath();
 
+  const plyDepth = Math.min(0.022, Math.max(0.012, depthM));
   const extrudeGeom = new THREE.ExtrudeGeometry(shape, {
-    depth: depthM,
+    depth: plyDepth,
     bevelEnabled: true,
-    bevelThickness: 0.014,
-    bevelSize: 0.012,
-    bevelSegments: 2,
+    bevelThickness: 0.004,
+    bevelSize: 0.004,
+    bevelSegments: 1,
     curveSegments: 10,
   });
-  extrudeGeom.translate(0, 0, -depthM / 2);
+  extrudeGeom.translate(0, 0, -plyDepth / 2);
 
-  const frontMesh = new THREE.Mesh(extrudeGeom, frontMaterial);
+  const paintedFrontMat =
+    frontMaterial instanceof THREE.MeshStandardMaterial
+      ? new THREE.MeshStandardMaterial({
+          map: getPaintedIcicleCutoutTexture(),
+          color: frontMaterial.color,
+          roughness: Math.max(0.55, frontMaterial.roughness),
+          metalness: frontMaterial.metalness,
+        })
+      : frontMaterial;
+
+  const frontMesh = new THREE.Mesh(extrudeGeom, paintedFrontMat);
   frontMesh.castShadow = true;
   group.add(frontMesh);
 
   if (glazeBackMaterial) {
     const backMesh = new THREE.Mesh(extrudeGeom, glazeBackMaterial);
-    backMesh.scale.set(1.01, 1.05, 0.65);
-    backMesh.position.set(0, -0.018, -0.036);
+    backMesh.scale.set(1.012, 1.04, 0.75);
+    backMesh.position.set(0, -0.016, -0.024);
     group.add(backMesh);
   }
 
   return group;
 }
+
+export interface WhoFairyLightOptions {
+  readonly bulbCount?: number;
+  readonly bulbRadiusM?: number;
+  readonly cordRadiusM?: number;
+  readonly cordColor?: number;
+  readonly sagM?: number;
+  readonly colors?: ReadonlyArray<number>;
+  readonly palette?: ReadonlyArray<number>;
+  readonly emissiveIntensity?: number;
+  readonly includePointLight?: boolean;
+  readonly pointLightCount?: number;
+  readonly pointLightColor?: number;
+  readonly pointLightIntensity?: number;
+  readonly pointLightDistance?: number;
+}
+
+const DEFAULT_WHO_FAIRY_PALETTE: ReadonlyArray<number> = [
+  0xff0c2e, // Ruby Red
+  0x00e848, // Emerald Green
+  0x00a8ff, // Sapphire Cyan-Blue
+  0xffc400, // Golden Yellow
+  0xff14b8, // Whoville Hot Magenta
+  0xff6200, // Tangerine Orange
+  0x8c1eff, // Amethyst Purple
+];
+
+/**
+ * Builds a Multi-Colored Emissive Who-Land Fairy Light Strand (`createWhoLandFairyLightStrand`)
+ * draped along `waypoints` with optional catenary sag between points, a dark
+ * forest-green festoon wire, brass bulb sockets, saturated multi-colored emissive
+ * glass bulbs (`toneMapped: false` with clamped chroma so colors stay vivid red,
+ * green, blue, yellow, magenta, orange, and purple without washing out to white),
+ * colored bloom halos, and multi-colored practical `THREE.PointLight`s.
+ */
+export function createWhoLandFairyLightStrand(
+  waypoints: ReadonlyArray<THREE.Vector3>,
+  options: WhoFairyLightOptions = {}
+): THREE.Group {
+  const strandGroup = new THREE.Group();
+  strandGroup.name = 'WhoLandFairyLightStrand';
+  if (waypoints.length < 2) {
+    return strandGroup;
+  }
+
+  const bulbCount = options.bulbCount ?? 14;
+  const bulbRadiusM = options.bulbRadiusM ?? 0.032;
+  const cordRadiusM = options.cordRadiusM ?? 0.009;
+  const sagM = options.sagM ?? 0.0;
+  const customColors = options.colors ?? options.palette;
+  const palette =
+    customColors && customColors.length > 0
+      ? customColors
+      : DEFAULT_WHO_FAIRY_PALETTE;
+  // Keep effective un-tonemapped emissive multiplier <= 1.05 so secondary RGB channels never clip to white
+  const clampedEmissive = Math.min(1.05, options.emissiveIntensity ?? 0.92);
+
+  // Subdivide between waypoints if sagM > 0 so each span forms a natural catenary swag
+  const curvePts: THREE.Vector3[] = [];
+  if (Math.abs(sagM) > 1e-4 && waypoints.length >= 2) {
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const p0 = waypoints[i]!;
+      const p1 = waypoints[i + 1]!;
+      if (i === 0) curvePts.push(p0.clone());
+      const mid = new THREE.Vector3().lerpVectors(p0, p1, 0.5);
+      mid.y -= sagM;
+      curvePts.push(mid);
+      curvePts.push(p1.clone());
+    }
+  } else {
+    for (const wp of waypoints) {
+      curvePts.push(wp.clone());
+    }
+  }
+
+  const curve = new THREE.CatmullRomCurve3(curvePts);
+  const cordMat = new THREE.MeshStandardMaterial({
+    color: options.cordColor ?? 0x163022,
+    roughness: 0.65,
+    metalness: 0.2,
+  });
+  const socketMat = new THREE.MeshStandardMaterial({
+    color: 0xd4a638,
+    roughness: 0.35,
+    metalness: 0.72,
+  });
+
+  const cordSegments = Math.max(24, bulbCount * 2);
+  const cordMesh = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, cordSegments, cordRadiusM, 6, false),
+    cordMat
+  );
+  strandGroup.add(cordMesh);
+
+  const bulbGeo = new THREE.SphereGeometry(bulbRadiusM, 10, 8);
+  const haloGeo = new THREE.SphereGeometry(bulbRadiusM * 1.95, 8, 6);
+  const socketGeo = new THREE.CylinderGeometry(
+    bulbRadiusM * 0.42,
+    bulbRadiusM * 0.5,
+    bulbRadiusM * 0.75,
+    6
+  );
+
+  const bulbMatCache = new Map<number, THREE.MeshStandardMaterial>();
+  const haloMatCache = new Map<number, THREE.MeshBasicMaterial>();
+
+  for (let i = 0; i < bulbCount; i++) {
+    const t = bulbCount === 1 ? 0.5 : (i + 0.5) / bulbCount;
+    const pt = curve.getPoint(t);
+    const col = palette[i % palette.length] ?? 0xff0c2e;
+
+    let bulbMat = bulbMatCache.get(col);
+    if (!bulbMat) {
+      bulbMat = new THREE.MeshStandardMaterial({
+        color: col,
+        emissive: col,
+        emissiveIntensity: clampedEmissive,
+        roughness: 0.14,
+        metalness: 0.04,
+        toneMapped: false,
+      });
+      bulbMatCache.set(col, bulbMat);
+    }
+
+    let haloMat = haloMatCache.get(col);
+    if (!haloMat) {
+      haloMat = new THREE.MeshBasicMaterial({
+        color: col,
+        transparent: true,
+        opacity: 0.42,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      haloMatCache.set(col, haloMat);
+    }
+
+    const socket = new THREE.Mesh(socketGeo, socketMat);
+    socket.position.set(pt.x, pt.y - bulbRadiusM * 0.32, pt.z);
+    strandGroup.add(socket);
+
+    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+    bulb.scale.set(0.84, 1.32, 0.84);
+    bulb.position.set(
+      pt.x,
+      pt.y - bulbRadiusM * 1.15,
+      pt.z + bulbRadiusM * 0.18
+    );
+    bulb.rotation.z = ((i % 3) - 1) * 0.16;
+    strandGroup.add(bulb);
+
+    const halo = new THREE.Mesh(haloGeo, haloMat);
+    halo.position.copy(bulb.position);
+    strandGroup.add(halo);
+  }
+
+  const lightCount =
+    options.pointLightCount ?? (options.includePointLight ? 1 : 0);
+  if (lightCount > 0) {
+    const lightIntensity = options.pointLightIntensity ?? 0.65;
+    const lightDist = options.pointLightDistance ?? 2.6;
+    for (let l = 0; l < lightCount; l++) {
+      const lt = (l + 0.5) / lightCount;
+      const lPt = curve.getPoint(lt);
+      const multiColor =
+        options.pointLightColor ??
+        palette[(l * 2) % palette.length] ??
+        0xff0c2e;
+      const ptLight = new THREE.PointLight(
+        multiColor,
+        lightIntensity,
+        lightDist,
+        1.8
+      );
+      ptLight.position.set(lPt.x, lPt.y - bulbRadiusM * 1.2, lPt.z + 0.12);
+      strandGroup.add(ptLight);
+    }
+  }
+
+  return strandGroup;
+}
+
 
