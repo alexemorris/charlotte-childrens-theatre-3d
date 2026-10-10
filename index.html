@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#101216" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="description" content="Children's Theatre of Charlotte — Hugh McColl Family Theatre (ImaginOn) 3D Set Design & Audience Sightline Modeler" />
   <title>Children's Theatre of Charlotte — 3D Set Design &amp; Sightline Modeler</title>
   <link rel="stylesheet" href="/src/style.css" />
@@ -36,13 +39,15 @@
   <div id="app">
     <canvas id="three-canvas"></canvas>
 
-    <!-- Floating Hover Seat Tooltip -->
+    <!-- Floating Hover Seat Tooltip (Desktop pointer only) -->
     <div id="seat-hover-tooltip" class="seat-hover-tooltip" hidden></div>
 
     <!-- Top-Center Quick-Launch Pill (Visible in Orbit Camera Mode) -->
     <div id="orbit-top-pill" class="orbit-top-pill">
       <span class="live-status-dot"></span>
-      <span class="orbit-pill-label">Click any seat in 3D or 2D Chart for <strong>1st-Person Sightline View</strong></span>
+      <span class="orbit-pill-label">
+        <span class="desktop-only-inline">Click any seat in 3D or 2D Chart for </span><strong>1st-Person Sightline View</strong>
+      </span>
       <button id="quick-seat-director-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Center Orchestra Row G Seat 108">
         Sit Center (G-108)
       </button>
@@ -56,7 +61,7 @@
       <div class="walkthrough-hud-top">
         <div class="walkthrough-hud-brand">
           <span class="live-status-dot is-cyan"></span>
-          <span class="walkthrough-hud-title">1ST-PERSON SEAT VIEW</span>
+          <span class="walkthrough-hud-title">SEAT VIEW</span>
           <span id="seat-hud-readout" class="walkthrough-pos-readout">MAIN FLOOR · ROW G · SEAT 108</span>
           <span id="seat-hud-score-badge" class="seat-score-badge grade-optimal">99% OPTIMAL</span>
         </div>
@@ -67,7 +72,7 @@
             type="button"
             title="Toggle Seated Eye Height between Child (0.96m / Ages 5–10) and Adult (1.18m) (Shortcut: C)"
           >
-            Eye: Child 0.96m (C)
+            Child 0.96m
           </button>
           <button
             id="seat-hud-laser-btn"
@@ -75,7 +80,7 @@
             type="button"
             title="Toggle 3D Sightline Laser Rays to Stage Targets (Shortcut: L)"
           >
-            3D Lasers: OFF (L)
+            Lasers: OFF
           </button>
           <button id="seat-hud-prev-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Previous Seat in Row (Left Arrow)">
             ← Seat
@@ -95,33 +100,25 @@
             type="button"
             title="Return to 3D Orbit Camera (Shortcut: Esc)"
           >
-            Exit to Orbit (Esc)
+            Exit Orbit
           </button>
         </div>
       </div>
       <div class="walkthrough-hint-row">
-        <span><strong>Drag Mouse</strong> to Look Around Stage &amp; Proscenium</span>
-        <span>·</span>
-        <span><kbd>←</kbd><kbd>→</kbd> Adjacent Seat</span>
-        <span>·</span>
-        <span><kbd>↑</kbd><kbd>↓</kbd> Step Row</span>
-        <span>·</span>
-        <span><kbd>C</kbd> Child / Adult Eye Height</span>
-        <span>·</span>
-        <span><kbd>L</kbd> 3D Sightline Lasers</span>
-        <span>·</span>
-        <span><kbd>Esc</kbd> Orbit View</span>
+        <span><strong>Drag / Swipe</strong> to Look Around Stage &amp; Proscenium</span>
+        <span class="desktop-only-inline">· <kbd>←</kbd><kbd>→</kbd> Seat · <kbd>↑</kbd><kbd>↓</kbd> Row · <kbd>C</kbd> Child/Adult Eye · <kbd>Esc</kbd> Orbit</span>
       </div>
     </div>
 
     <!-- ======================================================================
-         LEFT FLOATING WINDOW: 570-SEAT CHART & SIGHTLINE ANALYZER
+         LEFT FLOATING WINDOW / MOBILE SHEET: 570-SEAT CHART & SIGHTLINE ANALYZER
          ====================================================================== -->
     <aside id="seating-window" class="hud-window seating-window" aria-label="McColl Family Theatre 570-Seat Sightline Inspector">
       <header id="seating-titlebar" class="hud-titlebar" title="Drag to move Seating & Sightline Inspector">
         <button id="seating-collapse-btn" class="hud-win-btn" type="button" title="Collapse / Expand Seating Chart" aria-label="Collapse Seating Chart"></button>
         <span class="hud-title">McColl Family Theatre · 570 Seats</span>
         <span id="seating-active-badge" class="hud-count">420 Main · 150 Balc</span>
+        <button id="seating-mobile-close-btn" class="mobile-sheet-close-btn" type="button" aria-label="Minimize Seating Sheet">✕</button>
       </header>
 
       <div id="seating-body" class="hud-body">
@@ -157,7 +154,7 @@
         <section class="hud-section">
           <div class="hud-section-head">
             <span>INTERACTIVE 2D SEATING CHART</span>
-            <span class="hud-meta">CLICK ANY SEAT</span>
+            <span class="hud-meta">TAP ANY SEAT</span>
           </div>
           <div id="seating-chart-mount" class="seating-chart-mount"></div>
 
@@ -197,7 +194,7 @@
           </div>
           <div id="seat-telemetry-card" class="seat-telemetry-card">
             <div class="telemetry-empty">
-              Click any of the <strong>570 seats</strong> in the 3D auditorium or on the 2D chart above to inspect its exact 1st-person stage view and sightline clearance.
+              Tap any of the <strong>570 seats</strong> in the 3D auditorium or on the 2D chart above to inspect its exact 1st-person stage view and sightline clearance.
             </div>
           </div>
         </section>
@@ -237,13 +234,14 @@
     </aside>
 
     <!-- ======================================================================
-         RIGHT FLOATING WINDOW: SET DESIGNER & STAGE TECHNICAL CONSOLE
+         RIGHT FLOATING WINDOW / MOBILE SHEET: SET DESIGNER & STAGE CONSOLE
          ====================================================================== -->
     <aside id="stage-console-window" class="hud-window stage-console-window" aria-label="Set Designer & Stage Technical Console">
       <header id="stage-console-titlebar" class="hud-titlebar" title="Drag to move Set Designer Console">
         <button id="stage-console-collapse-btn" class="hud-win-btn" type="button" title="Collapse / Expand Set Designer Console" aria-label="Collapse Set Designer Console"></button>
         <span class="hud-title">Set Designer &amp; Stage Console</span>
         <span id="active-prod-badge" class="hud-count">Alice Set</span>
+        <button id="stage-mobile-close-btn" class="mobile-sheet-close-btn" type="button" aria-label="Minimize Stage Sheet">✕</button>
       </header>
 
       <div id="stage-console-body" class="hud-body">
@@ -421,6 +419,36 @@
         </footer>
       </div>
     </aside>
+
+    <!-- ======================================================================
+         MOBILE QUICK CAMERA & PRODUCTION STRIP + BOTTOM NAVIGATION DOCK
+         ====================================================================== -->
+    <div id="mobile-quick-cams" class="mobile-quick-cams" hidden>
+      <button class="hud-inline-btn cam-preset-btn active" type="button" data-cam="house-overview">Overview</button>
+      <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="stage-front">Stage Front</button>
+      <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="from-stage-to-house">Stage → House</button>
+      <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="lower-balcony-center">Balcony</button>
+      <button class="hud-inline-btn cam-preset-btn" type="button" data-cam="ortho-ground-plan">Top Plan</button>
+    </div>
+
+    <nav id="mobile-dock-bar" class="mobile-dock-bar" aria-label="Mobile Navigation">
+      <button id="mob-tab-viewport" class="mobile-dock-btn is-active" type="button" data-mob-tab="viewport">
+        <span class="mobile-dock-icon">🎭</span>
+        <span class="mobile-dock-label">3D Viewport</span>
+      </button>
+      <button id="mob-tab-seats" class="mobile-dock-btn" type="button" data-mob-tab="seats">
+        <span class="mobile-dock-icon">🪑</span>
+        <span class="mobile-dock-label">570 Seats</span>
+      </button>
+      <button id="mob-tab-sets" class="mobile-dock-btn" type="button" data-mob-tab="sets">
+        <span class="mobile-dock-icon">🎨</span>
+        <span class="mobile-dock-label">Sets &amp; Fly</span>
+      </button>
+      <button id="mob-tab-cams" class="mobile-dock-btn" type="button" data-mob-tab="cams">
+        <span class="mobile-dock-icon">🎥</span>
+        <span class="mobile-dock-label">Cameras</span>
+      </button>
+    </nav>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

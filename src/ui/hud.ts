@@ -40,9 +40,59 @@ export class TheatreHudController {
     );
 
     this.initDraggableAndCollapsibleWindows();
+    this.initMobileNavigationDock();
     this.renderProductionSwitcher();
     this.renderScenicElementsAndBattens(this.sceneCtrl.getActiveProduction());
     this.bindControls();
+  }
+
+  private setMobileTab(tab: 'viewport' | 'seats' | 'sets' | 'cams'): void {
+    const seatingWin = document.getElementById('seating-window');
+    const stageWin = document.getElementById('stage-console-window');
+    const quickCams = document.getElementById('mobile-quick-cams');
+
+    seatingWin?.classList.toggle('mobile-sheet-open', tab === 'seats');
+    stageWin?.classList.toggle('mobile-sheet-open', tab === 'sets');
+    if (quickCams) {
+      quickCams.hidden = tab !== 'cams';
+    }
+
+    document
+      .querySelectorAll<HTMLButtonElement>('.mobile-dock-btn')
+      .forEach((btn) => {
+        btn.classList.toggle('is-active', btn.dataset.mobTab === tab);
+      });
+  }
+
+  private initMobileNavigationDock(): void {
+    document
+      .querySelectorAll<HTMLButtonElement>('.mobile-dock-btn')
+      .forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.mobTab as
+            | 'viewport'
+            | 'seats'
+            | 'sets'
+            | 'cams'
+            | undefined;
+          if (!tab) return;
+          // Tapping an already-open sheet tab returns to the full 3D viewport
+          const isAlreadyActive =
+            btn.classList.contains('is-active') && tab !== 'viewport';
+          this.setMobileTab(isAlreadyActive ? 'viewport' : tab);
+        });
+      });
+
+    document
+      .getElementById('seating-mobile-close-btn')
+      ?.addEventListener('click', () => {
+        this.setMobileTab('viewport');
+      });
+    document
+      .getElementById('stage-mobile-close-btn')
+      ?.addEventListener('click', () => {
+        this.setMobileTab('viewport');
+      });
   }
 
   private initDraggableAndCollapsibleWindows(): void {
@@ -68,6 +118,7 @@ export class TheatreHudController {
       let origTop = 0;
 
       bar.addEventListener('pointerdown', (e: PointerEvent) => {
+        if (window.innerWidth <= 860) return;
         if ((e.target as HTMLElement).tagName === 'BUTTON') return;
         dragging = true;
         const rect = win.getBoundingClientRect();
@@ -81,7 +132,7 @@ export class TheatreHudController {
       });
 
       window.addEventListener('pointermove', (e: PointerEvent) => {
-        if (!dragging) return;
+        if (!dragging || window.innerWidth <= 860) return;
         const nx = Math.max(
           6,
           Math.min(window.innerWidth - 220, origLeft + (e.clientX - startX))

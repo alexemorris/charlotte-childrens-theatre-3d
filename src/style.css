@@ -1,6 +1,7 @@
 /* ============================================================================
    Children's Theatre of Charlotte — Hugh McColl Family Theatre (ImaginOn)
    Matte dark charcoal utility inspector palette (inspired by Crox Farmhouse)
+   Desktop Floating Windows + Mobile Bottom-Sheet & Touch Ergonomics
    ============================================================================ */
 
 * {
@@ -9,6 +10,7 @@
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -16,7 +18,9 @@ body,
 #app {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
   background: #101216;
   font-family: -apple-system, BlinkMacSystemFont, "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
   font-size: 11px;
@@ -30,6 +34,7 @@ body,
   width: 100%;
   height: 100%;
   cursor: grab;
+  touch-action: none;
 }
 
 #three-canvas:active {
@@ -47,6 +52,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
   background: #0d0f13;
   transition: opacity 0.45s ease, visibility 0.45s ease;
 }
@@ -58,7 +64,7 @@ body,
 }
 
 .loading-card {
-  width: min(460px, 92vw);
+  width: min(460px, 94vw);
   background: #1b1d22;
   border: 1px solid #0a0b0d;
   box-shadow:
@@ -129,6 +135,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   font-size: 10px;
   color: #a6acb8;
 }
@@ -145,7 +152,7 @@ body,
 
 .orbit-top-pill {
   position: fixed;
-  top: 14px;
+  top: max(12px, env(safe-area-inset-top, 12px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 25;
@@ -160,6 +167,12 @@ body,
     0 8px 22px rgba(0, 0, 0, 0.65);
   border-radius: 5px;
   white-space: nowrap;
+}
+
+.orbit-top-pill[hidden],
+.walkthrough-hud[hidden],
+.mobile-quick-cams[hidden] {
+  display: none !important;
 }
 
 .orbit-pill-label {
@@ -189,7 +202,7 @@ body,
 
 .walkthrough-hud {
   position: fixed;
-  top: 12px;
+  top: max(10px, env(safe-area-inset-top, 10px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -208,14 +221,15 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .walkthrough-hud-brand {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .walkthrough-hud-title {
@@ -223,6 +237,7 @@ body,
   font-weight: 700;
   letter-spacing: 0.05em;
   color: #f0f2f5;
+  flex-shrink: 0;
 }
 
 .walkthrough-pos-readout {
@@ -234,6 +249,9 @@ body,
   padding: 2px 6px;
   border-radius: 3px;
   border: 1px solid #262b34;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .seat-score-badge {
@@ -242,6 +260,7 @@ body,
   padding: 2px 6px;
   border-radius: 3px;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .seat-score-badge.grade-optimal {
@@ -307,7 +326,7 @@ kbd {
 }
 
 /* ============================================================================
-   Floating HUD Palette Windows (Left & Right)
+   Floating HUD Palette Windows (Desktop Left & Right)
    ============================================================================ */
 
 .hud-window {
@@ -341,7 +360,7 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 23px;
+  height: 24px;
   padding: 0 8px;
   background: #1a1a1a;
   border-bottom: 1px solid #101010;
@@ -362,6 +381,18 @@ kbd {
 
 .hud-win-btn:hover {
   background: #888;
+}
+
+.mobile-sheet-close-btn {
+  display: none;
+  background: #2b2b2b;
+  border: 1px solid #121212;
+  border-radius: 3px;
+  color: #d0d0d0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  cursor: pointer;
 }
 
 .hud-title {
@@ -388,8 +419,9 @@ kbd {
 .hud-body {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 52px);
+  max-height: calc(100dvh - 52px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hud-body::-webkit-scrollbar {
@@ -563,6 +595,7 @@ kbd {
   display: block;
   width: 100%;
   height: auto;
+  touch-action: manipulation;
 }
 
 .chart-seat-dot {
@@ -605,6 +638,7 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   margin-bottom: 5px;
 }
 
@@ -924,10 +958,230 @@ input[type="range"] {
   text-overflow: ellipsis;
 }
 
-@media (max-width: 980px) {
-  .orbit-top-pill,
+/* ============================================================================
+   Mobile Navigation Dock & Mobile Sheet System (Hidden on Desktop > 860px)
+   ============================================================================ */
+
+.mobile-dock-bar {
+  display: none;
+}
+
+.mobile-quick-cams {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .seat-hover-tooltip {
+    display: none !important;
+  }
+  .chart-seat-dot {
+    stroke-width: 1.5px;
+  }
+}
+
+@media (max-width: 860px) {
+  .desktop-only-inline {
+    display: none;
+  }
+
+  /* Compact top bar on mobile */
+  .orbit-top-pill {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    justify-content: space-between;
+    padding: 6px 9px;
+    gap: 6px;
+  }
+
+  .orbit-pill-label {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .orbit-pill-btn {
+    padding: 5px 8px;
+    font-size: 9.8px;
+    flex-shrink: 0;
+  }
+
   .walkthrough-hud {
-    max-width: 92vw;
-    min-width: auto;
+    left: 6px;
+    right: 6px;
+    transform: none;
+    min-width: 0;
+    max-width: none;
+    padding: 6px 8px;
+  }
+
+  .walkthrough-hud-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .walkthrough-hud-brand {
+    justify-content: space-between;
+  }
+
+  .walkthrough-hud-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .walkthrough-hud-actions .hud-inline-btn {
+    padding: 6px 4px;
+    font-size: 9.6px;
+    text-align: center;
+  }
+
+  .walkthrough-hint-row {
+    font-size: 9px;
+    margin-top: 4px;
+  }
+
+  /* Convert Left & Right Floating Windows into Slide-Up Mobile Bottom Sheets */
+  .hud-window {
+    left: 6px !important;
+    right: 6px !important;
+    top: auto !important;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-height: 58dvh;
+    border-radius: 8px;
+    z-index: 35;
+    display: none;
+  }
+
+  .hud-window.mobile-sheet-open {
+    display: block;
+  }
+
+  .hud-window.is-collapsed .hud-body {
+    display: flex;
+  }
+
+  .hud-titlebar {
+    height: 34px;
+    padding: 0 10px;
+    cursor: default;
+  }
+
+  .hud-win-btn {
+    display: none;
+  }
+
+  .mobile-sheet-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hud-title {
+    font-size: 11px;
+  }
+
+  .hud-body {
+    max-height: calc(58dvh - 34px);
+    padding-bottom: 6px;
+  }
+
+  /* Larger touch-friendly buttons & sliders inside sheets */
+  .hud-seg-btn,
+  .hud-inline-btn,
+  .quick-seat-btn,
+  .spawn-piece-btn,
+  .cam-preset-btn {
+    padding: 7px 8px;
+    font-size: 10.2px;
+  }
+
+  .prod-card-btn {
+    padding: 7px 8px;
+  }
+
+  .prod-card-title {
+    font-size: 10.2px;
+  }
+
+  .scenic-element-row {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  input[type="range"] {
+    height: 8px;
+  }
+
+  /* Mobile Quick Camera Strip above Bottom Dock */
+  .mobile-quick-cams {
+    position: fixed;
+    left: 6px;
+    right: 6px;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    z-index: 34;
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 7px 8px;
+    background: rgba(26, 28, 33, 0.96);
+    border: 1px solid #0c0c0c;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+    border-radius: 7px;
+  }
+
+  .mobile-quick-cams .cam-preset-btn {
+    flex: 1 0 auto;
+    white-space: nowrap;
+  }
+
+  /* Mobile Bottom Navigation Dock */
+  .mobile-dock-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(52px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+    background: rgba(22, 24, 28, 0.98);
+    border-top: 1px solid #0c0d10;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.65);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    z-index: 40;
+  }
+
+  .mobile-dock-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: #25272e;
+    border: 1px solid #121317;
+    border-radius: 5px;
+    color: #a8aeb8;
+    font-size: 9.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mobile-dock-btn.is-active {
+    background: #362c1e;
+    border-color: #d6983a;
+    color: #f7c873;
+  }
+
+  .mobile-dock-icon {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .mobile-dock-label {
+    font-size: 9.2px;
+    letter-spacing: 0.02em;
   }
 }

@@ -640,6 +640,17 @@ export class TheatreSceneController {
     this.selectSeatByIndex(closest.instanceIndex, true);
   }
 
+  private computeAdaptiveFov(baseFov: number): number {
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    if (aspect < 0.75) {
+      return Math.min(72, baseFov + 14);
+    }
+    if (aspect < 1.0) {
+      return Math.min(68, baseFov + 8);
+    }
+    return baseFov;
+  }
+
   private flyToSeatEye(seat: SeatRecord, duration = 0.65): void {
     const eye =
       this.eyeMode === 'child' ? seat.eyePositionChild : seat.eyePositionAdult;
@@ -653,7 +664,7 @@ export class TheatreSceneController {
 
     const lookTarget = endPos.clone().add(dir.multiplyScalar(8.0));
     this.controls.enabled = false;
-    this.camera.fov = 54;
+    this.camera.fov = this.computeAdaptiveFov(54);
     this.camera.updateProjectionMatrix();
 
     this.cameraTween = {
@@ -769,7 +780,7 @@ export class TheatreSceneController {
     this.inSeatView = false;
     this.activeCameraPreset = preset;
     this.controls.enabled = true;
-    this.camera.fov = 52;
+    this.camera.fov = this.computeAdaptiveFov(52);
     this.camera.updateProjectionMatrix();
 
     let endPos = new THREE.Vector3(8.6, 5.4, 14.2);
@@ -954,7 +965,7 @@ export class TheatreSceneController {
     this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
       this.pointerDownClientX = e.clientX;
       this.pointerDownClientY = e.clientY;
-      if (this.inSeatView && e.button === 0) {
+      if (this.inSeatView && e.isPrimary && (e.button === 0 || e.pointerType === 'touch')) {
         this.isDraggingSeatLook = true;
         this.dragStartClientX = e.clientX;
         this.dragStartClientY = e.clientY;
@@ -962,13 +973,13 @@ export class TheatreSceneController {
     });
 
     window.addEventListener('pointermove', (e: PointerEvent) => {
-      if (this.inSeatView && this.isDraggingSeatLook) {
+      if (this.inSeatView && this.isDraggingSeatLook && e.isPrimary) {
         const dx = e.clientX - this.dragStartClientX;
         const dy = e.clientY - this.dragStartClientY;
         this.dragStartClientX = e.clientX;
         this.dragStartClientY = e.clientY;
-        this.seatLookYawOffset -= dx * 0.0034;
-        this.seatLookPitchOffset -= dy * 0.0028;
+        this.seatLookYawOffset -= dx * 0.0038;
+        this.seatLookPitchOffset -= dy * 0.0032;
         this.seatLookYawOffset = Math.max(-1.35, Math.min(1.35, this.seatLookYawOffset));
         this.seatLookPitchOffset = Math.max(
           -0.65,
@@ -977,9 +988,13 @@ export class TheatreSceneController {
         return;
       }
 
-      if (e.target === this.canvas) {
+      if (e.target === this.canvas && e.pointerType !== 'touch') {
         this.handlePointerHover(e);
       }
+    });
+
+    window.addEventListener('pointercancel', () => {
+      this.isDraggingSeatLook = false;
     });
 
     window.addEventListener('pointerup', (e: PointerEvent) => {
@@ -989,7 +1004,8 @@ export class TheatreSceneController {
         e.clientX - this.pointerDownClientX,
         e.clientY - this.pointerDownClientY
       );
-      if (dist < 6) {
+      const maxTapSlop = e.pointerType === 'touch' ? 14 : 6;
+      if (dist < maxTapSlop) {
         this.handleViewportClick(e);
       }
     });
@@ -1097,6 +1113,7 @@ export class TheatreSceneController {
     const w = window.innerWidth;
     const h = Math.max(1, window.innerHeight);
     this.camera.aspect = w / h;
+    this.camera.fov = this.computeAdaptiveFov(this.inSeatView ? 54 : 52);
     this.camera.updateProjectionMatrix();
     this.postPipeline.resize(w, h);
   }
