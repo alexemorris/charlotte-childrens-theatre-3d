@@ -711,12 +711,232 @@ export function createGrinchSnowFloorTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+export interface SeussianTextOptions {
+  readonly fontSize: number;
+  readonly fillTopColor: string;
+  readonly fillBottomColor?: string;
+  readonly bevelHighlightColor?: string;
+  readonly shadowColor?: string;
+  readonly outlineColor?: string;
+  readonly bounceAmp?: number;
+  readonly tiltAmp?: number;
+  readonly archCurvature?: number;
+  readonly letterSpacing?: number;
+}
+
+/**
+ * Custom hand-lettered Seussian wedge-block display typography renderer.
+ * Renders each character with playful Seussian per-letter tilt, baseline bounce,
+ * top/bottom wedge shear, 3D extruded drop shadow, crisp ink outline,
+ * vertical gradient fill, and inner 3D bevel highlight — never relying on
+ * Times New Roman or generic system serifs.
+ */
+export function drawSeussianDisplayText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  centerX: number,
+  centerY: number,
+  options: SeussianTextOptions
+): void {
+  const fontSize = options.fontSize;
+  const spacing = options.letterSpacing ?? fontSize * 0.66;
+  const bounceAmp = options.bounceAmp ?? fontSize * 0.08;
+  const tiltAmp = options.tiltAmp ?? 0.095;
+  const arch = options.archCurvature ?? 0;
+
+  ctx.save();
+  ctx.font = `900 ${Math.round(fontSize)}px "Fredoka", "Luckiest Guy", "Arial Black", "Impact", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  const chars = Array.from(text);
+  const widths = chars.map((ch) =>
+    ch === ' ' ? fontSize * 0.36 : Math.max(fontSize * 0.44, ctx.measureText(ch).width * 0.94)
+  );
+  const totalW =
+    widths.reduce((acc, w) => acc + w, 0) +
+    Math.max(0, chars.length - 1) * (spacing - fontSize * 0.58);
+
+  let cursorX = centerX - totalW / 2;
+
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i]!;
+    const cw = widths[i]!;
+    const charX = cursorX + cw / 2;
+    cursorX += cw + (spacing - fontSize * 0.58);
+
+    if (ch === ' ') continue;
+
+    const normX = totalW > 1 ? (charX - centerX) / (totalW * 0.5) : 0;
+    const archOffsetY = arch * (normX * normX - 0.35) * fontSize;
+    const bounceY = Math.sin(i * 1.85 + 0.6) * bounceAmp;
+    const angle = Math.cos(i * 2.15 + 0.4) * tiltAmp + normX * (arch * 0.14);
+    const shearX = ((i % 2 === 0 ? 1 : -1) * 0.06);
+    const scaleY = 1.0 + ((i * 7) % 3 - 1) * 0.05;
+
+    ctx.save();
+    ctx.translate(charX, centerY + archOffsetY + bounceY);
+    ctx.rotate(angle);
+    ctx.transform(1.04, 0, shearX, scaleY, 0, 0);
+
+    // 1. Deep 3D extruded block drop shadow
+    const shadowCol = options.shadowColor ?? '#121521';
+    const extrudeSteps = Math.max(3, Math.round(fontSize * 0.09));
+    ctx.fillStyle = shadowCol;
+    for (let s = extrudeSteps; s >= 1; s--) {
+      ctx.fillText(ch, s * 1.15, s * 1.35);
+    }
+
+    // 2. Crisp dark Seussian ink outline
+    ctx.strokeStyle = options.outlineColor ?? '#141824';
+    ctx.lineWidth = Math.max(3, fontSize * 0.13);
+    ctx.strokeText(ch, 0, 0);
+
+    // 3. Top-to-bottom Seussian gradient fill
+    const grad = ctx.createLinearGradient(0, -fontSize * 0.55, 0, fontSize * 0.52);
+    grad.addColorStop(0, options.fillTopColor);
+    grad.addColorStop(1, options.fillBottomColor ?? options.fillTopColor);
+    ctx.fillStyle = grad;
+    ctx.fillText(ch, 0, 0);
+
+    // 4. Inner 3D top-left bevel highlight
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.strokeStyle = options.bevelHighlightColor ?? 'rgba(255, 255, 230, 0.55)';
+    ctx.lineWidth = Math.max(1.5, fontSize * 0.045);
+    ctx.strokeText(ch, -fontSize * 0.025, -fontSize * 0.03);
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Draws the iconic "HOW THE GRINCH STOLE CHRISTMAS" multi-tiered Seussian logo
+ * matching the official title artwork (tilted red "HOW", mint-green "THE",
+ * giant stepping lime-to-emerald "GRINCH", and bold red "STOLE CHRISTMAS").
+ */
+export function drawGrinchLogoGraphic(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  scale = 1.0
+): void {
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.scale(scale, scale);
+
+  // Subtle radial glow behind the logo on the scrim
+  const glow = ctx.createRadialGradient(0, 0, 12, 0, 0, 210);
+  glow.addColorStop(0, 'rgba(255, 248, 225, 0.34)');
+  glow.addColorStop(0.65, 'rgba(210, 195, 255, 0.12)');
+  glow.addColorStop(1, 'rgba(110, 88, 180, 0.0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 220, 145, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // "Dr. Seuss'" whimsical script eyebrow
+  drawSeussianDisplayText(ctx, "DR. SEUSS'", -82, -104, {
+    fontSize: 21,
+    fillTopColor: '#fff6d6',
+    fillBottomColor: '#f0cf68',
+    outlineColor: '#1e1636',
+    shadowColor: '#120c24',
+    bounceAmp: 1.5,
+    tiltAmp: 0.06,
+    letterSpacing: 14,
+  });
+
+  // Top-left "HOW" in tilted vibrant crimson-red
+  ctx.save();
+  ctx.rotate(-0.11);
+  drawSeussianDisplayText(ctx, 'HOW', -108, -62, {
+    fontSize: 34,
+    fillTopColor: '#ff4848',
+    fillBottomColor: '#c81922',
+    bevelHighlightColor: 'rgba(255, 220, 200, 0.65)',
+    outlineColor: '#1a0d12',
+    shadowColor: '#12080c',
+    bounceAmp: 3,
+    tiltAmp: 0.11,
+    letterSpacing: 24,
+  });
+  ctx.restore();
+
+  // Top-center "THE" in mint-pistachio green
+  ctx.save();
+  ctx.rotate(-0.05);
+  drawSeussianDisplayText(ctx, 'THE', -14, -68, {
+    fontSize: 36,
+    fillTopColor: '#c8f69e',
+    fillBottomColor: '#76c84e',
+    bevelHighlightColor: 'rgba(255, 255, 235, 0.75)',
+    outlineColor: '#162814',
+    shadowColor: '#0e1a0c',
+    bounceAmp: 2.5,
+    tiltAmp: 0.09,
+    letterSpacing: 25,
+  });
+  ctx.restore();
+
+  // Centerpiece "GRINCH" — giant stepping/arching lime-to-emerald wedge letters
+  ctx.save();
+  ctx.rotate(-0.09);
+  drawSeussianDisplayText(ctx, 'GRINCH', 6, -4, {
+    fontSize: 82,
+    fillTopColor: '#98ea44',
+    fillBottomColor: '#0e8c28',
+    bevelHighlightColor: 'rgba(235, 255, 175, 0.8)',
+    outlineColor: '#0a3212',
+    shadowColor: '#071e0b',
+    bounceAmp: 6,
+    tiltAmp: 0.1,
+    archCurvature: -0.08,
+    letterSpacing: 54,
+  });
+  ctx.restore();
+
+  // "STOLE" in bold bouncy red below GRINCH
+  drawSeussianDisplayText(ctx, 'STOLE', 26, 56, {
+    fontSize: 38,
+    fillTopColor: '#ff4a44',
+    fillBottomColor: '#c81820',
+    bevelHighlightColor: 'rgba(255, 215, 195, 0.65)',
+    outlineColor: '#1c0c10',
+    shadowColor: '#120608',
+    bounceAmp: 3,
+    tiltAmp: 0.1,
+    letterSpacing: 26,
+  });
+
+  // "CHRISTMAS!" in bold arching crimson-red at bottom
+  drawSeussianDisplayText(ctx, 'CHRISTMAS!', 22, 98, {
+    fontSize: 44,
+    fillTopColor: '#ff4842',
+    fillBottomColor: '#bd141c',
+    bevelHighlightColor: 'rgba(255, 220, 200, 0.7)',
+    outlineColor: '#1c0c10',
+    shadowColor: '#120608',
+    bounceAmp: 3.8,
+    tiltAmp: 0.11,
+    archCurvature: 0.06,
+    letterSpacing: 29,
+  });
+
+  ctx.restore();
+}
+
 /**
  * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") from Slide 3 of
  * the Grinch Scenic Design deck:
  * - Lavender/violet translucent scrim wash
  * - Left projection: "Charlotte's Web — Adapted by Joseph Robinette" (Wilbur pig & fence)
- * - Center projection: `"Dr. Seuss' How The Grinch Stole Christmas!"`
+ * - Center projection: Authentic Seussian "HOW THE GRINCH STOLE CHRISTMAS!" graphic logo
  * - Right projection: "BENEATH THE BAOBAB TREE" poster art
  */
 export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
@@ -727,9 +947,9 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
 
   if (ctx) {
     const bg = ctx.createLinearGradient(0, 0, 0, 512);
-    bg.addColorStop(0, '#3e2d6e');
-    bg.addColorStop(0.5, '#6852ad');
-    bg.addColorStop(1, '#7c68c4');
+    bg.addColorStop(0, '#362664');
+    bg.addColorStop(0.5, '#5e48a2');
+    bg.addColorStop(1, '#725cb8');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, 1024, 512);
 
@@ -743,92 +963,180 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
       ctx.stroke();
     }
 
-    // 1. Left Poster Card: "Charlotte's Web" (x = 120..310, y = 105..365)
-    ctx.fillStyle = '#c8a882';
-    ctx.fillRect(125, 108, 185, 255);
-    ctx.strokeStyle = '#38281e';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(125, 108, 185, 255);
+    // 1. Left Poster Card: "Charlotte's Web" (x = 95..285, y = 105..368)
+    ctx.save();
+    ctx.translate(190, 236);
+    ctx.rotate(-0.04);
+    ctx.fillStyle = '#cfa97e';
+    ctx.fillRect(-95, -130, 190, 260);
+    ctx.strokeStyle = '#382418';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(-95, -130, 190, 260);
+
+    // Sky gradient inside Charlotte's Web poster
+    const cwSky = ctx.createLinearGradient(0, -126, 0, 40);
+    cwSky.addColorStop(0, '#e8d5b5');
+    cwSky.addColorStop(1, '#c8a276');
+    ctx.fillStyle = cwSky;
+    ctx.fillRect(-91, -126, 182, 252);
 
     // White picket fence in Charlotte's Web poster
     ctx.fillStyle = '#f2ede4';
-    for (let px = 132; px < 302; px += 14) {
-      ctx.fillRect(px, 285, 9, 48);
+    ctx.fillRect(-88, 66, 176, 6);
+    ctx.fillRect(-88, 92, 176, 6);
+    for (let px = -84; px <= 78; px += 15) {
+      ctx.beginPath();
+      ctx.moveTo(px, 54);
+      ctx.lineTo(px + 5, 44);
+      ctx.lineTo(px + 10, 54);
+      ctx.lineTo(px + 10, 114);
+      ctx.lineTo(px, 114);
+      ctx.closePath();
+      ctx.fill();
     }
+
     // Wilbur the pink pig
-    ctx.fillStyle = '#e5989b';
+    ctx.fillStyle = '#eb9da2';
     ctx.beginPath();
-    ctx.ellipse(218, 285, 36, 42, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 62, 36, 42, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#4a2830';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.2;
     ctx.stroke();
-    // Pig snout
-    ctx.fillStyle = '#f4b4b8';
-    ctx.beginPath();
-    ctx.ellipse(218, 278, 14, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Spiderweb in top-left corner of poster
-    ctx.strokeStyle = '#2a2220';
-    ctx.lineWidth = 1.4;
-    for (let r = 18; r <= 72; r += 18) {
+    // Pig ears
+    for (const side of [-1, 1]) {
       ctx.beginPath();
-      ctx.arc(125, 108, r, 0, Math.PI / 2);
+      ctx.ellipse(side * 24, 26, 10, 16, side * 0.45, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
     }
-    ctx.fillStyle = '#221a18';
-    ctx.font = 'italic bold 20px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText("Charlotte's Web", 222, 152);
-    ctx.font = '11px Georgia, serif';
-    ctx.fillText('Adapted by Joseph Robinette', 222, 172);
+    // Pig snout & eyes
+    ctx.fillStyle = '#f6b8bc';
+    ctx.beginPath();
+    ctx.ellipse(0, 54, 14, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#26161a';
+    ctx.beginPath();
+    ctx.arc(-12, 40, 3, 0, Math.PI * 2);
+    ctx.arc(12, 40, 3, 0, Math.PI * 2);
+    ctx.fill();
 
-    // 2. Center Title Projection: "Dr. Seuss' How The Grinch Stole Christmas!"
-    ctx.save();
-    ctx.fillStyle = '#e8e4f8';
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
-    ctx.shadowBlur = 8;
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 26px Georgia, serif';
-    ctx.fillText(`"Dr. Seuss'`, 495, 212);
-    ctx.font = 'bold 34px Georgia, serif';
-    ctx.fillText('HOW The GRINCH', 502, 254);
-    ctx.font = 'bold 28px Georgia, serif';
-    ctx.fillText('STOLE', 502, 288);
-    ctx.font = 'bold 34px Georgia, serif';
-    ctx.fillText(`CHRISTMAS!"`, 506, 326);
+    // Spiderweb in top-left corner of poster
+    ctx.strokeStyle = 'rgba(42, 30, 24, 0.65)';
+    ctx.lineWidth = 1.4;
+    for (let r = 18; r <= 76; r += 18) {
+      ctx.beginPath();
+      ctx.arc(-95, -130, r, 0, Math.PI / 2);
+      ctx.stroke();
+    }
+    for (let a = 0.15; a < 1.45; a += 0.32) {
+      ctx.beginPath();
+      ctx.moveTo(-95, -130);
+      ctx.lineTo(-95 + Math.cos(a) * 82, -130 + Math.sin(a) * 82);
+      ctx.stroke();
+    }
+
+    drawSeussianDisplayText(ctx, "CHARLOTTE'S", 4, -78, {
+      fontSize: 21,
+      fillTopColor: '#fff6e8',
+      fillBottomColor: '#f0d4a8',
+      outlineColor: '#2c1a12',
+      shadowColor: '#1a0e08',
+      bounceAmp: 1.5,
+      tiltAmp: 0.05,
+      letterSpacing: 13,
+    });
+    drawSeussianDisplayText(ctx, 'WEB', 4, -50, {
+      fontSize: 26,
+      fillTopColor: '#ffdf68',
+      fillBottomColor: '#e09a28',
+      outlineColor: '#2c1a12',
+      shadowColor: '#1a0e08',
+      bounceAmp: 1.5,
+      tiltAmp: 0.06,
+      letterSpacing: 18,
+    });
     ctx.restore();
 
-    // 3. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 670..855, y = 170..420)
-    ctx.fillStyle = '#dcd4f0';
-    ctx.fillRect(670, 170, 185, 245);
-    ctx.strokeStyle = '#4a3b78';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(670, 170, 185, 245);
+    // 2. Center Title Projection: Authentic "HOW THE GRINCH STOLE CHRISTMAS!" Logo
+    drawGrinchLogoGraphic(ctx, 502, 255, 0.94);
 
-    ctx.fillStyle = '#9a4c78';
-    ctx.font = 'bold 17px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('BENEATH THE', 762, 198);
-    ctx.fillText('BAOBAB', 778, 220);
-    ctx.fillStyle = '#487868';
-    ctx.fillText('TREE', 785, 242);
+    // 3. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 720..910, y = 140..395)
+    ctx.save();
+    ctx.translate(815, 268);
+    ctx.rotate(0.035);
+    const baoGrad = ctx.createLinearGradient(0, -128, 0, 128);
+    baoGrad.addColorStop(0, '#e8dff8');
+    baoGrad.addColorStop(0.6, '#d4c4ee');
+    baoGrad.addColorStop(1, '#b8a0dc');
+    ctx.fillStyle = baoGrad;
+    ctx.fillRect(-92, -126, 184, 252);
+    ctx.strokeStyle = '#3e2d68';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(-92, -126, 184, 252);
 
-    // Baobab tree trunk & figure holding glowing disc
-    ctx.fillStyle = '#9c7a64';
-    ctx.fillRect(692, 255, 22, 130);
-    ctx.strokeStyle = '#d45b7a';
-    ctx.lineWidth = 5;
+    drawSeussianDisplayText(ctx, 'BENEATH THE', 0, -92, {
+      fontSize: 18,
+      fillTopColor: '#d4487e',
+      fillBottomColor: '#982654',
+      outlineColor: '#261020',
+      shadowColor: '#180814',
+      bounceAmp: 1.2,
+      tiltAmp: 0.04,
+      letterSpacing: 11,
+    });
+    drawSeussianDisplayText(ctx, 'BAOBAB', 0, -64, {
+      fontSize: 26,
+      fillTopColor: '#f6a838',
+      fillBottomColor: '#c86418',
+      outlineColor: '#281408',
+      shadowColor: '#180a04',
+      bounceAmp: 1.8,
+      tiltAmp: 0.06,
+      letterSpacing: 17,
+    });
+    drawSeussianDisplayText(ctx, 'TREE', 0, -34, {
+      fontSize: 25,
+      fillTopColor: '#56b886',
+      fillBottomColor: '#287852',
+      outlineColor: '#0e261a',
+      shadowColor: '#081810',
+      bounceAmp: 1.5,
+      tiltAmp: 0.05,
+      letterSpacing: 17,
+    });
+
+    // Sculpted Baobab tree trunk, roots, canopy & golden sun disc
+    ctx.fillStyle = '#f8c848';
     ctx.beginPath();
-    ctx.arc(765, 292, 16, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = '#4a7c59';
-    ctx.fillRect(753, 325, 24, 48);
+    ctx.arc(18, 28, 34, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#7e563e';
+    ctx.beginPath();
+    ctx.moveTo(-58, 118);
+    ctx.quadraticCurveTo(-42, 65, -44, 4);
+    ctx.lineTo(-18, 4);
+    ctx.quadraticCurveTo(-16, 65, -4, 118);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#3c8c5c';
+    for (const [cx, cy, rx, ry] of [
+      [-48, -4, 28, 16],
+      [-18, -12, 32, 18],
+      [12, -2, 26, 15],
+    ] as const) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }

@@ -1,6 +1,19 @@
+import {
+  activeCameraPreset,
+  activeProduction,
+  activeScene,
+  customPieces,
+  hoveredScenicElement,
+  hoveredSeat,
+  inSeatView,
+  selectedCustomPiece,
+  selectedSeatMetrics,
+  syncStoreFromSceneController,
+  workshopTarget,
+} from './state/shell-store.ts';
 import { TheatreSceneController } from './theatre/theatre-scene.ts';
 import type { CameraPresetId, ProductionId } from './types/theatre.ts';
-import { TheatreHudController } from './ui/hud.ts';
+import { mountShell } from './ui/shell/mount-shell.tsx';
 
 declare global {
   interface Window {
@@ -37,29 +50,42 @@ async function bootstrap(): Promise<void> {
 
   updateLoadingProgress(
     28,
-    'Constructing Hugh McColl Family Theatre Proscenium & 570 Seats...'
+    'Constructing Hugh McColl Family Theatre Proscenium & 533 Seats...'
   );
 
-  let hud: TheatreHudController | null = null;
-
   const sceneCtrl = new TheatreSceneController(canvas, {
-    onSeatSelected: (metrics, inSeatView) => {
-      hud?.handleSeatSelected(metrics, inSeatView);
+    onSeatSelected: (metrics, seated) => {
+      selectedSeatMetrics.value = metrics;
+      inSeatView.value = seated;
     },
     onSeatHovered: (seat, clientX, clientY) => {
-      hud?.handleSeatHovered(seat, clientX, clientY);
+      hoveredSeat.value = seat ? { seat, x: clientX, y: clientY } : null;
+    },
+    onScenicElementClicked: (element, objectGroup) => {
+      workshopTarget.value = { element, objectGroup };
+    },
+    onScenicElementHovered: (element, clientX, clientY) => {
+      hoveredScenicElement.value = element
+        ? { element, x: clientX, y: clientY }
+        : null;
     },
     onProductionChanged: (spec) => {
-      hud?.handleProductionChanged(spec);
+      activeProduction.value = spec;
+      syncStoreFromSceneController(sceneCtrl);
     },
     onSceneChanged: (scene, spec) => {
-      hud?.handleSceneChanged(scene, spec);
+      activeProduction.value = spec;
+      activeScene.value = scene;
+      syncStoreFromSceneController(sceneCtrl);
     },
-    onCustomPiecesChanged: () => {
-      hud?.handleCustomPieceSelected();
+    onCustomPiecesChanged: (pieces, selectedId) => {
+      customPieces.value = [...pieces];
+      selectedCustomPiece.value =
+        pieces.find((p) => p.id === selectedId) ?? null;
     },
-    onCameraModeChanged: (inSeatView, presetId) => {
-      hud?.handleCameraModeChanged(inSeatView, presetId);
+    onCameraModeChanged: (seated, presetId) => {
+      inSeatView.value = seated;
+      activeCameraPreset.value = presetId;
     },
   });
 
@@ -67,8 +93,6 @@ async function bootstrap(): Promise<void> {
     68,
     'Rigging 8 Modular Production Sets & 52-Lineset Counterweight Schedule...'
   );
-
-  hud = new TheatreHudController(sceneCtrl);
 
   // Support optional URL query params (?prod=..., ?scene=..., ?cam=..., ?seat=..., ?heatmap=1)
   const prodParam = params.get('prod') as ProductionId | null;
@@ -105,6 +129,9 @@ async function bootstrap(): Promise<void> {
       sceneCtrl.setCameraPreset(camParam);
     }
   }
+
+  // Mount Preact AppShell and synchronize reactive signals
+  mountShell(sceneCtrl);
 
   updateLoadingProgress(
     94,

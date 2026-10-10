@@ -11,6 +11,7 @@ import {
 } from '../engine/procedural-textures.ts';
 import type {
   CustomSetPiece,
+  ProductionElementSpec,
   ProductionId,
   ProductionSceneCue,
   ProductionSpec,
@@ -60,6 +61,8 @@ export interface ProductionSetsController {
   stepScene(delta: -1 | 1): ProductionSceneCue;
   setElementVisibility(elementId: string, visible: boolean): void;
   isElementVisible(elementId: string): boolean;
+  getElementNodes(elementId: string): ReadonlyArray<THREE.Object3D>;
+  pickScenicElementAtRay(raycaster: THREE.Raycaster): ProductionElementSpec | null;
   setBattenTrimHeight(lineNumber: number, trimHeightM: number): void;
   getBattenTrimHeight(lineNumber: number): number;
   rebuildCustomSetPieces(
@@ -108,6 +111,7 @@ export function buildProductionSetsController(): ProductionSetsController {
     obj: THREE.Object3D,
     battenLine?: number
   ): void => {
+    obj.userData.scenicElementId = id;
     const list = elementNodes.get(id) ?? [];
     list.push(obj);
     elementNodes.set(id, list);
@@ -280,6 +284,57 @@ export function buildProductionSetsController(): ProductionSetsController {
 
     isElementVisible(elementId: string): boolean {
       return elementVisibility.get(elementId) ?? true;
+    },
+
+    getElementNodes(elementId: string): ReadonlyArray<THREE.Object3D> {
+      return elementNodes.get(elementId) ?? [];
+    },
+
+    pickScenicElementAtRay(raycaster: THREE.Raycaster): ProductionElementSpec | null {
+      const activeGroup = productionGroups.get(activeProductionId);
+      if (!activeGroup || !activeGroup.visible) return null;
+
+      const hits = raycaster.intersectObjects([activeGroup, maskingGroup], true);
+      const spec = getActiveSpec();
+
+      let fallbackFloorOrMasking: ProductionElementSpec | null = null;
+
+      for (const hit of hits) {
+        // Verify full ancestor chain is visible
+        let visibleChain = true;
+        let matchedElementId: string | null = null;
+        let curr: THREE.Object3D | null = hit.object;
+
+        while (curr) {
+          if (!curr.visible) {
+            visibleChain = false;
+            break;
+          }
+          if (!matchedElementId && typeof curr.userData?.scenicElementId === 'string') {
+            matchedElementId = curr.userData.scenicElementId;
+          }
+          if (curr === root) break;
+          curr = curr.parent;
+        }
+
+        if (!visibleChain || !matchedElementId) continue;
+
+        const foundSpec = spec.elements.find((e) => e.id === matchedElementId) ?? null;
+        if (!foundSpec) continue;
+
+        const isFloorOrMasking =
+          foundSpec.id.endsWith('-floor') || foundSpec.category === 'masking';
+        if (isFloorOrMasking) {
+          if (!fallbackFloorOrMasking) {
+            fallbackFloorOrMasking = foundSpec;
+          }
+          continue;
+        }
+
+        return foundSpec;
+      }
+
+      return fallbackFloorOrMasking;
     },
 
     setBattenTrimHeight(lineNumber: number, trimHeightM: number): void {

@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { drawSeussianDisplayText } from '../../engine/procedural-textures.ts';
+import {
+  createSculptedIcicleDrip,
+  createSeussianIcicleValance,
+  createWhoCharacter,
+} from '../shared-scenic-helpers.ts';
 
 /**
  * Generates a painted Seussian pink stucco canvas texture with vertical shading,
@@ -422,6 +428,19 @@ function buildSingleWhovilleHouse(
   dormerSnowCap.position.y = 0.16;
   dormerGroup.add(dormerSnowCap);
 
+  // Sculpted Seussian icicle valance tucked beneath the dormer snow eave
+  const dormerValance = createSeussianIcicleValance(
+    0.46,
+    0.16,
+    5,
+    sharedMats.snowCapMat,
+    sharedMats.snowShadeMat,
+    0.04,
+    cfg.dormerSide > 0 ? 3 : 7
+  );
+  dormerValance.position.set(0, 0.14, 0.25);
+  dormerGroup.add(dormerValance);
+
   // Small glowing porthole window on the side dormer (offset +0.04m proud of dormer surface)
   const dormerPortholeFrame = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.024, 10, 18),
@@ -468,7 +487,7 @@ function buildSingleWhovilleHouse(
   snowRoofCap.receiveShadow = true;
   house.add(snowRoofCap);
 
-  // Ring of Sculpted Snow-Drip Lobes + Dark Seussian Ink Shadow Rim + Hanging Icicles
+  // Ring of Sculpted Snow-Drip Lobes + Dark Seussian Ink Shadow Rim + Organic Sculpted Icicles
   const lobeCount = 13;
   for (let i = 0; i < lobeCount; i++) {
     const u = i / (lobeCount - 1);
@@ -479,8 +498,9 @@ function buildSingleWhovilleHouse(
     const dripLen = 0.24 + (i % 3) * 0.09 + (i === 4 || i === 8 ? 0.11 : 0);
     const dripRad = 0.125 + (i % 2) * 0.022;
     const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.11;
+    const bendSign = i % 2 === 0 ? 1 : -1;
 
-    // Puffy top bulb of snow drip
+    // Puffy top bulb of snow drip (envelops the flared root collar of the sculpted drip)
     const lobeBulb = new THREE.Mesh(
       new THREE.SphereGeometry(dripRad, 12, 10),
       sharedMats.snowCapMat
@@ -489,39 +509,42 @@ function buildSingleWhovilleHouse(
     lobeBulb.position.set(lx, archFollowY, lz);
     house.add(lobeBulb);
 
-    // Rounded teardrop snow drip extending downward
-    const lobeDrop = new THREE.Mesh(
-      new THREE.ConeGeometry(dripRad * 0.92, dripLen, 10),
-      sharedMats.snowCapMat
+    // Organic sculpted snow-drip extending downward from inside the bulb (y = archFollowY down to archFollowY - dripLen)
+    const lobeDrop = createSculptedIcicleDrip(
+      dripLen,
+      dripRad * 0.76,
+      sharedMats.snowCapMat,
+      bendSign * 0.025
     );
-    lobeDrop.rotation.x = Math.PI;
     lobeDrop.scale.set(1.0, 1.0, 0.68);
-    lobeDrop.position.set(lx, archFollowY - dripLen * 0.5, lz);
+    lobeDrop.position.set(lx, archFollowY, lz);
     house.add(lobeDrop);
 
-    // Dark Seussian ink outline drop-shadow collar behind/below the snow lobe (offset +0.032m from body)
-    const inkShadowDrop = new THREE.Mesh(
-      new THREE.ConeGeometry(dripRad * 1.02, dripLen + 0.05, 10),
-      sharedMats.inkMat
+    // Dark Seussian ink outline drop-shadow collar behind/below the snow lobe (offset -0.032m in Z)
+    const inkShadowDrop = createSculptedIcicleDrip(
+      dripLen + 0.04,
+      dripRad * 0.84,
+      sharedMats.inkMat,
+      bendSign * 0.025
     );
-    inkShadowDrop.rotation.x = Math.PI;
     inkShadowDrop.scale.set(1.04, 1.0, 0.52);
-    inkShadowDrop.position.set(lx, archFollowY - dripLen * 0.5 - 0.025, lz - 0.032);
+    inkShadowDrop.position.set(lx, archFollowY - 0.015, lz - 0.032);
     house.add(inkShadowDrop);
 
-    // Translucent-style frost-blue hanging icicles between snow lobes
+    // Organic frost-blue hanging icicles tucked smoothly inside the eaves between snow lobes
     if (i < lobeCount - 1 && i % 2 === 1) {
       const nextU = (i + 0.5) / (lobeCount - 1);
       const icAngle = (nextU - 0.5) * Math.PI * 1.16;
       const ix = Math.sin(icAngle) * (halfW * 1.03);
       const iz = Math.cos(icAngle) * (halfW * 1.03) * (cfg.depthScale + 0.075);
-      const icicleLen = 0.22 + (i % 3) * 0.06;
-      const icicle = new THREE.Mesh(
-        new THREE.ConeGeometry(0.038, icicleLen, 7),
-        sharedMats.icicleMat
+      const icicleLen = 0.24 + (i % 3) * 0.06;
+      const icicle = createSculptedIcicleDrip(
+        icicleLen,
+        0.042,
+        sharedMats.icicleMat,
+        -bendSign * 0.03
       );
-      icicle.rotation.x = Math.PI;
-      icicle.position.set(ix, archFollowY - icicleLen * 0.55, iz);
+      icicle.position.set(ix, archFollowY + 0.02, iz);
       house.add(icicle);
     }
   }
@@ -1028,21 +1051,22 @@ export function buildGrinchWhovilleHouses(
     shutterMat,
   };
 
-  // DSR House (-2.85, 0, -2.45): Door on stage-left (+x) side, 2 staggered windows on right (-x) side, T-cap chimney
+  // DSR House (-3.35, 0, -3.05): Front steps end at z <= -2.46m (behind Papa Who's House at z = -1.98m)
+  // and right edge x ≈ -2.05m leaves 0.90m open walking lane from Center Tree Turntable (x = -1.15m)
   const dsrConfig: WhovilleHouseConfig = {
     label: 'DSR',
-    position: new THREE.Vector3(-2.85, 0, -2.45),
+    position: new THREE.Vector3(-3.35, 0, -3.05),
     rotationY: 0.14,
-    widthM: 2.38,
-    heightM: 2.78,
-    depthScale: 0.42,
+    widthM: 2.34,
+    heightM: 2.76,
+    depthScale: 0.38,
     basePinkHex: '#d83e82',
     bellyPinkHex: '#f26aa8',
     stripePinkHex: '#b42464',
     ribColor: 0xc42e72,
-    doorX: 0.52,
-    doorWidth: 0.64,
-    doorHeight: 1.38,
+    doorX: 0.48,
+    doorWidth: 0.62,
+    doorHeight: 1.36,
     doorTiltZ: -0.04,
     doorFrameStyle: 'candy',
     dormerSide: -1,
@@ -1050,7 +1074,7 @@ export function buildGrinchWhovilleHouses(
     chimneyStyle: 't-cap',
     windows: [
       {
-        x: -0.72,
+        x: -0.7,
         y: 0.94,
         width: 0.34,
         height: 0.48,
@@ -1070,21 +1094,21 @@ export function buildGrinchWhovilleHouses(
     ],
   };
 
-  // USR House (-1.45, 0, -4.55): Upstage cottage with central-right door, left arched window & bulbous chimney pot
+  // USR House (-1.75, 0, -4.95): Completely upstage of Center Tree Turntable back edge (z = -4.70m)
   const usrConfig: WhovilleHouseConfig = {
     label: 'USR',
-    position: new THREE.Vector3(-1.45, 0, -4.55),
+    position: new THREE.Vector3(-1.75, 0, -4.95),
     rotationY: 0.06,
-    widthM: 2.08,
-    heightM: 2.52,
-    depthScale: 0.42,
+    widthM: 2.04,
+    heightM: 2.5,
+    depthScale: 0.36,
     basePinkHex: '#ce468c',
     bellyPinkHex: '#ec72b2',
     stripePinkHex: '#a62868',
     ribColor: 0xb83276,
-    doorX: 0.24,
-    doorWidth: 0.58,
-    doorHeight: 1.26,
+    doorX: 0.22,
+    doorWidth: 0.56,
+    doorHeight: 1.24,
     doorTiltZ: 0.05,
     doorFrameStyle: 'olive',
     dormerSide: -1,
@@ -1092,7 +1116,7 @@ export function buildGrinchWhovilleHouses(
     chimneyStyle: 'bulb-pot',
     windows: [
       {
-        x: -0.52,
+        x: -0.5,
         y: 0.98,
         width: 0.36,
         height: 0.5,
@@ -1103,21 +1127,21 @@ export function buildGrinchWhovilleHouses(
     ],
   };
 
-  // MSL House (+2.55, 0, -2.85): Door on left (-x) side facing center, cute low center peek-window + tall right window
+  // MSL House (+3.25, 0, -3.15): Left edge x ≈ +1.95m leaves 0.80m open walking lane from Center Tree Turntable (x = +1.15m)
   const mslConfig: WhovilleHouseConfig = {
     label: 'MSL',
-    position: new THREE.Vector3(2.55, 0, -2.85),
+    position: new THREE.Vector3(3.25, 0, -3.15),
     rotationY: -0.14,
-    widthM: 2.34,
-    heightM: 2.74,
-    depthScale: 0.42,
+    widthM: 2.3,
+    heightM: 2.72,
+    depthScale: 0.38,
     basePinkHex: '#dc4286',
     bellyPinkHex: '#f46ea8',
     stripePinkHex: '#b82666',
     ribColor: 0xc83074,
-    doorX: -0.48,
-    doorWidth: 0.64,
-    doorHeight: 1.36,
+    doorX: -0.46,
+    doorWidth: 0.62,
+    doorHeight: 1.34,
     doorTiltZ: 0.04,
     doorFrameStyle: 'candy',
     dormerSide: 1,
@@ -1134,7 +1158,7 @@ export function buildGrinchWhovilleHouses(
         hasWreath: false,
       },
       {
-        x: 0.68,
+        x: 0.66,
         y: 1.02,
         width: 0.36,
         height: 0.52,
@@ -1149,11 +1173,47 @@ export function buildGrinchWhovilleHouses(
   housesGroup.add(buildSingleWhovilleHouse(usrConfig, sharedMats));
   housesGroup.add(buildSingleWhovilleHouse(mslConfig, sharedMats));
 
+  // 3 Expressive Whoville Carolers / Townspeople standing in the open town-square lanes
+  const carolerSR = createWhoCharacter({
+    heightM: 1.66,
+    coatColorHex: 0x2268d8,
+    trimColorHex: 0xd4d8e2,
+    hairColorHex: 0x68381c,
+    hatColorHex: 0xd82868,
+    holdingGift: true,
+  });
+  carolerSR.position.set(-1.65, 0, -2.55);
+  carolerSR.rotation.y = 0.28;
+  housesGroup.add(carolerSR);
+
+  const carolerSL = createWhoCharacter({
+    heightM: 1.62,
+    coatColorHex: 0xd82e78,
+    trimColorHex: 0xd8dce4,
+    hairColorHex: 0xf0c248,
+    hasBraids: true,
+  });
+  carolerSL.position.set(1.62, 0, -2.65);
+  carolerSL.rotation.y = -0.32;
+  housesGroup.add(carolerSL);
+
+  const carolerChild = createWhoCharacter({
+    heightM: 1.24,
+    coatColorHex: 0x4ea42e,
+    trimColorHex: 0xd8dce4,
+    hairColorHex: 0xe69828,
+    hasBraids: true,
+    holdingGift: true,
+  });
+  carolerChild.position.set(-0.85, 0, -2.25);
+  carolerChild.rotation.y = 0.16;
+  housesGroup.add(carolerChild);
+
   return housesGroup;
 }
 
 /**
- * 2. Builds the Center Whoville Christmas Tree & Presents Turntable (`x = -0.1, z = -3.35`)
+ * 2. Builds the Center Whoville Christmas Tree & Presents Turntable (`x = 0.0m, z = -3.55m`)
  *    for element `'grinch-whoville-tree'`.
  */
 export function buildGrinchWhovilleTree(
@@ -1161,7 +1221,7 @@ export function buildGrinchWhovilleTree(
 ): THREE.Group {
   const treeWagonGroup = new THREE.Group();
   treeWagonGroup.name = 'Element_grinch-whoville-tree';
-  treeWagonGroup.position.set(-0.1, 0, -3.35);
+  treeWagonGroup.position.set(0.0, 0, -3.55);
 
   // Toned-down snow turntable materials (max hex channel <= 0xd8, roughness >= 0.55)
   const snowTurntableMat = new THREE.MeshStandardMaterial({
@@ -1182,10 +1242,10 @@ export function buildGrinchWhovilleTree(
   });
 
   // ==========================================================================
-  // 1. ROUND SNOW TURNTABLE BASE (r = 1.25m with stepped snow rim & front steps)
+  // 1. ROUND SNOW TURNTABLE BASE (r = 1.15m with stepped snow rim & front steps)
   // ==========================================================================
   const casterSubDeck = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.27, 1.29, 0.06, 32),
+    new THREE.CylinderGeometry(1.13, 1.15, 0.06, 32),
     deckSteelMat
   );
   casterSubDeck.position.y = 0.03;
@@ -1193,7 +1253,7 @@ export function buildGrinchWhovilleTree(
   treeWagonGroup.add(casterSubDeck);
 
   const lowerSnowDrum = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.22, 1.26, 0.14, 36),
+    new THREE.CylinderGeometry(1.08, 1.13, 0.14, 36),
     snowStepMat
   );
   lowerSnowDrum.position.y = 0.13;
@@ -1202,7 +1262,7 @@ export function buildGrinchWhovilleTree(
   treeWagonGroup.add(lowerSnowDrum);
 
   const upperSnowRim = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.06, 1.15, 0.12, 36),
+    new THREE.CylinderGeometry(0.95, 1.03, 0.12, 36),
     snowTurntableMat
   );
   upperSnowRim.position.y = 0.26;
@@ -1210,11 +1270,11 @@ export function buildGrinchWhovilleTree(
   upperSnowRim.receiveShadow = true;
   treeWagonGroup.add(upperSnowRim);
 
-  // Stepped semi-circular downstage snow steps (matching the curved front steps on CAD Plan 1B)
+  // Stepped semi-circular downstage snow steps tucked within the r = 1.15m envelope
   const frontStepLower = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      1.18,
-      1.24,
+      0.98,
+      1.04,
       0.08,
       24,
       1,
@@ -1224,15 +1284,15 @@ export function buildGrinchWhovilleTree(
     ),
     snowTurntableMat
   );
-  frontStepLower.scale.set(1.0, 1.0, 0.42);
-  frontStepLower.position.set(0, 0.04, 1.04);
+  frontStepLower.scale.set(1.0, 1.0, 0.32);
+  frontStepLower.position.set(0, 0.04, 0.8);
   frontStepLower.receiveShadow = true;
   treeWagonGroup.add(frontStepLower);
 
   const frontStepUpper = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      1.02,
-      1.08,
+      0.86,
+      0.92,
       0.08,
       24,
       1,
@@ -1242,8 +1302,8 @@ export function buildGrinchWhovilleTree(
     ),
     snowStepMat
   );
-  frontStepUpper.scale.set(1.0, 1.0, 0.35);
-  frontStepUpper.position.set(0, 0.12, 0.96);
+  frontStepUpper.scale.set(1.0, 1.0, 0.28);
+  frontStepUpper.position.set(0, 0.12, 0.76);
   frontStepUpper.receiveShadow = true;
   treeWagonGroup.add(frontStepUpper);
 
@@ -1263,35 +1323,35 @@ export function buildGrinchWhovilleTree(
     roughness: 0.52,
   });
 
-  // Helper function defining the S-curve spine of the Whoville Christmas Tree
+  // Helper function defining the S-curve spine of the Whoville Christmas Tree (max height <= 4.25m)
   const getSpineOffset = (y: number): { x: number; z: number; tiltZ: number } => {
-    const t = Math.max(0, Math.min(1, (y - 0.3) / 4.1));
-    const sx = Math.sin(t * Math.PI * 1.85) * 0.14 * (0.4 + t * 0.8);
-    const sz = Math.cos(t * Math.PI * 1.4) * 0.05;
-    const tiltZ = -Math.cos(t * Math.PI * 1.85) * 0.14;
+    const t = Math.max(0, Math.min(1, (y - 0.3) / 3.55));
+    const sx = Math.sin(t * Math.PI * 1.85) * 0.13 * (0.4 + t * 0.8);
+    const sz = Math.cos(t * Math.PI * 1.4) * 0.045;
+    const tiltZ = -Math.cos(t * Math.PI * 1.85) * 0.13;
     return { x: sx, z: sz, tiltZ };
   };
 
   // Curved wooden trunk at the base
   const trunkCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0.28, 0),
-    new THREE.Vector3(0.05, 1.2, 0.02),
-    new THREE.Vector3(-0.06, 2.4, -0.02),
-    new THREE.Vector3(0.04, 3.8, 0.01),
+    new THREE.Vector3(0.05, 1.1, 0.02),
+    new THREE.Vector3(-0.06, 2.15, -0.02),
+    new THREE.Vector3(0.04, 3.4, 0.01),
   ]);
   const trunkMesh = new THREE.Mesh(
-    new THREE.TubeGeometry(trunkCurve, 20, 0.15, 10, false),
+    new THREE.TubeGeometry(trunkCurve, 20, 0.14, 10, false),
     trunkMat
   );
   treeWagonGroup.add(trunkMesh);
 
-  // 7 Stacked Foliage Tiers with Scalloped Branch Lobes
+  // 7 Stacked Foliage Tiers with Scalloped Branch Lobes (spanning y = 0.60m to 3.30m)
   const tierCount = 7;
   for (let tier = 0; tier < tierCount; tier++) {
     const tierFrac = tier / (tierCount - 1);
-    const tierY = 0.64 + tier * 0.51;
-    const baseRadius = 1.24 - tier * 0.145;
-    const tierHeight = 0.88 - tier * 0.045;
+    const tierY = 0.6 + tier * 0.45;
+    const baseRadius = 1.08 - tier * 0.128;
+    const tierHeight = 0.78 - tier * 0.04;
     const spine = getSpineOffset(tierY);
 
     const tierGroup = new THREE.Group();
@@ -1321,7 +1381,7 @@ export function buildGrinchWhovilleTree(
       const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.35;
       const lobeRad = baseRadius * 0.94;
       const branchLobe = new THREE.Mesh(
-        new THREE.ConeGeometry(0.19 - tier * 0.015, 0.38 - tier * 0.02, 7),
+        new THREE.ConeGeometry(0.17 - tier * 0.013, 0.34 - tier * 0.018, 7),
         tier % 2 === 0 ? foliageBrightMat : foliageDeepMat
       );
       branchLobe.position.set(
@@ -1360,10 +1420,10 @@ export function buildGrinchWhovilleTree(
   const turns = 5.5;
   for (let i = 0; i <= helixSteps; i++) {
     const t = i / helixSteps;
-    const y = 0.62 + t * 3.35;
+    const y = 0.58 + t * 2.95;
     const spine = getSpineOffset(y);
-    // Offset radially outside the foliage cones (+0.07m) so the garland never clips coplanarly
-    const outerRadius = (1.18 - t * 0.96) + Math.sin(t * Math.PI * 12) * 0.04;
+    // Offset radially outside the foliage cones (+0.06m) so the garland never clips coplanarly
+    const outerRadius = (1.04 - t * 0.84) + Math.sin(t * Math.PI * 12) * 0.035;
     const thetaGold = t * Math.PI * 2 * turns;
     const thetaRed = thetaGold + Math.PI;
 
@@ -1376,9 +1436,9 @@ export function buildGrinchWhovilleTree(
     );
     redHelixPts.push(
       new THREE.Vector3(
-        spine.x + Math.cos(thetaRed) * (outerRadius + 0.035),
-        y - 0.04,
-        spine.z + Math.sin(thetaRed) * (outerRadius + 0.035)
+        spine.x + Math.cos(thetaRed) * (outerRadius + 0.032),
+        y - 0.035,
+        spine.z + Math.sin(thetaRed) * (outerRadius + 0.032)
       )
     );
   }
@@ -1387,7 +1447,7 @@ export function buildGrinchWhovilleTree(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(goldHelixPts),
       140,
-      0.032,
+      0.03,
       8,
       false
     ),
@@ -1399,7 +1459,7 @@ export function buildGrinchWhovilleTree(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(redHelixPts),
       140,
-      0.024,
+      0.022,
       8,
       false
     ),
@@ -1431,11 +1491,11 @@ export function buildGrinchWhovilleTree(
   const totalBaubles = 36;
   for (let b = 0; b < totalBaubles; b++) {
     const t = (b + 0.5) / totalBaubles;
-    const y = 0.68 + t * 3.22;
+    const y = 0.64 + t * 2.84;
     const spine = getSpineOffset(y);
     const angle = b * 2.39996; // Golden-angle spiral distribution
-    const rad = (1.16 - t * 0.92) + 0.05;
-    const bRadius = 0.078 - t * 0.022;
+    const rad = (1.02 - t * 0.8) + 0.045;
+    const bRadius = 0.072 - t * 0.02;
     const mat = ornamentMats[b % ornamentMats.length] ?? ornamentMats[0]!;
 
     const baubleGroup = new THREE.Group();
@@ -1453,7 +1513,7 @@ export function buildGrinchWhovilleTree(
     baubleGroup.add(sphere);
 
     const cap = new THREE.Mesh(
-      new THREE.CylinderGeometry(bRadius * 0.32, bRadius * 0.36, 0.028, 8),
+      new THREE.CylinderGeometry(bRadius * 0.32, bRadius * 0.36, 0.026, 8),
       goldTinselMat
     );
     cap.position.y = bRadius * 0.98;
@@ -1464,21 +1524,21 @@ export function buildGrinchWhovilleTree(
 
   // 8 Sculpted Gold Bell Ornaments & 10 Multi-Point Starburst Ornaments (matching Model 1B)
   const bellProfile: THREE.Vector2[] = [
-    new THREE.Vector2(0.01, 0.09),
-    new THREE.Vector2(0.045, 0.08),
-    new THREE.Vector2(0.06, 0.02),
-    new THREE.Vector2(0.105, -0.06),
-    new THREE.Vector2(0.09, -0.07),
+    new THREE.Vector2(0.01, 0.085),
+    new THREE.Vector2(0.042, 0.075),
+    new THREE.Vector2(0.056, 0.02),
+    new THREE.Vector2(0.098, -0.055),
+    new THREE.Vector2(0.084, -0.065),
   ];
   const bellGeo = new THREE.LatheGeometry(bellProfile, 14);
 
   for (let k = 0; k < 10; k++) {
     const t = (k + 0.6) / 10.5;
-    const y = 0.82 + t * 2.95;
+    const y = 0.76 + t * 2.6;
     const spine = getSpineOffset(y);
     // Bias toward the downstage face (+z) so they shine prominently like Model 1B
     const angle = (k % 2 === 0 ? 1 : -1) * (0.22 + (k % 3) * 0.35);
-    const rad = (1.18 - t * 0.9) + 0.08;
+    const rad = (1.04 - t * 0.78) + 0.07;
 
     if (k % 2 === 0) {
       // Multi-point Seussian Starburst / Poinsettia Ornament
@@ -1492,14 +1552,14 @@ export function buildGrinchWhovilleTree(
       const burstMat = ornamentMats[(k * 2) % ornamentMats.length] ?? ornamentMats[0]!;
       for (let ray = 0; ray < 6; ray++) {
         const rayCone = new THREE.Mesh(
-          new THREE.ConeGeometry(0.036, 0.22, 5),
+          new THREE.ConeGeometry(0.034, 0.2, 5),
           burstMat
         );
         rayCone.rotation.z = (ray / 6) * Math.PI;
         burstGroup.add(rayCone);
       }
       const centerDot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.042, 8, 8),
+        new THREE.SphereGeometry(0.04, 8, 8),
         goldTinselMat
       );
       centerDot.position.z = 0.025;
@@ -1535,20 +1595,20 @@ export function buildGrinchWhovilleTree(
   });
 
   const caneHookCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, -0.18, 0),
-    new THREE.Vector3(0, 0.08, 0),
-    new THREE.Vector3(0.04, 0.15, 0),
-    new THREE.Vector3(0.1, 0.12, 0),
-    new THREE.Vector3(0.11, 0.05, 0),
+    new THREE.Vector3(0, -0.16, 0),
+    new THREE.Vector3(0, 0.07, 0),
+    new THREE.Vector3(0.038, 0.14, 0),
+    new THREE.Vector3(0.092, 0.11, 0),
+    new THREE.Vector3(0.1, 0.045, 0),
   ]);
-  const caneGeo = new THREE.TubeGeometry(caneHookCurve, 18, 0.022, 8, false);
+  const caneGeo = new THREE.TubeGeometry(caneHookCurve, 18, 0.02, 8, false);
 
   for (let c = 0; c < 8; c++) {
     const t = (c + 0.5) / 8.5;
-    const y = 0.88 + t * 2.75;
+    const y = 0.8 + t * 2.42;
     const spine = getSpineOffset(y);
     const angle = c * 0.85 - 2.6;
-    const rad = (1.16 - t * 0.88) + 0.07;
+    const rad = (1.02 - t * 0.76) + 0.065;
 
     const cane = new THREE.Mesh(caneGeo, candyCaneMat);
     cane.position.set(
@@ -1563,10 +1623,10 @@ export function buildGrinchWhovilleTree(
 
   for (let l = 0; l < 12; l++) {
     const t = (l + 0.3) / 12.2;
-    const y = 0.74 + t * 3.1;
+    const y = 0.68 + t * 2.74;
     const spine = getSpineOffset(y);
     const angle = (l / 12) * Math.PI * 2 + 0.4;
-    const rad = (1.2 - t * 0.92) + 0.06;
+    const rad = (1.06 - t * 0.8) + 0.055;
 
     const candleGroup = new THREE.Group();
     candleGroup.position.set(
@@ -1576,17 +1636,17 @@ export function buildGrinchWhovilleTree(
     );
 
     const waxStick = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.016, 0.018, 0.11, 8),
+      new THREE.CylinderGeometry(0.015, 0.017, 0.1, 8),
       candleWaxMat
     );
-    waxStick.position.y = 0.055;
+    waxStick.position.y = 0.05;
     candleGroup.add(waxStick);
 
     const flame = new THREE.Mesh(
-      new THREE.ConeGeometry(0.024, 0.065, 8),
+      new THREE.ConeGeometry(0.022, 0.06, 8),
       flameMat
     );
-    flame.position.y = 0.14;
+    flame.position.y = 0.13;
     candleGroup.add(flame);
 
     treeWagonGroup.add(candleGroup);
@@ -1594,6 +1654,7 @@ export function buildGrinchWhovilleTree(
 
   // ==========================================================================
   // 5. RADIANT MULTI-POINT 3D GOLD STAR TOPPER WITH WHIMSICAL SEUSSIAN CURL
+  //    (Topper apex reaches y = 4.22m <= 4.25m, leaving > 0.70m clearance below banner)
   // ==========================================================================
   const starTopMat = new THREE.MeshStandardMaterial({
     color: 0xffd832,
@@ -1603,14 +1664,14 @@ export function buildGrinchWhovilleTree(
     metalness: 0.45,
   });
 
-  const topSpine = getSpineOffset(4.32);
+  const topSpine = getSpineOffset(3.74);
   const starGroup = new THREE.Group();
-  starGroup.position.set(topSpine.x, 4.34, topSpine.z);
+  starGroup.position.set(topSpine.x, 3.74, topSpine.z);
   starGroup.rotation.z = -0.08;
 
   // Central faceted gold star core
   const starCore = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.14, 0),
+    new THREE.OctahedronGeometry(0.13, 0),
     starTopMat
   );
   starCore.scale.set(1.0, 1.0, 0.65);
@@ -1620,12 +1681,12 @@ export function buildGrinchWhovilleTree(
   for (let p = 0; p < 5; p++) {
     const pAngle = (p / 5) * Math.PI * 2;
     const ray = new THREE.Mesh(
-      new THREE.ConeGeometry(0.085, 0.34, 4),
+      new THREE.ConeGeometry(0.08, 0.31, 4),
       starTopMat
     );
     ray.position.set(
-      Math.sin(pAngle) * 0.15,
-      Math.cos(pAngle) * 0.15,
+      Math.sin(pAngle) * 0.14,
+      Math.cos(pAngle) * 0.14,
       0
     );
     ray.rotation.z = -pAngle;
@@ -1633,28 +1694,28 @@ export function buildGrinchWhovilleTree(
 
     const subAngle = pAngle + Math.PI / 5;
     const subRay = new THREE.Mesh(
-      new THREE.ConeGeometry(0.045, 0.2, 4),
+      new THREE.ConeGeometry(0.042, 0.18, 4),
       starTopMat
     );
     subRay.position.set(
-      Math.sin(subAngle) * 0.1,
-      Math.cos(subAngle) * 0.1,
+      Math.sin(subAngle) * 0.095,
+      Math.cos(subAngle) * 0.095,
       0.02
     );
     subRay.rotation.z = -subAngle;
     starGroup.add(subRay);
   }
 
-  // Whimsical Seussian Spiral Curl at the Top Tip of the Star
+  // Whimsical Seussian Spiral Curl at the Top Tip of the Star (reaches y = 4.22m)
   const curlPts: THREE.Vector3[] = [];
   for (let s = 0; s <= 24; s++) {
     const u = s / 24;
     const cAngle = u * Math.PI * 2.6;
-    const cRad = (1 - u * 0.72) * 0.095;
+    const cRad = (1 - u * 0.72) * 0.088;
     curlPts.push(
       new THREE.Vector3(
-        Math.sin(cAngle) * cRad + u * 0.06,
-        0.28 + u * 0.22 - Math.cos(cAngle) * cRad * 0.5,
+        Math.sin(cAngle) * cRad + u * 0.055,
+        0.26 + u * 0.2 - Math.cos(cAngle) * cRad * 0.5,
         Math.sin(u * Math.PI) * 0.02
       )
     );
@@ -1663,7 +1724,7 @@ export function buildGrinchWhovilleTree(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(curlPts),
       24,
-      0.016,
+      0.015,
       8,
       false
     ),
@@ -1693,7 +1754,7 @@ export function buildGrinchWhovilleTree(
     (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.34 })
   );
 
-  // 20 Gifts arranged in two lush rings (inner tall gifts + outer cascading gifts on the snow steps)
+  // 20 Gifts arranged in two lush rings within the r = 1.15m snow turntable
   const totalGifts = 20;
   for (let gIdx = 0; gIdx < totalGifts; gIdx++) {
     const isOuterRing = gIdx >= 10;
@@ -1701,15 +1762,15 @@ export function buildGrinchWhovilleTree(
     const angle =
       ((ringIndex / 10) - 0.5) * Math.PI * (isOuterRing ? 1.35 : 1.65);
     const radius = isOuterRing
-      ? 0.88 + (gIdx % 3) * 0.08
-      : 0.56 + (gIdx % 2) * 0.14;
+      ? 0.78 + (gIdx % 3) * 0.06
+      : 0.5 + (gIdx % 2) * 0.12;
     const gx = Math.sin(angle) * radius;
-    const gz = Math.cos(angle) * radius + (isOuterRing ? 0.08 : 0.04);
+    const gz = Math.cos(angle) * radius + (isOuterRing ? 0.05 : 0.02);
     const baseSurfaceY = isOuterRing ? 0.21 : 0.32;
 
-    const boxW = 0.2 + (gIdx % 3) * 0.045;
-    const boxH = 0.22 + ((gIdx * 3) % 4) * 0.065;
-    const boxD = 0.2 + ((gIdx + 1) % 3) * 0.04;
+    const boxW = 0.19 + (gIdx % 3) * 0.04;
+    const boxH = 0.21 + ((gIdx * 3) % 4) * 0.06;
+    const boxD = 0.19 + ((gIdx + 1) % 3) * 0.038;
     const isHatbox = gIdx % 4 === 1;
 
     const gMat = giftBoxMats[gIdx % giftBoxMats.length] ?? giftBoxMats[0]!;
@@ -1774,15 +1835,15 @@ export function buildGrinchWhovilleTree(
 
   // Toy Train Track & Miniature Steam Locomotive on the front-left turntable rim
   const trainGroup = new THREE.Group();
-  trainGroup.position.set(-0.52, 0.33, 0.82);
+  trainGroup.position.set(-0.46, 0.33, 0.72);
   trainGroup.rotation.y = 0.42;
 
   const trackArc = new THREE.Mesh(
-    new THREE.TorusGeometry(0.32, 0.012, 8, 20, Math.PI * 0.75),
+    new THREE.TorusGeometry(0.28, 0.012, 8, 20, Math.PI * 0.75),
     goldTinselMat
   );
   trackArc.rotation.x = Math.PI * 0.5;
-  trackArc.position.set(0, -0.01, -0.22);
+  trackArc.position.set(0, -0.01, -0.18);
   trainGroup.add(trackArc);
 
   const engineBoiler = new THREE.Mesh(
@@ -1812,45 +1873,45 @@ export function buildGrinchWhovilleTree(
 
   // Miniature Crooked Seussian Tricycle & Parade Drum on the front-right snow step
   const propsGroup = new THREE.Group();
-  propsGroup.position.set(0.56, 0.33, 0.84);
+  propsGroup.position.set(0.48, 0.33, 0.74);
   propsGroup.rotation.y = -0.38;
 
   // Parade Drum
   const drumBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11, 0.11, 0.14, 16),
+    new THREE.CylinderGeometry(0.1, 0.1, 0.13, 16),
     redTinselMat
   );
-  drumBody.position.set(-0.18, 0.07, 0.04);
+  drumBody.position.set(-0.16, 0.065, 0.04);
   propsGroup.add(drumBody);
 
   const drumHead = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.116, 0.116, 0.025, 16),
+    new THREE.CylinderGeometry(0.106, 0.106, 0.025, 16),
     candleWaxMat
   );
-  drumHead.position.set(-0.18, 0.145, 0.04);
+  drumHead.position.set(-0.16, 0.135, 0.04);
   propsGroup.add(drumHead);
 
   // Crooked Seussian Tricycle
   const frontWheel = new THREE.Mesh(
-    new THREE.TorusGeometry(0.085, 0.014, 8, 16),
+    new THREE.TorusGeometry(0.08, 0.013, 8, 16),
     goldTinselMat
   );
-  frontWheel.position.set(0.12, 0.085, 0.04);
+  frontWheel.position.set(0.11, 0.08, 0.04);
   propsGroup.add(frontWheel);
 
   for (const wSide of [-1, 1]) {
     const rearWheel = new THREE.Mesh(
-      new THREE.TorusGeometry(0.055, 0.012, 8, 14),
+      new THREE.TorusGeometry(0.052, 0.011, 8, 14),
       goldTinselMat
     );
-    rearWheel.position.set(-0.04, 0.055, 0.04 + wSide * 0.085);
+    rearWheel.position.set(-0.04, 0.052, 0.04 + wSide * 0.08);
     propsGroup.add(rearWheel);
   }
 
   const trikeFrameCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.04, 0.06, 0.04),
-    new THREE.Vector3(0.04, 0.16, 0.04),
-    new THREE.Vector3(0.12, 0.085, 0.04),
+    new THREE.Vector3(-0.04, 0.055, 0.04),
+    new THREE.Vector3(0.04, 0.15, 0.04),
+    new THREE.Vector3(0.11, 0.08, 0.04),
   ]);
   const trikeFrame = new THREE.Mesh(
     new THREE.TubeGeometry(trikeFrameCurve, 12, 0.014, 8, false),
@@ -1864,27 +1925,27 @@ export function buildGrinchWhovilleTree(
 }
 
 /**
- * 3. Builds the Lineset #15 (10'-6") `"MERRY CHRISTMAS WHOVILLE"` Banner (`y ≈ 5.25m, z = -3.2m`)
+ * 3. Builds the Lineset #15 (10'-6") `"MERRY CHRISTMAS WHOVILLE"` Banner (`y = 5.45m, z = -3.15m`)
  *    for element `'grinch-christmas-sign'`.
  */
 export function buildGrinchChristmasSign(): THREE.Group {
   const signGroup = new THREE.Group();
   signGroup.name = 'Element_grinch-christmas-sign';
 
-  const bannerCenterY = 5.25;
-  const bannerZ = -3.2;
+  const bannerCenterY = 5.45;
+  const bannerZ = -3.15;
   const bannerWidth = 4.56;
-  const bannerHeight = 0.96;
+  const bannerHeight = 0.88;
   const halfSpan = bannerWidth * 0.5;
 
   // Catenary sag helper matching the curved hanging silhouette in Model 1B / 1D / 1G
   const getCatenarySag = (x: number): number => {
     const u = Math.max(-1, Math.min(1, x / halfSpan));
-    return -0.28 * (1 - u * u);
+    return -0.18 * (1 - u * u);
   };
 
   // ==========================================================================
-  // 1. HIGH-RESOLUTION CANVAS TYPOGRAPHY (1024×320)
+  // 1. HIGH-RESOLUTION SEUSSIAN DISPLAY TYPOGRAPHY (1024×320)
   // ==========================================================================
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 1024;
@@ -1893,47 +1954,92 @@ export function buildGrinchChristmasSign(): THREE.Group {
   if (sCtx) {
     // Rich crimson theatre-banner velvet gradient
     const bgGrad = sCtx.createLinearGradient(0, 0, 0, 320);
-    bgGrad.addColorStop(0, '#a81428');
-    bgGrad.addColorStop(0.5, '#d42238');
-    bgGrad.addColorStop(1, '#9e1224');
+    bgGrad.addColorStop(0, '#9e1226');
+    bgGrad.addColorStop(0.5, '#d62238');
+    bgGrad.addColorStop(1, '#941022');
     sCtx.fillStyle = bgGrad;
     sCtx.fillRect(0, 0, 1024, 320);
 
-    // Subtle fabric weave highlights and gold stitch border
+    // Subtle theatre velvet diagonal sheen & gold border frame
     sCtx.strokeStyle = '#ffd238';
     sCtx.lineWidth = 7;
-    sCtx.strokeRect(18, 16, 988, 268);
+    sCtx.strokeRect(18, 16, 988, 284);
 
-    sCtx.strokeStyle = 'rgba(255, 236, 170, 0.45)';
+    sCtx.strokeStyle = 'rgba(255, 236, 170, 0.5)';
     sCtx.lineWidth = 3;
     sCtx.setLineDash([14, 10]);
-    sCtx.strokeRect(30, 28, 964, 244);
+    sCtx.strokeRect(30, 28, 964, 260);
     sCtx.setLineDash([]);
+
+    // Ornate gold filigree scroll corners & painted holly berry clusters
+    for (const [cx, cy, sx, sy] of [
+      [56, 56, 1, 1],
+      [968, 56, -1, 1],
+      [56, 260, 1, -1],
+      [968, 260, -1, -1],
+    ] as const) {
+      sCtx.save();
+      sCtx.translate(cx, cy);
+      sCtx.scale(sx, sy);
+
+      // Gold filigree spiral flourish
+      sCtx.strokeStyle = '#ffda48';
+      sCtx.lineWidth = 4;
+      sCtx.beginPath();
+      sCtx.moveTo(0, 38);
+      sCtx.bezierCurveTo(0, 8, 8, 0, 48, 0);
+      sCtx.bezierCurveTo(26, 18, 18, 26, 28, 34);
+      sCtx.stroke();
+
+      // Holly leaves & crimson berries in corner motif
+      sCtx.fillStyle = '#24983e';
+      sCtx.beginPath();
+      sCtx.ellipse(18, 10, 14, 6, 0.35, 0, Math.PI * 2);
+      sCtx.ellipse(10, 18, 14, 6, 1.2, 0, Math.PI * 2);
+      sCtx.fill();
+
+      sCtx.fillStyle = '#ff283c';
+      sCtx.beginPath();
+      sCtx.arc(8, 8, 4.5, 0, Math.PI * 2);
+      sCtx.arc(16, 6, 4, 0, Math.PI * 2);
+      sCtx.arc(6, 16, 4, 0, Math.PI * 2);
+      sCtx.fill();
+
+      sCtx.restore();
+    }
 
     // Festive gold stars / dots along the upper and lower border
     sCtx.fillStyle = '#ffd83b';
-    for (let dx = 64; dx <= 960; dx += 64) {
+    for (let dx = 112; dx <= 912; dx += 80) {
       sCtx.beginPath();
-      sCtx.arc(dx, 44, 5, 0, Math.PI * 2);
-      sCtx.arc(dx, 256, 5, 0, Math.PI * 2);
+      sCtx.arc(dx, 42, 4.5, 0, Math.PI * 2);
+      sCtx.arc(dx, 274, 4.5, 0, Math.PI * 2);
       sCtx.fill();
     }
 
-    // Hand-lettered Seussian typography with warm drop-shadow
-    sCtx.font = '900 54px "Comic Sans MS", "Trebuchet MS", Georgia, serif';
-    sCtx.textAlign = 'center';
-    sCtx.textBaseline = 'middle';
-
-    // Dark maroon drop shadow
-    sCtx.fillStyle = '#480610';
-    sCtx.fillText('MERRY CHRISTMAS WHOVILLE', 515, 160);
-
-    // Warm cream-white & gold stroke main lettering (matching Model 1B banner text)
-    sCtx.strokeStyle = '#ffd438';
-    sCtx.lineWidth = 4;
-    sCtx.strokeText('MERRY CHRISTMAS WHOVILLE', 512, 156);
-    sCtx.fillStyle = '#fff6e4';
-    sCtx.fillText('MERRY CHRISTMAS WHOVILLE', 512, 156);
+    // Authentic Seussian Display Typography ("MERRY CHRISTMAS" + "WHOVILLE!")
+    drawSeussianDisplayText(sCtx, 'MERRY CHRISTMAS', 512, 118, {
+      fontSize: 64,
+      fillTopColor: '#fff8dc',
+      fillBottomColor: '#ffd248',
+      outlineColor: '#2a0810',
+      shadowColor: '#180408',
+      bounceAmp: 5,
+      tiltAmp: 0.08,
+      archCurvature: -0.05,
+      letterSpacing: 40,
+    });
+    drawSeussianDisplayText(sCtx, 'WHOVILLE!', 512, 208, {
+      fontSize: 74,
+      fillTopColor: '#98ea44',
+      fillBottomColor: '#1e9c34',
+      outlineColor: '#0c2810',
+      shadowColor: '#061808',
+      bounceAmp: 6,
+      tiltAmp: 0.09,
+      archCurvature: 0.04,
+      letterSpacing: 48,
+    });
   }
 
   const signTex = new THREE.CanvasTexture(signCanvas);

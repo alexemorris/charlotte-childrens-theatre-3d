@@ -1,10 +1,18 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { createHumanScaleFigure } from '../shared-scenic-helpers.ts';
+import { drawSeussianDisplayText } from '../../engine/procedural-textures.ts';
+import {
+  createGrinchCharacter,
+  createMaxDogCharacter,
+  createSculptedIcicleDrip,
+  createSeussianIcicleValance,
+  createWhoCharacter,
+} from '../shared-scenic-helpers.ts';
 
 /**
- * Helper to generate a procedural Seussian shop sign texture with whimsical borders,
- * decorative corner ornaments, and hand-lettered department store typography.
+ * Helper to generate a procedural Seussian shop sign texture on a high-res 512×192 canvas
+ * with scalloped Seussian gold/green borders and authentic bouncy Seussian wedge lettering
+ * via `drawSeussianDisplayText` (zero standard Times New Roman / Georgia `ctx.fillText`).
  */
 function createSeussianShopSignTexture(
   mainTitle: string,
@@ -18,11 +26,14 @@ function createSeussianShopSignTexture(
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // Rich painted background
-    ctx.fillStyle = bgColorHex;
+    // Rich painted crimson/berry gradient background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGrad.addColorStop(0, bgColorHex);
+    bgGrad.addColorStop(1, '#7c1222');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Subtle Seussian cross-hatch texture strokes
+    // Subtle Seussian cross-hatch ink texture strokes
     ctx.strokeStyle = 'rgba(20, 12, 28, 0.16)';
     ctx.lineWidth = 2;
     for (let x = 12; x < canvas.width; x += 22) {
@@ -32,16 +43,28 @@ function createSeussianShopSignTexture(
       ctx.stroke();
     }
 
-    // Scalloped lime/gold inner border frame
+    // Scalloped lime-green & gold Seussian outer border
     ctx.strokeStyle = borderColorHex;
-    ctx.lineWidth = 7;
-    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+    ctx.lineWidth = 8;
+    ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+
+    // Scalloped gold inner festoon loops around the perimeter
+    ctx.strokeStyle = '#d8b428';
+    ctx.lineWidth = 3.5;
+    for (let sx = 24; sx <= canvas.width - 24; sx += 32) {
+      ctx.beginPath();
+      ctx.arc(sx, 14, 10, 0, Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(sx, canvas.height - 14, 10, Math.PI, Math.PI * 2);
+      ctx.stroke();
+    }
 
     ctx.strokeStyle = '#1b1424';
     ctx.lineWidth = 3;
     ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
 
-    // Corner holly/star dots
+    // Corner holly/star medallions
     ctx.fillStyle = '#d8b428';
     for (const [cx, cy] of [
       [28, 28],
@@ -54,23 +77,38 @@ function createSeussianShopSignTexture(
       ctx.fill();
     }
 
-    // Main store title
-    ctx.fillStyle = '#d8d2c4';
-    ctx.shadowColor = 'rgba(18, 8, 24, 0.75)';
-    ctx.shadowOffsetX = 3;
-    ctx.shadowOffsetY = 3;
-    ctx.font = 'bold 34px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(mainTitle, canvas.width / 2, 74);
+    // Authentic bouncy Seussian wedge lettering for Main Shop Title
+    const mainFontSize = mainTitle.length > 17 ? 26 : 30;
+    drawSeussianDisplayText(ctx, mainTitle, canvas.width / 2, 68, {
+      fontSize: mainFontSize,
+      fillTopColor: '#d8d4c8',
+      fillBottomColor: '#c8b898',
+      bevelHighlightColor: 'rgba(255, 250, 230, 0.65)',
+      outlineColor: '#181020',
+      shadowColor: '#100816',
+      bounceAmp: 2.8,
+      tiltAmp: 0.08,
+      archCurvature: -0.05,
+      letterSpacing: mainFontSize * 0.62,
+    });
 
-    // Whimsical Seussian sub-label
-    ctx.fillStyle = '#d8b834';
-    ctx.font = 'italic bold 22px Georgia, serif';
-    ctx.fillText(subTitle, canvas.width / 2, 132);
+    // Authentic bouncy Seussian wedge lettering for Whoville Sub-Title
+    drawSeussianDisplayText(ctx, subTitle, canvas.width / 2, 134, {
+      fontSize: 21,
+      fillTopColor: '#d8c448',
+      fillBottomColor: '#c48c20',
+      bevelHighlightColor: 'rgba(255, 245, 200, 0.6)',
+      outlineColor: '#181020',
+      shadowColor: '#100816',
+      bounceAmp: 2.2,
+      tiltAmp: 0.09,
+      archCurvature: 0.04,
+      letterSpacing: 13.5,
+    });
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -291,9 +329,11 @@ function createMerchandiseGiftStack(
  *
  * Recreates the 3 crooked, curvy blue & turquoise Seussian Department Store Counter Booths
  * from `model_1D_shopping.jpg` and `plan_1D_shopping.jpg`:
- * - DSR Wagon (`x = -2.75, z = -1.65`) · "WHO DEPT. STORE" ("NEEDS-A-MAWOOZIS")
- * - Center Wagon (`x = 0.0, z = -1.85`) · "TINSEL & TRIMMINGS" ("WHATCH-A-MA-WHO")
- * - DSL Wagon (`x = +2.75, z = -1.65`) · "FLOO-FLOOBERS & TOYS" ("FUZZ-A-MA-WUMPUS")
+ * - DSR Wagon (`x = -2.65m, z = -1.12m`) · "WHO DEPT. STORE" ("NEEDS-A-MAWOOZIS")
+ * - Center Wagon (`x = 0.0m, z = -1.25m`) · "TINSEL & TRIMMINGS" ("WHATCH-A-MA-WHO")
+ * - DSL Wagon (`x = +2.65m, z = -1.12m`) · "FLOO-FLOOBERS & TOYS" ("FUZZ-A-MA-WUMPUS")
+ * Positioned downstage with >0.65m clearance from the Center Christmas Tree Turntable
+ * (`z = -3.55m`, front edge `-2.40m`) and the 3 Pink Whoville Houses (`z <= -2.45m`).
  */
 export function buildGrinchShoppingCounters(
   rockTex: THREE.CanvasTexture
@@ -324,6 +364,10 @@ export function buildGrinchShoppingCounters(
     color: 0xcad2dc,
     roughness: 0.6,
   });
+  const iceGlazeMat = new THREE.MeshStandardMaterial({
+    color: 0x8eb8dc,
+    roughness: 0.56,
+  });
   const limeFrameMat = new THREE.MeshStandardMaterial({
     color: 0x42b438,
     roughness: 0.55,
@@ -349,9 +393,9 @@ export function buildGrinchShoppingCounters(
 
   const boothSpecs = [
     {
-      x: -2.75,
-      z: -1.65,
-      rotY: 0.18,
+      x: -2.65,
+      z: -1.12,
+      rotY: 0.16,
       mainTitle: 'WHO DEPT. STORE',
       subTitle: 'NEEDS-A-MAWOOZIS',
       clerkColor: 0xc82848,
@@ -361,8 +405,8 @@ export function buildGrinchShoppingCounters(
     },
     {
       x: 0.0,
-      z: -1.85,
-      rotY: 0.04,
+      z: -1.25,
+      rotY: 0.03,
       mainTitle: 'TINSEL & TRIMMINGS',
       subTitle: 'WHATCH-A-MA-WHO',
       clerkColor: 0x2e9448,
@@ -371,9 +415,9 @@ export function buildGrinchShoppingCounters(
       boxPalette: [0x8838c8, 0xd42848, 0x38b468] as const,
     },
     {
-      x: 2.75,
-      z: -1.65,
-      rotY: -0.18,
+      x: 2.65,
+      z: -1.12,
+      rotY: -0.16,
       mainTitle: 'FLOO-FLOOBERS & TOYS',
       subTitle: 'FUZZ-A-MA-WUMPUS',
       clerkColor: 0x7c38b8,
@@ -394,85 +438,100 @@ export function buildGrinchShoppingCounters(
 
     // 1. Rolling caster base platform (separated from floor at y = 0.04m)
     const wagonCasterDeck = new THREE.Mesh(
-      new RoundedBoxGeometry(1.96, 0.08, 0.68, 2, 0.02),
+      new RoundedBoxGeometry(1.92, 0.08, 0.62, 2, 0.02),
       new THREE.MeshStandardMaterial({ color: 0x1e2432, roughness: 0.7 })
     );
     wagonCasterDeck.position.set(0, 0.04, 0);
     unit.add(wagonCasterDeck);
 
     // 2. Curved multi-segment Seussian counter front with recessed center arch niche
-    // Left and right curved turquoise/blue counter piers
     for (const side of [-1, 1] as const) {
       const pier = new THREE.Mesh(
-        new RoundedBoxGeometry(0.56, 0.76, 0.56, 3, 0.08),
+        new RoundedBoxGeometry(0.55, 0.76, 0.54, 3, 0.08),
         counterBlueMat
       );
-      pier.position.set(side * 0.62, 0.46, 0.02);
-      pier.rotation.y = side * -0.12;
+      pier.position.set(side * 0.61, 0.46, 0.01);
+      pier.rotation.y = side * -0.1;
       pier.castShadow = true;
       pier.receiveShadow = true;
       unit.add(pier);
 
       // Molded turquoise front relief panel (offset +0.04m in Z to avoid coplanarity)
       const reliefPanel = new THREE.Mesh(
-        new RoundedBoxGeometry(0.42, 0.56, 0.05, 2, 0.04),
+        new RoundedBoxGeometry(0.41, 0.54, 0.045, 2, 0.04),
         counterTurquoiseMat
       );
-      reliefPanel.position.set(side * 0.62, 0.46, 0.31);
-      reliefPanel.rotation.y = side * -0.12;
+      reliefPanel.position.set(side * 0.61, 0.46, 0.305);
+      reliefPanel.rotation.y = side * -0.1;
       unit.add(reliefPanel);
     }
 
     // Center upper arch bridge of the counter
     const archBridge = new THREE.Mesh(
-      new RoundedBoxGeometry(0.76, 0.28, 0.54, 2, 0.06),
+      new RoundedBoxGeometry(0.74, 0.28, 0.52, 2, 0.06),
       counterBlueMat
     );
     archBridge.position.set(0, 0.7, 0);
     archBridge.castShadow = true;
     unit.add(archBridge);
 
-    // Recessed dark arched display niche in the front center of the counter (matching model_1D_shopping.jpg!)
+    // Recessed dark arched display niche in the front center of the counter
     const nicheBacking = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.34, 0.36, 0.52, 16, 1, false, 0, Math.PI),
+      new THREE.CylinderGeometry(0.33, 0.35, 0.5, 16, 1, false, 0, Math.PI),
       darkRecessMat
     );
     nicheBacking.rotation.x = Math.PI / 2;
-    nicheBacking.position.set(0, 0.12, 0.22);
+    nicheBacking.position.set(0, 0.12, 0.21);
     unit.add(nicheBacking);
 
     // Turquoise arch molding rim around the center cutout
     const archRim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.35, 0.042, 10, 20, Math.PI),
+      new THREE.TorusGeometry(0.34, 0.04, 10, 20, Math.PI),
       counterTurquoiseMat
     );
-    archRim.position.set(0, 0.12, 0.31);
+    archRim.position.set(0, 0.12, 0.305);
     unit.add(archRim);
 
-    // 3. Snowy white-ice curved counter top slab (roughness >= 0.55, color <= 0xd8)
+    // 3. Snowy white-ice curved counter top slab + sculpted Seussian icicle valance
     const counterTopCenter = new THREE.Mesh(
-      new RoundedBoxGeometry(1.98, 0.09, 0.64, 3, 0.04),
+      new RoundedBoxGeometry(1.96, 0.09, 0.6, 3, 0.04),
       snowCounterTopMat
     );
-    counterTopCenter.position.set(0, 0.88, 0.03);
+    counterTopCenter.position.set(0, 0.88, 0.02);
     counterTopCenter.castShadow = true;
     counterTopCenter.receiveShadow = true;
     unit.add(counterTopCenter);
 
-    // Curved front apron lip on counter top (offset in Z and Y)
-    const counterLip = new THREE.Mesh(
-      new RoundedBoxGeometry(2.04, 0.055, 0.12, 2, 0.02),
-      counterTurquoiseMat
+    // Sculpted Seussian snow-drip valance along the front counter edge (no ConeGeometry!)
+    const counterIcicleValance = createSeussianIcicleValance(
+      1.86,
+      0.16,
+      11,
+      snowCounterTopMat,
+      iceGlazeMat,
+      0.045,
+      bIdx + 10
     );
-    counterLip.position.set(0, 0.84, 0.34);
-    unit.add(counterLip);
+    counterIcicleValance.position.set(0, 0.85, 0.345);
+    unit.add(counterIcicleValance);
+
+    // Individual sculpted icicle drips at the two outer corners of the counter top
+    for (const side of [-1, 1] as const) {
+      const cornerDrip = createSculptedIcicleDrip(
+        0.22,
+        0.042,
+        snowCounterTopMat,
+        side * 0.025
+      );
+      cornerDrip.position.set(side * 0.91, 0.85, 0.31);
+      unit.add(cornerDrip);
+    }
 
     // 4. Tall red-and-white spiral candy-cane side posts + crooked lime-green Seussian branch arms
     for (const side of [-1, 1] as const) {
       const postGroup = new THREE.Group();
-      postGroup.position.set(side * 0.76, 0.92, 0.06);
+      postGroup.position.set(side * 0.76, 0.92, 0.05);
 
-      // Curved spiral candy-cane post via TubeGeometry
       const postCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(side * -0.06, 0.42, 0.03),
@@ -486,7 +545,6 @@ export function buildGrinchShoppingCounters(
       candyPost.castShadow = true;
       postGroup.add(candyPost);
 
-      // Lime-green crooked Seussian outer vine/branch post (seen in model_1D_shopping.jpg)
       const branchCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.07, 0, 0.04),
         new THREE.Vector3(side * 0.16, 0.45, 0.06),
@@ -500,7 +558,7 @@ export function buildGrinchShoppingCounters(
       limeBranch.castShadow = true;
       postGroup.add(limeBranch);
 
-      // Side sprout arm with hanging ornament
+      // Side sprout arm with hanging ornament & sculpted icicle drip
       const sproutArm = new THREE.Mesh(
         new THREE.CylinderGeometry(0.018, 0.028, 0.26, 8),
         limeFrameMat
@@ -516,7 +574,6 @@ export function buildGrinchShoppingCounters(
       hangingBall.position.set(side * 0.3, 0.62, 0.06);
       postGroup.add(hangingBall);
 
-      // Top curled candy-cane finial knob
       const finialKnob = new THREE.Mesh(
         new THREE.SphereGeometry(0.075, 12, 10),
         limeFrameMat
@@ -529,10 +586,9 @@ export function buildGrinchShoppingCounters(
 
     // 5. Crooked scalloped lime-green & crimson Seussian overhead shop sign
     const signGroup = new THREE.Group();
-    signGroup.position.set(0, 2.08, 0.1);
+    signGroup.position.set(0, 2.08, 0.08);
     signGroup.rotation.z = bIdx === 1 ? -0.04 : bIdx === 0 ? 0.05 : -0.05;
 
-    // Scalloped lime-green outer frame backing (Z = -0.035m relative to signGroup)
     const limeSignFrame = new THREE.Mesh(
       new RoundedBoxGeometry(1.68, 0.56, 0.04, 3, 0.08),
       limeFrameMat
@@ -541,7 +597,6 @@ export function buildGrinchShoppingCounters(
     limeSignFrame.castShadow = true;
     signGroup.add(limeSignFrame);
 
-    // Top and bottom lime-green Seussian scallops along the sign frame
     for (let sc = -3; sc <= 3; sc++) {
       const scallop = new THREE.Mesh(
         new THREE.CylinderGeometry(0.11, 0.11, 0.04, 12),
@@ -552,7 +607,7 @@ export function buildGrinchShoppingCounters(
       signGroup.add(scallop);
     }
 
-    // Canvas-rendered painted signboard (Z = +0.015m relative to signGroup, separated by 0.05m)
+    // High-res 512×192 Seussian signboard rendered with `drawSeussianDisplayText`
     const signTex = createSeussianShopSignTexture(
       spec.mainTitle,
       spec.subTitle,
@@ -568,6 +623,18 @@ export function buildGrinchShoppingCounters(
     );
     signBoard.position.set(0, 0.01, 0.015);
     signGroup.add(signBoard);
+
+    // Snow bolster + sculpted icicle drips hanging from top corners of the shop sign
+    for (const side of [-1, 1] as const) {
+      const signDrip = createSculptedIcicleDrip(
+        0.19,
+        0.036,
+        snowCounterTopMat,
+        side * 0.02
+      );
+      signDrip.position.set(side * 0.76, -0.24, 0.03);
+      signGroup.add(signDrip);
+    }
 
     // Hanging ornaments & pine garland swag under the sign
     for (let o = -2; o <= 2; o++) {
@@ -595,47 +662,52 @@ export function buildGrinchShoppingCounters(
 
     unit.add(signGroup);
 
-    // 6. Countertop Merchandise: Seussian Cash Register, Conical Display Trees, & Gift Stacks
+    // 6. Countertop Merchandise: Seussian Cash Register, Tiered Hatboxes, & Gift Stacks
     const cashRegister = createSeussianCashRegister(spec.registerColor);
-    cashRegister.position.set(-0.52, 0.92, 0.04);
+    cashRegister.position.set(-0.52, 0.92, 0.02);
     cashRegister.rotation.y = 0.22;
     unit.add(cashRegister);
 
-    const giftStackLeft = createMerchandiseGiftStack(spec.boxPalette, 0xd4b828);
-    giftStackLeft.position.set(0.48, 0.92, 0.05);
-    giftStackLeft.rotation.y = -0.18;
-    unit.add(giftStackLeft);
+    const giftStackRight = createMerchandiseGiftStack(spec.boxPalette, 0xd4b828);
+    giftStackRight.position.set(0.48, 0.92, 0.03);
+    giftStackRight.rotation.y = -0.18;
+    unit.add(giftStackRight);
 
-    // Colorful tiered conical hats / display trees on counter center (matching model_1D_shopping.jpg!)
-    const coneColors = [0xd42838, 0xd4a824, 0x2884d4, 0x34a848];
+    // Colorful tiered Seussian display domes/spools on counter center
+    const displayColors = [0xd42838, 0xd4a824, 0x2884d4, 0x34a848];
     for (let c = 0; c < 3; c++) {
-      const displayCone = new THREE.Mesh(
-        new THREE.ConeGeometry(0.085, 0.24 + (c % 2) * 0.06, 12),
+      const displayStand = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.082, 0.22 + (c % 2) * 0.06, 12),
         new THREE.MeshStandardMaterial({
-          color: coneColors[(bIdx + c) % coneColors.length] ?? 0xd42838,
+          color: displayColors[(bIdx + c) % displayColors.length] ?? 0xd42838,
           roughness: 0.55,
         })
       );
-      displayCone.position.set(-0.14 + c * 0.18, 1.04, 0.08 + (c % 2) * 0.04);
-      displayCone.rotation.z = (c - 1) * 0.08;
-      displayCone.castShadow = true;
-      unit.add(displayCone);
+      displayStand.position.set(-0.14 + c * 0.18, 1.03, 0.06 + (c % 2) * 0.04);
+      displayStand.rotation.z = (c - 1) * 0.08;
+      displayStand.castShadow = true;
+      unit.add(displayStand);
     }
 
-    // 7. Who Store Clerk behind the counter + Who Shopper beside the booth
-    const clerk = createHumanScaleFigure(1.52, spec.clerkColor, 0.16, 0x2e9448, false);
-    clerk.position.set(0.12, 0, -0.46);
+    // 7. Expressive Who Store Clerk behind counter (`z = -0.52m` local) & Who Shopper in front (`z = +0.58m` local)
+    const clerk = createWhoCharacter({
+      heightM: 1.54,
+      coatColorHex: spec.clerkColor,
+      hatColorHex: 0x2e9448,
+      trimColorHex: 0xd4d8de,
+    });
+    clerk.position.set(0.1, 0, -0.52);
     unit.add(clerk);
 
-    const shopper = createHumanScaleFigure(
-      1.38,
-      spec.shopperColor,
-      0.14,
-      0xd42848,
-      bIdx === 1
-    );
-    shopper.position.set(bIdx === 2 ? -1.12 : 1.12, 0, 0.25);
-    shopper.rotation.y = bIdx === 2 ? 0.65 : -0.65;
+    const shopper = createWhoCharacter({
+      heightM: 1.42,
+      coatColorHex: spec.shopperColor,
+      hatColorHex: 0xd42848,
+      hasBraids: bIdx === 1,
+      holdingGift: true,
+    });
+    shopper.position.set(bIdx === 2 ? -0.68 : 0.68, 0, 0.58);
+    shopper.rotation.y = bIdx === 2 ? 2.55 : -2.55;
     unit.add(shopper);
 
     shoppingGroup.add(unit);
@@ -647,7 +719,8 @@ export function buildGrinchShoppingCounters(
 
 /**
  * Helper to build the DSR Pink Whoville Round House wagon that remains onstage
- * during Scene 1F (`model_1F_mt_crumpit_sleigh.jpg` & `plan_1F_cave2_crumpit.jpg`).
+ * during Scene 1F (`model_1F_mt_crumpit_sleigh.jpg` & `plan_1F_cave2_crumpit.jpg`),
+ * upgraded with `createSeussianIcicleValance` and `createSculptedIcicleDrip` eaves!
  */
 function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
   const widthM = 2.35;
@@ -671,6 +744,10 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
     map: rockTex,
     color: 0xbed0d8,
     roughness: 0.62,
+  });
+  const iceGlazeMat = new THREE.MeshStandardMaterial({
+    color: 0x86b2dc,
+    roughness: 0.56,
   });
   const outlineMat = new THREE.MeshBasicMaterial({ color: 0x181422 });
   const warmWindowMat = new THREE.MeshStandardMaterial({
@@ -714,17 +791,29 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
   roof.castShadow = true;
   g.add(roof);
 
-  const scallopCount = 7;
-  for (let i = 0; i < scallopCount; i++) {
-    const sx =
-      ((i - (scallopCount - 1) / 2) / (scallopCount / 2)) * (widthM * 0.44);
-    const drip = new THREE.Mesh(
-      new THREE.ConeGeometry(0.14, 0.34, 8),
-      snowRoofMat
+  // Continuous sculpted Seussian snow-drip valance along the roof eaves (replaces ConeGeometry!)
+  const eavesValance = createSeussianIcicleValance(
+    widthM * 0.92,
+    0.34,
+    9,
+    snowRoofMat,
+    iceGlazeMat,
+    0.055,
+    17
+  );
+  eavesValance.position.set(0, heightM * 0.65, 0.37);
+  g.add(eavesValance);
+
+  // Additional organic fluted icicle drips flanking the eaves corners
+  for (const side of [-1, 1] as const) {
+    const cornerIcicle = createSculptedIcicleDrip(
+      0.36,
+      0.058,
+      snowRoofMat,
+      side * 0.035
     );
-    drip.rotation.x = Math.PI;
-    drip.position.set(sx, heightM * 0.58, 0.38);
-    g.add(drip);
+    cornerIcicle.position.set(side * (widthM * 0.45), heightM * 0.64, 0.35);
+    g.add(cornerIcicle);
   }
 
   const chimney = new THREE.Mesh(
@@ -784,282 +873,17 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
 }
 
 /**
- * Helper to build faithful Max the Dog with his single oversized reindeer antler tied with a red bow.
- */
-function createMaxTheDogWithAntler(): THREE.Group {
-  const max = new THREE.Group();
-  max.name = 'MaxTheDog';
-
-  const furMat = new THREE.MeshStandardMaterial({
-    color: 0xa87242,
-    roughness: 0.62,
-  });
-  const earMat = new THREE.MeshStandardMaterial({
-    color: 0x6e4424,
-    roughness: 0.65,
-  });
-  const antlerMat = new THREE.MeshStandardMaterial({
-    color: 0xc8b48c,
-    roughness: 0.58,
-  });
-  const redRibbonMat = new THREE.MeshStandardMaterial({
-    color: 0xc82238,
-    roughness: 0.5,
-  });
-
-  // Seated/leaning dog torso
-  const body = new THREE.Mesh(
-    new RoundedBoxGeometry(0.34, 0.24, 0.2, 2, 0.07),
-    furMat
-  );
-  body.position.set(0, 0.18, 0);
-  body.rotation.z = 0.22;
-  body.castShadow = true;
-  max.add(body);
-
-  // Front and back legs
-  for (const [lx, lz] of [
-    [-0.12, -0.06],
-    [-0.12, 0.06],
-    [0.12, -0.06],
-    [0.12, 0.06],
-  ] as const) {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.028, 0.18, 8),
-      furMat
-    );
-    leg.position.set(lx, 0.09, lz);
-    max.add(leg);
-  }
-
-  // Head & snout
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), furMat);
-  head.position.set(-0.18, 0.34, 0);
-  head.castShadow = true;
-  max.add(head);
-
-  const snout = new THREE.Mesh(
-    new RoundedBoxGeometry(0.12, 0.075, 0.08, 2, 0.025),
-    furMat
-  );
-  snout.position.set(-0.27, 0.32, 0);
-  max.add(snout);
-
-  const nose = new THREE.Mesh(
-    new THREE.SphereGeometry(0.025, 8, 8),
-    new THREE.MeshStandardMaterial({ color: 0x1a1418, roughness: 0.4 })
-  );
-  nose.position.set(-0.33, 0.34, 0);
-  max.add(nose);
-
-  // Floppy ears
-  for (const side of [-1, 1] as const) {
-    const ear = new THREE.Mesh(
-      new RoundedBoxGeometry(0.06, 0.16, 0.03, 1, 0.01),
-      earMat
-    );
-    ear.position.set(-0.16, 0.28, side * 0.1);
-    ear.rotation.x = side * 0.25;
-    max.add(ear);
-  }
-
-  // Red ribbon tied around Max's head
-  const headRibbon = new THREE.Mesh(
-    new THREE.TorusGeometry(0.095, 0.016, 8, 16),
-    redRibbonMat
-  );
-  headRibbon.rotation.y = Math.PI / 2;
-  headRibbon.position.set(-0.18, 0.36, 0);
-  max.add(headRibbon);
-
-  // Single oversized crooked reindeer antler tied to the top of Max's head!
-  const antlerMainCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.18, 0.44, 0),
-    new THREE.Vector3(-0.22, 0.62, 0.02),
-    new THREE.Vector3(-0.14, 0.78, -0.02),
-    new THREE.Vector3(-0.24, 0.92, 0),
-  ]);
-  const antlerStem = new THREE.Mesh(
-    new THREE.TubeGeometry(antlerMainCurve, 20, 0.022, 8, false),
-    antlerMat
-  );
-  antlerStem.castShadow = true;
-  max.add(antlerStem);
-
-  // Antler tines
-  for (const [ty, tz, rotZ] of [
-    [0.58, 0.02, 0.65],
-    [0.72, -0.02, -0.58],
-    [0.84, 0.01, 0.52],
-  ] as const) {
-    const tine = new THREE.Mesh(
-      new THREE.ConeGeometry(0.018, 0.16, 8),
-      antlerMat
-    );
-    tine.position.set(-0.19, ty, tz);
-    tine.rotation.z = rotZ;
-    max.add(tine);
-  }
-
-  return max;
-}
-
-/**
- * Helper to build the Grinch figure in his stolen Santa Claus coat and hat.
- */
-function createGrinchCharacter(withCarvingTools = false): THREE.Group {
-  const grinch = new THREE.Group();
-  grinch.name = 'TheGrinchFigure';
-
-  const grinchGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x52b838,
-    roughness: 0.55,
-  });
-  const santaCoatMat = new THREE.MeshStandardMaterial({
-    color: 0xc82238,
-    roughness: 0.52,
-  });
-  const furTrimMat = new THREE.MeshStandardMaterial({
-    color: 0xd0d4d8,
-    roughness: 0.62,
-  });
-  const beltMat = new THREE.MeshStandardMaterial({
-    color: 0x18161e,
-    roughness: 0.45,
-  });
-
-  // Green furry legs
-  for (const lx of [-0.09, 0.09] as const) {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.052, 0.045, 0.62, 10),
-      grinchGreenMat
-    );
-    leg.position.set(lx, 0.33, 0);
-    leg.castShadow = true;
-    grinch.add(leg);
-
-    // Curled-toe crimson elf/Santa shoes
-    const shoe = new THREE.Mesh(
-      new RoundedBoxGeometry(0.11, 0.08, 0.22, 2, 0.03),
-      santaCoatMat
-    );
-    shoe.position.set(lx, 0.04, 0.05);
-    grinch.add(shoe);
-  }
-
-  // Red Santa coat torso with pear-shaped Seussian posture
-  const coatTorso = new THREE.Mesh(
-    CylinderGeometryOrRounded(0.24, 0.72),
-    santaCoatMat
-  );
-  coatTorso.position.set(0, 0.94, 0);
-  coatTorso.castShadow = true;
-  grinch.add(coatTorso);
-
-  // White fur hem & collar (offset outward so no coplanar surfaces)
-  const furHem = new THREE.Mesh(
-    new THREE.TorusGeometry(0.23, 0.045, 10, 18),
-    furTrimMat
-  );
-  furHem.rotation.x = Math.PI / 2;
-  furHem.position.set(0, 0.62, 0);
-  grinch.add(furHem);
-
-  const belt = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.215, 0.225, 0.08, 16),
-    beltMat
-  );
-  belt.position.set(0, 0.84, 0);
-  grinch.add(belt);
-
-  // Green Grinch head with tuft of fur & Santa hat
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.145, 14, 12),
-    grinchGreenMat
-  );
-  head.scale.set(0.95, 1.12, 0.98);
-  head.position.set(0, 1.46, 0.02);
-  head.castShadow = true;
-  grinch.add(head);
-
-  const santaHatTrim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.135, 0.036, 8, 16),
-    furTrimMat
-  );
-  santaHatTrim.rotation.x = Math.PI / 2;
-  santaHatTrim.position.set(0, 1.56, 0.02);
-  grinch.add(santaHatTrim);
-
-  const santaHatCone = new THREE.Mesh(
-    new THREE.ConeGeometry(0.13, 0.34, 12),
-    santaCoatMat
-  );
-  santaHatCone.position.set(0.04, 1.72, 0.02);
-  santaHatCone.rotation.z = -0.28;
-  grinch.add(santaHatCone);
-
-  const hatPom = new THREE.Mesh(
-    new THREE.SphereGeometry(0.042, 10, 10),
-    furTrimMat
-  );
-  hatPom.position.set(0.1, 1.88, 0.02);
-  grinch.add(hatPom);
-
-  // Arms
-  for (const side of [-1, 1] as const) {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.045, 0.04, 0.48, 8),
-      santaCoatMat
-    );
-    arm.position.set(side * 0.26, 1.12, 0.08);
-    arm.rotation.z = side * 0.45;
-    arm.rotation.x = -0.45;
-    grinch.add(arm);
-
-    const hand = new THREE.Mesh(
-      new THREE.SphereGeometry(0.048, 8, 8),
-      grinchGreenMat
-    );
-    hand.position.set(side * 0.36, 1.24, 0.22);
-    grinch.add(hand);
-  }
-
-  if (withCarvingTools) {
-    const silverMat = new THREE.MeshStandardMaterial({
-      color: 0xc8d0d8,
-      roughness: 0.25,
-      metalness: 0.85,
-    });
-    const carvingKnife = new THREE.Mesh(
-      new THREE.BoxGeometry(0.02, 0.32, 0.04),
-      silverMat
-    );
-    carvingKnife.position.set(0.38, 1.38, 0.24);
-    carvingKnife.rotation.x = 0.25;
-    grinch.add(carvingKnife);
-  }
-
-  return grinch;
-}
-
-function CylinderGeometryOrRounded(
-  radius: number,
-  height: number
-): THREE.BufferGeometry {
-  return new THREE.CylinderGeometry(radius * 0.75, radius, height, 14);
-}
-
-/**
  * 2. SCENE 1F — MT. CRUMPIT SLEIGH CLIFF WAGON (`'grinch-mt-crumpit-sleigh'`)
  *
  * Recreates Scene 1F from `model_1F_mt_crumpit_sleigh.jpg` and `plan_1F_cave2_crumpit.jpg`:
- * - DSR Pink Whoville House (`x = -2.85, z = -2.45`) remaining onstage
- * - Steep, jagged icy-blue Mt. Crumpit precipice wagon at DSL (`x = +2.45m, z = -2.35m`)
- *   with stepped rock strata, overhanging snow ledges, and icicles
- * - Perched precariously at a dramatic tilt on the cliff crest: the Grinch's crooked wooden &
- *   crimson sleigh with curved steel runners (`TubeGeometry`), dashboard horn, and the
- *   colossal overstuffed crimson sack bursting with stolen Christmas trees, bicycle wheels,
- *   wrapped presents, candy canes, and stockings, plus the Grinch (`0x52b838`) and Max!
+ * - DSR Pink Whoville House at `x = -3.35m, z = -3.05m` (matching Scene 1B)
+ * - Steep, jagged icy-blue Mt. Crumpit precipice wagon at DSL (`x = +2.35m, z = -2.25m`)
+ *   with stepped rock strata, overhanging snow ledges, and sculpted `createSeussianIcicleValance`
+ *   & `createSculptedIcicleDrip` icicles
+ * - Tilted sleigh runners resting 100% flush on the upper snow ledge (zero floating, zero penetration)
+ * - `createGrinchCharacter({ heightM: 1.82, santaDisguise: true })` and
+ *   `createMaxDogCharacter({ withAntler: true })` standing firmly on horizontal snow-ledge
+ *   steps of the cliff wagon with their base discs at the exact surface Y height of those ledges!
  */
 export function buildGrinchMtCrumpitSleigh(
   rockTex: THREE.CanvasTexture
@@ -1067,16 +891,16 @@ export function buildGrinchMtCrumpitSleigh(
   const crumpitSleighGroup = new THREE.Group();
   crumpitSleighGroup.name = 'Element_grinch-mt-crumpit-sleigh';
 
-  // 1. DSR Pink Whoville House remains onstage in Scene 1F (see model_1F_mt_crumpit_sleigh.jpg)
+  // 1. DSR Pink Whoville House at x = -3.35m, z = -3.05m (matching Scene 1B)
   const dsrHouse1F = buildDsrWhovilleHouseFor1F(rockTex);
-  dsrHouse1F.position.set(-2.85, 0, -2.45);
-  dsrHouse1F.rotation.y = 0.14;
+  dsrHouse1F.position.set(-3.35, 0, -3.05);
+  dsrHouse1F.rotation.y = 0.18;
   crumpitSleighGroup.add(dsrHouse1F);
 
-  // 2. Steep Jagged Icy-Blue Mt. Crumpit Precipice Wagon at DSL (x = +2.45m, z = -2.35m)
+  // 2. Steep Jagged Icy-Blue Mt. Crumpit Precipice Wagon at DSL (x = +2.35m, z = -2.25m)
   const cliffWagon = new THREE.Group();
   cliffWagon.name = 'MtCrumpitCliffWagon';
-  cliffWagon.position.set(2.45, 0, -2.35);
+  cliffWagon.position.set(2.35, 0, -2.25);
 
   const iceRockLowerMat = new THREE.MeshStandardMaterial({
     map: rockTex,
@@ -1100,22 +924,20 @@ export function buildGrinchMtCrumpitSleigh(
     roughness: 0.55,
     metalness: 0.12,
   });
-  const darkContourMat = new THREE.MeshBasicMaterial({ color: 0x162038 });
 
-  // Rolling steel wagon base frame (drawn as rectangle + stair unit on plan_1F_cave2_crumpit.jpg)
+  // Rolling steel wagon base frame
   const wagonFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(2.65, 0.12, 1.18, 2, 0.02),
+    new RoundedBoxGeometry(2.75, 0.12, 1.24, 2, 0.02),
     new THREE.MeshStandardMaterial({ color: 0x202838, roughness: 0.7 })
   );
   wagonFrame.position.set(0, 0.06, 0);
   cliffWagon.add(wagonFrame);
 
-  // Stepped jagged rock strata ascending steeply from stage right (left of wagon) up to the DSL precipice peak
+  // Stepped jagged rock strata ascending toward the DSL precipice crest
   const strataSpecs = [
-    { x: -0.92, y: 0.42, z: -0.04, w: 1.05, h: 0.68, d: 0.88, rotZ: 0.34, mat: iceRockLowerMat },
-    { x: -0.32, y: 0.78, z: 0.02, w: 1.28, h: 1.18, d: 0.82, rotZ: 0.38, mat: iceRockUpperMat },
-    { x: 0.28, y: 1.16, z: -0.03, w: 1.24, h: 1.62, d: 0.86, rotZ: 0.32, mat: iceRockLowerMat },
-    { x: 0.68, y: 1.54, z: 0.03, w: 0.96, h: 1.92, d: 0.78, rotZ: 0.22, mat: iceRockUpperMat },
+    { x: -0.95, y: 0.36, z: -0.06, w: 0.96, h: 0.52, d: 0.84, rotZ: 0.0, mat: iceRockLowerMat },
+    { x: -0.36, y: 0.58, z: -0.02, w: 1.02, h: 0.92, d: 0.82, rotZ: 0.0, mat: iceRockUpperMat },
+    { x: 0.38, y: 0.96, z: -0.04, w: 1.48, h: 1.48, d: 0.88, rotZ: 0.24, mat: iceRockLowerMat },
   ] as const;
 
   for (let sIdx = 0; sIdx < strataSpecs.length; sIdx++) {
@@ -1123,7 +945,7 @@ export function buildGrinchMtCrumpitSleigh(
     if (!st) continue;
 
     const rockBlock = new THREE.Mesh(
-      new RoundedBoxGeometry(st.w, st.h, st.d, 3, 0.16),
+      new RoundedBoxGeometry(st.w, st.h, st.d, 3, 0.12),
       st.mat
     );
     rockBlock.position.set(st.x, st.y, st.z);
@@ -1131,66 +953,136 @@ export function buildGrinchMtCrumpitSleigh(
     rockBlock.castShadow = true;
     rockBlock.receiveShadow = true;
     cliffWagon.add(rockBlock);
+  }
 
-    // Overhanging snow ledge capping each stepped stratum (separated in Z & Y)
-    const snowCap = new THREE.Mesh(
-      new RoundedBoxGeometry(st.w * 0.95, 0.18, st.d + 0.1, 2, 0.07),
-      snowLedgeMat
-    );
-    snowCap.position.set(
-      st.x - Math.sin(st.rotZ) * (st.h * 0.46),
-      st.y + Math.cos(st.rotZ) * (st.h * 0.46),
-      st.z + 0.04
-    );
-    snowCap.rotation.z = st.rotZ * 0.85;
-    snowCap.castShadow = true;
-    cliffWagon.add(snowCap);
+  // Horizontal Snow-Ledge Step #1 (Lower Left Terrace for Max the Dog):
+  // Centered at (x = -0.98, y = 0.62, z = 0.16), height = 0.12m -> exact top surface Y = 0.68m!
+  const lowerSnowStep = new THREE.Mesh(
+    new RoundedBoxGeometry(0.84, 0.12, 0.76, 2, 0.04),
+    snowLedgeMat
+  );
+  lowerSnowStep.position.set(-0.98, 0.62, 0.16);
+  lowerSnowStep.castShadow = true;
+  lowerSnowStep.receiveShadow = true;
+  cliffWagon.add(lowerSnowStep);
 
-    // Dark Seussian contour border line under the snow ledge (offset +0.05m in Z)
-    const contourStrip = new THREE.Mesh(
-      new THREE.BoxGeometry(st.w * 0.88, 0.035, 0.04),
-      darkContourMat
-    );
-    contourStrip.position.set(
-      snowCap.position.x,
-      snowCap.position.y - 0.09,
-      st.z + st.d * 0.5 + 0.06
-    );
-    contourStrip.rotation.z = st.rotZ * 0.85;
-    cliffWagon.add(contourStrip);
+  const lowerValance = createSeussianIcicleValance(
+    0.76,
+    0.22,
+    6,
+    snowLedgeMat,
+    icicleMat,
+    0.045,
+    31
+  );
+  lowerValance.position.set(-0.98, 0.62, 0.57);
+  cliffWagon.add(lowerValance);
 
-    // Hanging icicles beneath each overhanging snow ledge
-    for (let ic = -2; ic <= 2; ic++) {
-      const icicle = new THREE.Mesh(
-        new THREE.ConeGeometry(0.055, 0.24 + ((sIdx + ic + 2) % 3) * 0.09, 7),
-        icicleMat
-      );
-      icicle.rotation.x = Math.PI;
-      icicle.position.set(
-        snowCap.position.x + ic * 0.18,
-        snowCap.position.y - 0.18,
-        st.z + st.d * 0.5 + 0.03
-      );
-      cliffWagon.add(icicle);
-    }
+  // Horizontal Snow-Ledge Step #2 (Mid Terrace for the Grinch):
+  // Centered at (x = -0.38, y = 1.04, z = 0.22), height = 0.12m -> exact top surface Y = 1.10m!
+  const midSnowStep = new THREE.Mesh(
+    new RoundedBoxGeometry(0.82, 0.12, 0.78, 2, 0.04),
+    snowLedgeMat
+  );
+  midSnowStep.position.set(-0.38, 1.04, 0.22);
+  midSnowStep.castShadow = true;
+  midSnowStep.receiveShadow = true;
+  cliffWagon.add(midSnowStep);
+
+  const midValance = createSeussianIcicleValance(
+    0.74,
+    0.26,
+    6,
+    snowLedgeMat,
+    icicleMat,
+    0.045,
+    37
+  );
+  midValance.position.set(-0.38, 1.04, 0.64);
+  cliffWagon.add(midValance);
+
+  // Upper Tilted Summit Snow Ramp Ledge (for the Grinch's Sleigh):
+  // Tilted at `sleighTiltRad = 0.24` rad so it slopes up to the right (`+X`).
+  // Ledge center at `(0.48, 1.68, -0.04)`, thickness `0.16m` (half-thickness `0.08m`).
+  // Its exact upper surface plane in `cliffWagon` coordinates passes through:
+  //   `x_surf = 0.48 - 0.08 * sin(0.24) = 0.4475`
+  //   `y_surf = 1.68 + 0.08 * cos(0.24) = 1.7577`
+  const sleighTiltRad = 0.24;
+  const upperLedgeCenterX = 0.48;
+  const upperLedgeCenterY = 1.68;
+  const upperLedgeCenterZ = -0.04;
+  const upperLedgeHalfThick = 0.08;
+
+  const upperSummitLedge = new THREE.Mesh(
+    new RoundedBoxGeometry(1.62, upperLedgeHalfThick * 2, 0.92, 2, 0.04),
+    snowLedgeMat
+  );
+  upperSummitLedge.position.set(
+    upperLedgeCenterX,
+    upperLedgeCenterY,
+    upperLedgeCenterZ
+  );
+  upperSummitLedge.rotation.z = sleighTiltRad;
+  upperSummitLedge.castShadow = true;
+  upperSummitLedge.receiveShadow = true;
+  cliffWagon.add(upperSummitLedge);
+
+  // Sculpted Seussian icicle valance + organic fluted icicle drips hanging under the summit ledge
+  const summitValance = createSeussianIcicleValance(
+    1.52,
+    0.34,
+    9,
+    snowLedgeMat,
+    icicleMat,
+    0.05,
+    43
+  );
+  summitValance.position.set(
+    upperLedgeCenterX,
+    upperLedgeCenterY - 0.04,
+    upperLedgeCenterZ + 0.49
+  );
+  summitValance.rotation.z = sleighTiltRad;
+  cliffWagon.add(summitValance);
+
+  for (let dIdx = -2; dIdx <= 2; dIdx++) {
+    const drip = createSculptedIcicleDrip(
+      0.32 + (Math.abs(dIdx) % 2) * 0.08,
+      0.046,
+      icicleMat,
+      dIdx * 0.015
+    );
+    const localX = dIdx * 0.3;
+    drip.position.set(
+      upperLedgeCenterX + localX * Math.cos(sleighTiltRad),
+      upperLedgeCenterY + localX * Math.sin(sleighTiltRad) - 0.08,
+      upperLedgeCenterZ + 0.44
+    );
+    cliffWagon.add(drip);
   }
 
   // Upstage technician access steps behind the cliff flat (drawn on plan_1F_cave2_crumpit.jpg)
   for (let step = 0; step < 4; step++) {
     const tread = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 0.05, 0.52),
+      new THREE.BoxGeometry(0.45, 0.05, 0.48),
       new THREE.MeshStandardMaterial({ color: 0x2c3446, roughness: 0.72 })
     );
-    tread.position.set(-0.65 + step * 0.38, 0.28 + step * 0.28, -0.58);
+    tread.position.set(-0.65 + step * 0.38, 0.28 + step * 0.28, -0.68);
     cliffWagon.add(tread);
   }
 
-  // 3. The Grinch's Crooked Sleigh & Colossal Overstuffed Sack perched at a dramatic tilt!
-  // Total height reaches ~3.45m at the top of the overstuffed sack & protruding tree!
+  // 3. The Grinch's Crooked Sleigh & Colossal Overstuffed Sack Resting Flush on the Summit Ledge!
+  // Runner tube radius is `0.028m`, and runner bottom centerline is at `y = 0.028m` in `sleighGroup`
+  // local coordinates so `y = 0` in `sleighGroup` is the exact bottom contact plane of the steel runners!
+  const sleighSurfaceX =
+    upperLedgeCenterX - Math.sin(sleighTiltRad) * upperLedgeHalfThick;
+  const sleighSurfaceY =
+    upperLedgeCenterY + Math.cos(sleighTiltRad) * upperLedgeHalfThick;
+
   const sleighGroup = new THREE.Group();
   sleighGroup.name = 'GrinchPrecariousSleighAndSack';
-  sleighGroup.position.set(0.32, 1.98, 0.06);
-  sleighGroup.rotation.z = -0.28; // Dramatic downhill/cliff-edge tilt matching model_1F_mt_crumpit_sleigh.jpg!
+  sleighGroup.position.set(sleighSurfaceX, sleighSurfaceY, upperLedgeCenterZ);
+  sleighGroup.rotation.z = sleighTiltRad;
 
   const steelRunnerMat = new THREE.MeshStandardMaterial({
     color: 0x3e2a1e,
@@ -1212,18 +1104,19 @@ export function buildGrinchMtCrumpitSleigh(
     metalness: 0.72,
   });
 
-  // Curved steel runners with curled front scrolls via TubeGeometry
+  // Curved steel runners resting flush on `y = 0` (tube radius 0.028 -> centerline at y = 0.028)
+  const runnerRadius = 0.028;
   for (const rz of [-0.28, 0.28] as const) {
     const runnerCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.88, 0.26, rz),
-      new THREE.Vector3(-0.98, 0.14, rz),
-      new THREE.Vector3(-0.84, 0.02, rz),
-      new THREE.Vector3(-0.35, 0.0, rz),
-      new THREE.Vector3(0.35, 0.0, rz),
-      new THREE.Vector3(0.78, 0.04, rz),
+      new THREE.Vector3(-0.88, 0.28, rz),
+      new THREE.Vector3(-0.96, 0.14, rz),
+      new THREE.Vector3(-0.72, runnerRadius, rz),
+      new THREE.Vector3(-0.35, runnerRadius, rz),
+      new THREE.Vector3(0.35, runnerRadius, rz),
+      new THREE.Vector3(0.72, runnerRadius + 0.02, rz),
     ]);
     const runnerMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(runnerCurve, 32, 0.028, 10, false),
+      new THREE.TubeGeometry(runnerCurve, 32, runnerRadius, 10, false),
       steelRunnerMat
     );
     runnerMesh.castShadow = true;
@@ -1232,10 +1125,10 @@ export function buildGrinchMtCrumpitSleigh(
     // Vertical runner stanchions connecting runners to sleigh hull
     for (const sx of [-0.48, 0.0, 0.48] as const) {
       const strut = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.022, 0.022, 0.22, 8),
+        new THREE.CylinderGeometry(0.022, 0.022, 0.2, 8),
         steelRunnerMat
       );
-      strut.position.set(sx, 0.11, rz);
+      strut.position.set(sx, 0.12, rz);
       sleighGroup.add(strut);
     }
   }
@@ -1245,7 +1138,7 @@ export function buildGrinchMtCrumpitSleigh(
     new RoundedBoxGeometry(1.38, 0.06, 0.54, 2, 0.02),
     sleighWoodMat
   );
-  sleighFloor.position.set(-0.04, 0.22, 0);
+  sleighFloor.position.set(-0.04, 0.23, 0);
   sleighFloor.castShadow = true;
   sleighGroup.add(sleighFloor);
 
@@ -1255,16 +1148,15 @@ export function buildGrinchMtCrumpitSleigh(
       new RoundedBoxGeometry(1.32, 0.34, 0.05, 2, 0.06),
       sleighCrimsonMat
     );
-    sideWall.position.set(-0.02, 0.38, side * 0.29);
+    sideWall.position.set(-0.02, 0.39, side * 0.29);
     sideWall.castShadow = true;
     sleighGroup.add(sideWall);
 
-    // Gold Seussian scroll molding along sleigh side (offset outward by 0.035m)
     const scrollTrim = new THREE.Mesh(
       new RoundedBoxGeometry(1.18, 0.045, 0.02, 1, 0.01),
       goldTrimMat
     );
-    scrollTrim.position.set(-0.02, 0.44, side * 0.325);
+    scrollTrim.position.set(-0.02, 0.45, side * 0.325);
     sleighGroup.add(scrollTrim);
   }
 
@@ -1275,14 +1167,14 @@ export function buildGrinchMtCrumpitSleigh(
   );
   dashboard.rotation.x = Math.PI / 2;
   dashboard.rotation.z = Math.PI * 0.65;
-  dashboard.position.set(-0.66, 0.42, 0);
+  dashboard.position.set(-0.66, 0.43, 0);
   sleighGroup.add(dashboard);
 
   const tailboard = new THREE.Mesh(
     new RoundedBoxGeometry(0.12, 0.52, 0.58, 2, 0.04),
     sleighCrimsonMat
   );
-  tailboard.position.set(0.64, 0.46, 0);
+  tailboard.position.set(0.64, 0.47, 0);
   tailboard.rotation.z = -0.28;
   sleighGroup.add(tailboard);
 
@@ -1300,7 +1192,7 @@ export function buildGrinchMtCrumpitSleigh(
   sleighGroup.add(hornTube);
 
   const hornBell = new THREE.Mesh(
-    new THREE.ConeGeometry(0.065, 0.12, 12, 1, true),
+    new THREE.CylinderGeometry(0.062, 0.018, 0.11, 12, 1, true),
     goldTrimMat
   );
   hornBell.rotation.z = Math.PI / 2 + 0.2;
@@ -1308,7 +1200,6 @@ export function buildGrinchMtCrumpitSleigh(
   sleighGroup.add(hornBell);
 
   // 4. COLOSSAL OVERSTUFFED CRIMSON SACK OF STOLEN WHOVILLE PRESENTS!
-  // Multi-lobe SphereGeometry cluster matching the huge red teardrop sack in model_1F_mt_crumpit_sleigh.jpg
   const sackCrimsonMat = new THREE.MeshStandardMaterial({
     color: 0xc8182e,
     roughness: 0.55,
@@ -1329,7 +1220,6 @@ export function buildGrinchMtCrumpitSleigh(
   mainSackBelly.receiveShadow = true;
   sleighGroup.add(mainSackBelly);
 
-  // Secondary bulging lobes for organic overstuffed toys contour
   const lobeSpecs = [
     { x: -0.32, y: 0.78, z: 0.14, r: 0.46 },
     { x: 0.52, y: 0.88, z: -0.1, r: 0.5 },
@@ -1347,7 +1237,7 @@ export function buildGrinchMtCrumpitSleigh(
     sleighGroup.add(lobe);
   }
 
-  // Gathered tied sack neck + flared clothruffle top (matching model_1F_mt_crumpit_sleigh.jpg)
+  // Gathered tied sack neck + flared cloth ruffle top
   const sackNeck = new THREE.Mesh(
     new THREE.CylinderGeometry(0.18, 0.36, 0.34, 16),
     sackCrimsonMat
@@ -1357,15 +1247,13 @@ export function buildGrinchMtCrumpitSleigh(
   sleighGroup.add(sackNeck);
 
   const sackRuffle = new THREE.Mesh(
-    new THREE.ConeGeometry(0.36, 0.28, 14),
+    new THREE.CylinderGeometry(0.36, 0.18, 0.26, 14),
     sackHighlightMat
   );
-  sackRuffle.rotation.x = Math.PI;
   sackRuffle.position.set(0.22, 1.68, 0);
   sackRuffle.rotation.z = -0.16;
   sleighGroup.add(sackRuffle);
 
-  // Golden rope cinch around the neck of the sack
   const ropeCinch = new THREE.Mesh(
     new THREE.TorusGeometry(0.21, 0.032, 10, 20),
     new THREE.MeshStandardMaterial({ color: 0xc49a48, roughness: 0.65 })
@@ -1376,19 +1264,18 @@ export function buildGrinchMtCrumpitSleigh(
   sleighGroup.add(ropeCinch);
 
   // 5. Protruding Stolen Whoville Treasures bursting out of the top of the sack!
-  // Stolen Christmas tree top with star
   const stolenTreeMat = new THREE.MeshStandardMaterial({
     color: 0x1e8a3e,
     roughness: 0.58,
   });
   for (let tier = 0; tier < 2; tier++) {
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.22 - tier * 0.06, 0.32, 10),
+    const foliageTier = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.22 - tier * 0.06, 0.32, 10),
       stolenTreeMat
     );
-    cone.position.set(0.14 - tier * 0.04, 1.88 + tier * 0.18, 0.04);
-    cone.rotation.z = 0.24;
-    sleighGroup.add(cone);
+    foliageTier.position.set(0.14 - tier * 0.04, 1.88 + tier * 0.18, 0.04);
+    foliageTier.rotation.z = 0.24;
+    sleighGroup.add(foliageTier);
   }
   const treeStar = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.065, 0),
@@ -1440,7 +1327,6 @@ export function buildGrinchMtCrumpitSleigh(
   );
   sleighGroup.add(stolenCandyCane);
 
-  // Stolen Christmas stocking hanging off the side of the sack
   const stockingBoot = new THREE.Mesh(
     new RoundedBoxGeometry(0.12, 0.28, 0.06, 2, 0.02),
     new THREE.MeshStandardMaterial({ color: 0x28a448, roughness: 0.58 })
@@ -1449,18 +1335,27 @@ export function buildGrinchMtCrumpitSleigh(
   stockingBoot.rotation.z = 0.28;
   sleighGroup.add(stockingBoot);
 
-  // 6. The Grinch (`0x52b838`) & faithful Max the dog with his single tied antler!
-  const grinch = createGrinchCharacter(false);
-  grinch.scale.setScalar(0.78);
-  grinch.position.set(-0.52, 0.24, 0.04);
-  grinch.rotation.y = Math.PI * 0.5;
-  sleighGroup.add(grinch);
-
-  const maxDog = createMaxTheDogWithAntler();
-  maxDog.position.set(-0.98, 0.14, 0);
-  sleighGroup.add(maxDog);
-
   cliffWagon.add(sleighGroup);
+
+  // 6. The Grinch & Max the Dog standing firmly on the horizontal snow-ledge steps
+  //    with their base discs at the exact surface Y height of those ledges (zero clipping!)
+  const grinch = createGrinchCharacter({
+    heightM: 1.82,
+    santaDisguise: true,
+  });
+  // Mid snow step top surface is at `y = 1.10m` (`x = -0.38, z = 0.24`)
+  grinch.position.set(-0.38, 1.1, 0.24);
+  grinch.rotation.y = 0.32;
+  cliffWagon.add(grinch);
+
+  const maxDog = createMaxDogCharacter({
+    withAntler: true,
+  });
+  // Lower snow step top surface is at `y = 0.68m` (`x = -0.98, z = 0.18`)
+  maxDog.position.set(-0.98, 0.68, 0.18);
+  maxDog.rotation.y = -0.35;
+  cliffWagon.add(maxDog);
+
   crumpitSleighGroup.add(cliffWagon);
 
   crumpitSleighGroup.visible = false;
@@ -1470,19 +1365,17 @@ export function buildGrinchMtCrumpitSleigh(
 /**
  * 3. SCENE 1G — FINALE CHRISTMAS FEAST IN WHOVILLE (`'grinch-finale-banquet'`)
  *
- * Recreates the long, curved Whoville Feast Banquet Table (`width ≈ 4.9m`) at Center Stage
- * (`x = 0, z = -1.95m`) from `model_1G_finale.jpg` and `plan_1G_finale.jpg`:
- * - Multi-segment curved arc (`CylinderGeometry` / `ExtrudeGeometry` arc) with 4 sculpted
- *   royal-blue arches (`model_1G_finale.jpg`), white scalloped tablecloth, royal-blue & gold
- *   festooned swags with red bows
- * - Grand silver domed Roast Beast carving platter at center, tiered Who-pudding stands,
- *   golden candelabras, goblets, festive garland runner
- * - Transformed Grinch (`0x52b838`) with carving knife + Who townspeople gathered around the feast.
+ * Recreates the curved Whoville Feast Banquet Table (`width = 4.5m`) positioned downstage at
+ * `x = 0.0m, z = -1.18m` (gently curving only `0.42m` in Z so `z ∈ [-1.60m, -0.95m]`),
+ * completely clear of the Center Whoville Christmas Tree Turntable (`z = -3.55m`, front edge `-2.40m`)
+ * and the Pink Whoville Houses (`z <= -2.45m`).
+ * Populated with `createGrinchCharacter({ heightM: 1.82, santaDisguise: true, carvingKnife: true })`
+ * at `(0, 0, -1.78)`, flanked by `createWhoCharacter` figures (Cindy-Lou Who, Papa Who, Mama Who,
+ * Grandpa Who) and `createMaxDogCharacter({ withAntler: false, sitting: true })` at `(2.45, 0, -1.15)`.
  */
 export function buildGrinchFinaleBanquet(): THREE.Group {
   const finaleBanquetGroup = new THREE.Group();
   finaleBanquetGroup.name = 'Element_grinch-finale-banquet';
-  finaleBanquetGroup.position.set(0, 0, -1.95);
 
   const royalBlueArchMat = new THREE.MeshStandardMaterial({
     color: 0x1a72d4,
@@ -1520,26 +1413,30 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
     roughness: 0.62,
   });
 
-  // 1. Multi-segment curved Banquet Table Arc (width ≈ 4.9m across X, curving around Center Stage)
-  // Using 12 segments along a sweeping crescent arc (`radiusX = 2.48m, radiusZ = 1.18m`)
+  // 1. Multi-segment curved Banquet Table Arc positioned downstage at `x = 0.0m, z = -1.18m`
+  //    Width = 4.5m (`x ∈ [-2.25m, +2.25m]`), gently curving 0.42m in Z so `z ∈ [-1.60m, -0.95m]`!
+  const tableArcGroup = new THREE.Group();
+  tableArcGroup.name = 'WhovilleFeastBanquetTableArc';
+  finaleBanquetGroup.add(tableArcGroup);
+
   const segmentCount = 12;
-  const arcSpan = Math.PI * 0.76; // Sweeps across ~4.9m total width
-  const radiusX = 2.62;
-  const radiusZ = 1.15;
+  const totalWidthM = 4.5;
+  const curveDepthM = 0.22; // Centerline z goes from -1.15m at x=0 to -1.37m at x=±2.06m -> total Z bounds [-1.60m, -0.95m]
 
   for (let i = 0; i < segmentCount; i++) {
-    const t = (i + 0.5) / segmentCount - 0.5; // -0.458 .. +0.458
-    const angle = t * arcSpan;
-    const segX = Math.sin(angle) * radiusX;
-    const segZ = (Math.cos(angle) - 1.0) * radiusZ;
+    const u = (i + 0.5) / segmentCount - 0.5; // -0.4583 .. +0.4583
+    const normU = u * 2.0; // -0.916 .. +0.916
+    const segX = u * (totalWidthM - 0.38);
+    const segZ = -1.15 - normU * normU * curveDepthM;
+    const tangentAngle = Math.atan2(2 * normU * curveDepthM, totalWidthM * 0.5) * 0.65;
 
     const segGroup = new THREE.Group();
     segGroup.position.set(segX, 0, segZ);
-    segGroup.rotation.y = angle * 0.68;
+    segGroup.rotation.y = u < 0 ? -tangentAngle : tangentAngle;
 
-    // Royal-blue lower table apron column
+    // Royal-blue lower table apron column (depth 0.40m -> z_local ∈ [-0.20, +0.20])
     const blueBaseBlock = new THREE.Mesh(
-      new RoundedBoxGeometry(0.48, 0.72, 0.54, 2, 0.04),
+      new RoundedBoxGeometry(0.42, 0.72, 0.4, 2, 0.04),
       royalBlueArchMat
     );
     blueBaseBlock.position.set(0, 0.36, 0);
@@ -1547,128 +1444,124 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
     blueBaseBlock.receiveShadow = true;
     segGroup.add(blueBaseBlock);
 
-    // 4 Sculpted Arched Cutouts along the front face (matching the 4 arches in model_1G_finale.jpg!)
+    // 4 Sculpted Arched Cutouts along the front face (matching model_1G_finale.jpg!)
     if (i % 3 === 1) {
       const archRecess = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.24, 0.26, 0.48, 14, 1, false, 0, Math.PI),
+        new THREE.CylinderGeometry(0.21, 0.23, 0.34, 14, 1, false, 0, Math.PI),
         deepBlueShadowMat
       );
       archRecess.rotation.x = Math.PI / 2;
-      archRecess.position.set(0, 0.02, 0.25);
+      archRecess.position.set(0, 0.02, 0.18);
       segGroup.add(archRecess);
 
-      // Gold & blue arch trim molding (offset to z = +0.305m so never coplanar)
       const archTrim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.24, 0.028, 8, 16, Math.PI),
+        new THREE.TorusGeometry(0.21, 0.024, 8, 16, Math.PI),
         goldFestoonMat
       );
-      archTrim.position.set(0, 0.08, 0.305);
+      archTrim.position.set(0, 0.08, 0.235);
       segGroup.add(archTrim);
     }
 
     // White scalloped overhanging tablecloth top slab (`color: 0xcfd4d8, roughness: 0.58`)
     const clothTop = new THREE.Mesh(
-      new RoundedBoxGeometry(0.52, 0.09, 0.64, 2, 0.03),
+      new RoundedBoxGeometry(0.45, 0.09, 0.44, 2, 0.03),
       whiteTableclothMat
     );
-    clothTop.position.set(0, 0.76, 0.02);
+    clothTop.position.set(0, 0.76, 0);
     clothTop.castShadow = true;
     clothTop.receiveShadow = true;
     segGroup.add(clothTop);
 
-    // Scalloped front tablecloth skirt overhang (offset at z = +0.345m)
+    // Scalloped front tablecloth skirt overhang (offset at z = +0.245m)
     const scallopDrop = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.18, 0.14, 12),
+      new THREE.CylinderGeometry(0.19, 0.16, 0.13, 12),
       whiteTableclothMat
     );
     scallopDrop.rotation.x = Math.PI / 2;
-    scallopDrop.scale.set(1.0, 0.3, 0.65);
-    scallopDrop.position.set(0, 0.68, 0.345);
+    scallopDrop.scale.set(1.0, 0.26, 0.65);
+    scallopDrop.position.set(0, 0.68, 0.245);
     segGroup.add(scallopDrop);
 
-    // Royal-blue & gold festooned swags with red bows along the front skirt (offset at z = +0.38m)
+    // Royal-blue & gold festooned swags with red bows along the front skirt (offset at z = +0.28m)
     const swagCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.22, 0.68, 0.38),
-      new THREE.Vector3(0, 0.56, 0.39),
-      new THREE.Vector3(0.22, 0.68, 0.38),
+      new THREE.Vector3(-0.19, 0.68, 0.28),
+      new THREE.Vector3(0, 0.57, 0.29),
+      new THREE.Vector3(0.19, 0.68, 0.28),
     ]);
     const goldSwag = new THREE.Mesh(
-      new THREE.TubeGeometry(swagCurve, 14, 0.018, 8, false),
+      new THREE.TubeGeometry(swagCurve, 14, 0.016, 8, false),
       goldFestoonMat
     );
     segGroup.add(goldSwag);
 
     const redBow = new THREE.Mesh(
-      new RoundedBoxGeometry(0.09, 0.06, 0.03, 1, 0.01),
+      new RoundedBoxGeometry(0.08, 0.055, 0.028, 1, 0.01),
       crimsonBowMat
     );
-    redBow.position.set(-0.22, 0.69, 0.415);
+    redBow.position.set(-0.19, 0.69, 0.315);
     segGroup.add(redBow);
 
     // Festive pine garland runner + golden goblets on top of the banquet table
     const garlandCluster = new THREE.Mesh(
-      new RoundedBoxGeometry(0.46, 0.055, 0.09, 2, 0.02),
+      new RoundedBoxGeometry(0.4, 0.05, 0.08, 2, 0.02),
       pineGarlandMat
     );
-    garlandCluster.position.set(0, 0.835, 0.14);
+    garlandCluster.position.set(0, 0.83, 0.1);
     segGroup.add(garlandCluster);
 
     if (i % 2 === 0) {
       const goblet = new THREE.Group();
-      goblet.position.set(0.08, 0.81, -0.06);
+      goblet.position.set(0.06, 0.81, -0.05);
       const cup = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.012, 0.09, 10),
+        new THREE.CylinderGeometry(0.032, 0.012, 0.085, 10),
         goldFestoonMat
       );
-      cup.position.y = 0.05;
+      cup.position.y = 0.045;
       goblet.add(cup);
       segGroup.add(goblet);
     }
 
-    finaleBanquetGroup.add(segGroup);
+    tableArcGroup.add(segGroup);
   }
 
-  // 2. Centerpiece: Grand Silver Domed Roast Beast Carving Platter at Center of Table (`x = 0, y = 0.81, z = -0.02`)
+  // 2. Centerpiece: Grand Silver Domed Roast Beast Carving Platter at Center of Table (`x = 0, y = 0.81, z = -1.15`)
   const roastBeastGroup = new THREE.Group();
   roastBeastGroup.name = 'RoastBeastCarvingPlatter';
-  roastBeastGroup.position.set(0, 0.81, -0.02);
+  roastBeastGroup.position.set(0, 0.81, -1.15);
 
-  // Ornate oval silver platter tray
   const silverTray = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.36, 0.32, 0.04, 24),
+    new THREE.CylinderGeometry(0.32, 0.28, 0.04, 24),
     silverPlatterMat
   );
-  silverTray.scale.set(1.35, 1.0, 0.82);
+  silverTray.scale.set(1.3, 1.0, 0.72);
   silverTray.position.set(0, 0.02, 0);
   roastBeastGroup.add(silverTray);
 
-  // Sculpted Roast Beast haunch with bone frills
   const roastHaunch = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 18, 14),
+    new THREE.SphereGeometry(0.19, 18, 14),
     roastBeastMat
   );
-  roastHaunch.scale.set(1.35, 0.82, 0.88);
-  roastHaunch.position.set(-0.04, 0.16, 0);
+  roastHaunch.scale.set(1.32, 0.82, 0.85);
+  roastHaunch.position.set(-0.03, 0.15, 0);
   roastHaunch.castShadow = true;
   roastBeastGroup.add(roastHaunch);
 
-  for (const bz of [-0.07, 0.07] as const) {
+  for (const bz of [-0.06, 0.06] as const) {
     const boneFrill = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.024, 0.018, 0.16, 8),
+      new THREE.CylinderGeometry(0.022, 0.016, 0.14, 8),
       whiteTableclothMat
     );
     boneFrill.rotation.z = Math.PI / 2 - 0.25;
-    boneFrill.position.set(0.26, 0.19, bz);
+    boneFrill.position.set(0.23, 0.18, bz);
     roastBeastGroup.add(boneFrill);
   }
 
-  // Tilted open silver cloche dome revealing the Roast Beast
   const silverCloche = new THREE.Mesh(
-    new THREE.SphereGeometry(0.26, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5),
+    new THREE.SphereGeometry(0.22, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5),
     silverPlatterMat
   );
-  silverCloche.scale.set(1.28, 0.95, 0.82);
-  silverCloche.position.set(-0.18, 0.28, -0.06);
+  silverCloche.scale.set(1.25, 0.92, 0.78);
+  silverCloche.position.set(-0.16, 0.26, -0.04);
   silverCloche.rotation.z = 0.52;
   silverCloche.castShadow = true;
   roastBeastGroup.add(silverCloche);
@@ -1677,59 +1570,57 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
 
   // 3. Tiered Seussian Who-Pudding Stands & Golden Candelabras along the banquet arc
   for (const side of [-1, 1] as const) {
-    // Tiered Who-Pudding Stand
     const puddingStand = new THREE.Group();
-    puddingStand.position.set(side * 0.92, 0.81, -0.14);
+    puddingStand.position.set(side * 0.88, 0.81, -1.2);
 
     const standStem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.06, 0.28, 12),
+      new THREE.CylinderGeometry(0.024, 0.055, 0.26, 12),
       silverPlatterMat
     );
-    standStem.position.y = 0.14;
+    standStem.position.y = 0.13;
     puddingStand.add(standStem);
 
     for (let tier = 0; tier < 2; tier++) {
       const plate = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18 - tier * 0.05, 0.16 - tier * 0.05, 0.02, 16),
+        new THREE.CylinderGeometry(0.16 - tier * 0.04, 0.14 - tier * 0.04, 0.02, 16),
         silverPlatterMat
       );
-      plate.position.y = 0.12 + tier * 0.14;
+      plate.position.y = 0.11 + tier * 0.13;
       puddingStand.add(plate);
 
       const puddingCake = new THREE.Mesh(
-        new THREE.SphereGeometry(0.11 - tier * 0.03, 14, 10),
+        new THREE.SphereGeometry(0.1 - tier * 0.028, 14, 10),
         new THREE.MeshStandardMaterial({
           color: tier === 0 ? 0xc84878 : 0xd49838,
           roughness: 0.55,
         })
       );
       puddingCake.scale.set(1.0, 0.72, 1.0);
-      puddingCake.position.y = 0.17 + tier * 0.14;
+      puddingCake.position.y = 0.16 + tier * 0.13;
       puddingStand.add(puddingCake);
     }
     finaleBanquetGroup.add(puddingStand);
 
-    // Golden 3-arm Candelabra
     const candelabra = new THREE.Group();
-    candelabra.position.set(side * 1.68, 0.81, -0.38);
+    candelabra.position.set(side * 1.62, 0.81, -1.29);
 
     const candBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.07, 0.26, 12),
+      new THREE.CylinderGeometry(0.02, 0.065, 0.24, 12),
       goldFestoonMat
     );
-    candBase.position.y = 0.13;
+    candBase.position.y = 0.12;
     candelabra.add(candBase);
 
-    for (const cx of [-0.08, 0, 0.08] as const) {
+    for (const cx of [-0.075, 0, 0.075] as const) {
       const candle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.014, 0.014, 0.14, 8),
+        new THREE.CylinderGeometry(0.013, 0.013, 0.13, 8),
         whiteTableclothMat
       );
-      candle.position.set(cx, 0.28 + (cx === 0 ? 0.04 : 0), 0);
+      candle.position.set(cx, 0.26 + (cx === 0 ? 0.035 : 0), 0);
       candelabra.add(candle);
 
       const flame = new THREE.Mesh(
-        new THREE.ConeGeometry(0.018, 0.045, 8),
+        new THREE.SphereGeometry(0.018, 8, 8),
         new THREE.MeshStandardMaterial({
           color: 0xd8b838,
           emissive: 0xd88818,
@@ -1737,49 +1628,89 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
           roughness: 0.55,
         })
       );
-      flame.position.set(cx, 0.37 + (cx === 0 ? 0.04 : 0), 0);
+      flame.scale.set(0.75, 1.6, 0.75);
+      flame.position.set(cx, 0.345 + (cx === 0 ? 0.035 : 0), 0);
       candelabra.add(flame);
     }
     finaleBanquetGroup.add(candelabra);
   }
 
-  // 4. Transformed Grinch at the Head of the Feast + Joyful Who Townspeople & Cindy-Lou Who!
-  const redeemedGrinch = createGrinchCharacter(true);
-  redeemedGrinch.position.set(0, 0, -0.58);
+  // 4. Transformed Grinch at Center-Back `(0, 0, -1.78)` + Who Family & Max in Open Floor Space!
+  const redeemedGrinch = createGrinchCharacter({
+    heightM: 1.82,
+    santaDisguise: true,
+    carvingKnife: true,
+  });
+  redeemedGrinch.position.set(0, 0, -1.78);
   finaleBanquetGroup.add(redeemedGrinch);
 
-  // Cindy-Lou Who right beside the Grinch
-  const cindyLou = createHumanScaleFigure(1.12, 0xd44888, 0.12, 0xc82238, false);
-  cindyLou.position.set(0.58, 0, -0.56);
-  cindyLou.rotation.y = -0.15;
+  // Gleaming Roast Beast carving knife & fork in the Grinch's raised right/left hands
+  const carvingKnifeMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.018, 0.28, 0.036),
+    silverPlatterMat
+  );
+  carvingKnifeMesh.position.set(0.24, 1.12, -1.56);
+  carvingKnifeMesh.rotation.x = 0.48;
+  finaleBanquetGroup.add(carvingKnifeMesh);
+
+  // Cindy-Lou Who, Papa Who, Mama Who, and Grandpa Who standing behind/beside the banquet table
+  // with zero clipping into the tablecloth (`z <= -1.60m` or `|x| >= 2.35m`) and well clear of the tree (`z = -2.40m`)
+  const cindyLou = createWhoCharacter({
+    heightM: 1.14,
+    coatColorHex: 0xd44888,
+    hairColorHex: 0xd8b438,
+    hasBraids: true,
+  });
+  cindyLou.position.set(0.64, 0, -1.8);
+  cindyLou.rotation.y = -0.14;
   finaleBanquetGroup.add(cindyLou);
 
-  // Who family & townspeople gathered along the curved banquet table
-  const whoSpecs = [
-    { x: -0.68, z: -0.58, rotY: 0.18, h: 1.56, coat: 0x2878c8, hat: 0.18 },
-    { x: -1.42, z: -0.78, rotY: 0.32, h: 1.48, coat: 0x389c48, hat: 0.14 },
-    { x: 1.38, z: -0.76, rotY: -0.32, h: 1.54, coat: 0x8e38b8, hat: 0.16 },
-    { x: -2.08, z: -1.08, rotY: 0.48, h: 1.32, coat: 0xd47828, hat: 0.0 },
-    { x: 2.08, z: -1.08, rotY: -0.48, h: 1.44, coat: 0xc82848, hat: 0.15 },
-  ] as const;
+  const papaWho = createWhoCharacter({
+    heightM: 1.66,
+    coatColorHex: 0x2878c8,
+    hatColorHex: 0xd4a828,
+  });
+  papaWho.position.set(-0.68, 0, -1.82);
+  papaWho.rotation.y = 0.16;
+  finaleBanquetGroup.add(papaWho);
 
-  for (const wSpec of whoSpecs) {
-    const whoFig = createHumanScaleFigure(
-      wSpec.h,
-      wSpec.coat,
-      wSpec.hat,
-      0xd4a828,
-      false
-    );
-    whoFig.position.set(wSpec.x, 0, wSpec.z);
-    whoFig.rotation.y = wSpec.rotY;
-    finaleBanquetGroup.add(whoFig);
-  }
+  const mamaWho = createWhoCharacter({
+    heightM: 1.56,
+    coatColorHex: 0xc82848,
+    hairColorHex: 0xd48428,
+    hasBraids: true,
+  });
+  mamaWho.position.set(-1.38, 0, -1.88);
+  mamaWho.rotation.y = 0.26;
+  finaleBanquetGroup.add(mamaWho);
 
-  // Max the Dog sitting happily at the right end of the feast
-  const feastMax = createMaxTheDogWithAntler();
-  feastMax.position.set(0.95, 0, 0.38);
-  feastMax.rotation.y = -0.5;
+  const grandpaWho = createWhoCharacter({
+    heightM: 1.6,
+    coatColorHex: 0x2e9448,
+    hatColorHex: 0xc82238,
+    hairColorHex: 0xcfd4d8,
+  });
+  grandpaWho.position.set(1.38, 0, -1.88);
+  grandpaWho.rotation.y = -0.26;
+  finaleBanquetGroup.add(grandpaWho);
+
+  // Additional Who townspeople flanking the outer left & right ends of the banquet arc
+  const outerLeftWho = createWhoCharacter({
+    heightM: 1.48,
+    coatColorHex: 0x8e38b8,
+    hatColorHex: 0xd4a828,
+  });
+  outerLeftWho.position.set(-2.52, 0, -1.32);
+  outerLeftWho.rotation.y = 0.55;
+  finaleBanquetGroup.add(outerLeftWho);
+
+  // Max the Dog sitting happily at `(2.45, 0, -1.15)` in open floor space at the right end of the feast
+  const feastMax = createMaxDogCharacter({
+    withAntler: false,
+    sitting: true,
+  });
+  feastMax.position.set(2.45, 0, -1.15);
+  feastMax.rotation.y = -0.58;
   finaleBanquetGroup.add(feastMax);
 
   finaleBanquetGroup.visible = false;
@@ -1787,7 +1718,7 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
 }
 
 /**
- * Helper to create a raised backstage spike-tape rectangle outline (`y = 0.036m` so it is
+ * Helper to create a raised backstage spike-tape rectangle outline (`y = 0.038m` so it is
  * cleanly separated by >0.03m from the stage deck at `y = 0`).
  */
 function createSpikeTapeOutlineBay(
@@ -1804,7 +1735,7 @@ function createSpikeTapeOutlineBay(
   });
   const stripThickness = 0.045;
   const stripHeight = 0.012;
-  const yPos = 0.038; // >= 0.03m above floor plane (y = 0)
+  const yPos = 0.038;
 
   for (const sz of [-depthM / 2, depthM / 2] as const) {
     const hBar = new THREE.Mesh(
@@ -1816,7 +1747,11 @@ function createSpikeTapeOutlineBay(
   }
   for (const sx of [-widthM / 2, widthM / 2] as const) {
     const vBar = new THREE.Mesh(
-      new THREE.BoxGeometry(stripThickness, stripHeight, depthM - stripThickness * 2),
+      new THREE.BoxGeometry(
+        stripThickness,
+        stripHeight,
+        depthM - stripThickness * 2
+      ),
       tapeMat
     );
     vBar.position.set(sx, yPos, 0);
@@ -1846,7 +1781,6 @@ function createBackstageWorkLightStand(): THREE.Group {
     roughness: 0.55,
   });
 
-  // Tripod legs
   for (let l = 0; l < 3; l++) {
     const angle = (l * Math.PI * 2) / 3;
     const leg = new THREE.Mesh(
@@ -1859,7 +1793,6 @@ function createBackstageWorkLightStand(): THREE.Group {
     stand.add(leg);
   }
 
-  // Vertical telescoping pole
   const pole = new THREE.Mesh(
     new THREE.CylinderGeometry(0.018, 0.022, 1.95, 10),
     blackSteelMat
@@ -1867,7 +1800,6 @@ function createBackstageWorkLightStand(): THREE.Group {
   pole.position.set(0, 1.02, 0);
   stand.add(pole);
 
-  // Work-light hood & glowing amber lamp cage at top
   const hood = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.13, 0.16, 12),
     blackSteelMat
@@ -1918,17 +1850,13 @@ export function buildGrinchOffstageStorage(
     roughness: 0.6,
   });
 
-  // ==========================================================================
-  // A. UPSTAGE RIGHT (USR) WING STORAGE BAYS (CAD Sheets 1A–1G)
-  // ==========================================================================
-  // 1. USR "Refrigerator" & Oval "Tree" / Table Bay (x = -5.85m, z = -7.65m)
+  // A. UPSTAGE RIGHT (USR) WING STORAGE BAYS
   const usrFridgeBay = new THREE.Group();
   usrFridgeBay.position.set(-5.85, 0, -7.65);
 
   const fridgeSpike = createSpikeTapeOutlineBay(1.35, 0.95, 0xd4b828);
   usrFridgeBay.add(fridgeSpike);
 
-  // Parked Seussian Refrigerator Wagon (matching CAD label "Refrigerator")
   const fridgeBody = new THREE.Mesh(
     new RoundedBoxGeometry(0.92, 1.72, 0.64, 3, 0.12),
     olivePropMat
@@ -1945,7 +1873,6 @@ export function buildGrinchOffstageStorage(
   fridgeDoor.position.set(0, 0.92, 0.35);
   usrFridgeBay.add(fridgeDoor);
 
-  // Oval Tree / Prop Turntable parked beside Refrigerator (drawn on CAD plans)
   const ovalTreeProp = new THREE.Group();
   ovalTreeProp.position.set(-0.98, 0, -0.12);
   const ovalBase = new THREE.Mesh(
@@ -1957,7 +1884,7 @@ export function buildGrinchOffstageStorage(
   ovalTreeProp.add(ovalBase);
 
   const spareTree = new THREE.Mesh(
-    new THREE.ConeGeometry(0.34, 1.45, 10),
+    new THREE.CylinderGeometry(0.05, 0.34, 1.45, 10),
     new THREE.MeshStandardMaterial({ color: 0x1e843e, roughness: 0.6 })
   );
   spareTree.position.y = 0.84;
@@ -1967,7 +1894,6 @@ export function buildGrinchOffstageStorage(
 
   offstageStorageGroup.add(usrFridgeBay);
 
-  // 2. Far Upstage Right "Prop" Racks & Escape Stair Unit (x = -6.35m, z = -9.45m)
   const usrPropRacksGroup = new THREE.Group();
   usrPropRacksGroup.position.set(-6.35, 0, -9.45);
 
@@ -1983,7 +1909,6 @@ export function buildGrinchOffstageStorage(
     rackFrame.castShadow = true;
     usrPropRacksGroup.add(rackFrame);
 
-    // Spare holiday gifts & wreaths stored on the prop rack
     const storedBox = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.24, 0.28),
       new THREE.MeshStandardMaterial({
@@ -1996,10 +1921,7 @@ export function buildGrinchOffstageStorage(
   }
   offstageStorageGroup.add(usrPropRacksGroup);
 
-  // ==========================================================================
-  // B. STAGE LEFT (SL) WING STORAGE BAYS (CAD Sheets 1A–1G)
-  // ==========================================================================
-  // 1. Upstage Left "Daybed" Storage Bay (x = +5.95m, z = -7.35m)
+  // B. STAGE LEFT (SL) WING STORAGE BAYS
   const ulDaybedBay = new THREE.Group();
   ulDaybedBay.position.set(5.95, 0, -7.35);
 
@@ -2025,7 +1947,6 @@ export function buildGrinchOffstageStorage(
   }
   offstageStorageGroup.add(ulDaybedBay);
 
-  // 2. Far Upstage Left "Fireplace" & Curved Counter Storage Bay (x = +7.95m, z = -8.65m)
   const ulFireplaceBay = new THREE.Group();
   ulFireplaceBay.position.set(7.95, 0, -8.65);
 
@@ -2040,7 +1961,6 @@ export function buildGrinchOffstageStorage(
   parkedFireplace.castShadow = true;
   ulFireplaceBay.add(parkedFireplace);
 
-  // Parked curved counter/banquet unit at USL corner (x = +6.55m, z = -9.55m on CAD plans)
   const uslCurvedCounterParked = new THREE.Mesh(
     new RoundedBoxGeometry(1.42, 0.82, 0.56, 3, 0.08),
     royalBluePropMat
@@ -2051,7 +1971,6 @@ export function buildGrinchOffstageStorage(
 
   offstageStorageGroup.add(ulFireplaceBay);
 
-  // 3. Downstage Left Wing "Mt. Crumpit with sleigh" Storage Bay (x = +8.15m, z = -2.35m)
   const dslCrumpitBay = new THREE.Group();
   dslCrumpitBay.position.set(8.15, 0, -2.35);
 
@@ -2075,9 +1994,7 @@ export function buildGrinchOffstageStorage(
 
   offstageStorageGroup.add(dslCrumpitBay);
 
-  // ==========================================================================
-  // C. BACKSTAGE WORK-LIGHT STANDS (USR & SL Wings)
-  // ==========================================================================
+  // C. BACKSTAGE WORK-LIGHT STANDS
   const usrWorkLight = createBackstageWorkLightStand();
   usrWorkLight.position.set(-6.85, 0, -6.45);
   offstageStorageGroup.add(usrWorkLight);

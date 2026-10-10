@@ -1,9 +1,15 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import {
+  createSculptedIcicleDrip,
+  createSeussianIcicleValance,
+} from '../shared-scenic-helpers.ts';
 
 /**
- * Helper to build a scalloped overhanging Seussian snow-drift cap with hanging
- * icicle drips and a dark Seussian contour shadow lip underneath.
+ * Helper to build a scalloped overhanging Seussian snow-drift cap with a
+ * continuous wavy `createSeussianIcicleValance` curtain, organic fluted
+ * `createSculptedIcicleDrip` icicles, and a dark Seussian contour shadow lip
+ * tucked cleanly underneath.
  */
 function createSculptedSnowDriftCap(
   width: number,
@@ -12,7 +18,9 @@ function createSculptedSnowDriftCap(
   scallopCount: number,
   snowCapMat: THREE.Material,
   underShadowMat: THREE.Material,
-  icicleMat: THREE.Material
+  icicleMat: THREE.Material,
+  glazeBackMat: THREE.Material,
+  seed = 1
 ): THREE.Group {
   const group = new THREE.Group();
 
@@ -20,7 +28,12 @@ function createSculptedSnowDriftCap(
   const capShape = new THREE.Shape();
   const halfW = width * 0.5;
   capShape.moveTo(-halfW, 0.18);
-  capShape.quadraticCurveTo(-halfW - 0.08, height * 0.65, -halfW * 0.82, height * 0.92);
+  capShape.quadraticCurveTo(
+    -halfW - 0.08,
+    height * 0.65,
+    -halfW * 0.82,
+    height * 0.92
+  );
   capShape.bezierCurveTo(
     -halfW * 0.35,
     height * 1.06,
@@ -37,8 +50,8 @@ function createSculptedSnowDriftCap(
     const xRight = halfW - i * stepW;
     const xLeft = xRight - stepW;
     const xMid = (xRight + xLeft) * 0.5;
-    const dipY = -0.08 - ((i % 3) * 0.06);
-    capShape.quadraticCurveTo(xMid, dipY, xLeft, 0.14 + ((i % 2) * 0.04));
+    const dipY = -0.06 - (i % 3) * 0.05;
+    capShape.quadraticCurveTo(xMid, dipY, xLeft, 0.14 + (i % 2) * 0.04);
   }
   capShape.closePath();
 
@@ -47,8 +60,8 @@ function createSculptedSnowDriftCap(
     bevelEnabled: true,
     bevelSegments: 3,
     steps: 1,
-    bevelSize: 0.06,
-    bevelThickness: 0.06,
+    bevelSize: 0.055,
+    bevelThickness: 0.055,
   };
 
   const capGeo = new THREE.ExtrudeGeometry(capShape, extrudeSettings);
@@ -60,32 +73,48 @@ function createSculptedSnowDriftCap(
 
   // Dark Seussian blue-charcoal shadow contour band tucked just below & behind the cap front lip
   const underLipGeo = new RoundedBoxGeometry(
-    width * 0.96,
-    0.22,
-    depth * 0.88,
+    width * 0.95,
+    0.2,
+    depth * 0.84,
     2,
-    0.06
+    0.05
   );
   const underLip = new THREE.Mesh(underLipGeo, underShadowMat);
-  underLip.position.set(0, -height * 0.46, -0.04);
+  underLip.position.set(0, -height * 0.44, -0.035);
   group.add(underLip);
 
-  // Hanging Seussian icicle & snow-drip clusters along the underside of the overhang
-  const dripCount = scallopCount * 2 + 1;
-  for (let i = 0; i < dripCount; i++) {
-    const t = i / (dripCount - 1);
-    const xPos = THREE.MathUtils.lerp(-halfW * 0.88, halfW * 0.88, t);
-    const dripLen = 0.24 + ((i * 7) % 5) * 0.09;
-    const dripRadius = 0.055 + ((i * 3) % 3) * 0.018;
-    const zOffset = (i % 2 === 0 ? 0.05 : -0.05) + depth * 0.34;
+  // Continuous wavy Seussian icicle valance curtain tucked cleanly under the front overhang
+  const valance = createSeussianIcicleValance(
+    width * 0.92,
+    Math.min(0.42, height * 0.46),
+    scallopCount * 2 + 2,
+    icicleMat,
+    glazeBackMat,
+    0.055,
+    seed
+  );
+  valance.position.set(0, -height * 0.36, depth * 0.36);
+  group.add(valance);
 
-    const icicleGeo = new THREE.ConeGeometry(dripRadius, dripLen, 7);
-    const icicle = new THREE.Mesh(icicleGeo, icicleMat);
-    icicle.position.set(xPos, -height * 0.48 - dripLen * 0.42, zOffset);
-    icicle.rotation.x = Math.PI;
-    icicle.rotation.z = ((i % 3) - 1) * 0.07;
-    icicle.castShadow = true;
-    group.add(icicle);
+  // Organic fluted LatheGeometry icicle drips hanging from the scalloped pockets
+  const dripCount = scallopCount + 2;
+  for (let i = 0; i < dripCount; i++) {
+    const t = (i + 0.5) / dripCount;
+    const xPos = THREE.MathUtils.lerp(-halfW * 0.84, halfW * 0.84, t);
+    const dripLen = 0.22 + ((i * 5 + seed) % 4) * 0.075;
+    const topRadius = 0.036 + ((i * 3) % 3) * 0.008;
+    const bendM = (i % 2 === 0 ? 1 : -1) * (0.02 + (i % 3) * 0.008);
+    const zOffset = depth * 0.28 + (i % 2 === 0 ? 0.035 : -0.035);
+
+    const drip = createSculptedIcicleDrip(
+      dripLen,
+      topRadius,
+      icicleMat,
+      bendM
+    );
+    // Root at y = 0 is tucked up inside the snow cap overhang (-height * 0.34)
+    drip.position.set(xPos, -height * 0.34, zOffset);
+    group.add(drip);
   }
 
   return group;
@@ -161,7 +190,7 @@ function createSeussianIceWaveWing(
   waveMesh.receiveShadow = true;
   wingGroup.add(waveMesh);
 
-  // Darker blue ribbed Seussian underside along the inner overhang curve (staggered in Z by +0.04m)
+  // Darker blue ribbed Seussian underside along the inner overhang curve (staggered in Z by +0.06m)
   const ribBandShape = new THREE.Shape();
   ribBandShape.moveTo(width * 0.36, height * 0.32);
   ribBandShape.bezierCurveTo(
@@ -253,8 +282,10 @@ function createSeussianIceWaveWing(
 /**
  * 1. DOWNSTAGE LEFT & RIGHT SCULPTED SEUSSIAN SNOW-CLIFF PORTALS
  *    (`'grinch-snow-portals'`)
- *    Permanent false-proscenium tormentors, upper snow-border teaser arch,
- *    and S-curved Seussian ice-wave wing portals.
+ *    Permanent false-proscenium tormentors (`z = +0.18m`, completely downstage
+ *    of the Line #1 scrim at `z = -0.35m`), Mid-Wing Stepped Snow Flats
+ *    (`z = -0.92m`, cleanly upstage of the scrim), Upper Snow-Border Teaser
+ *    Arch (`y = 6.65m, z = +0.12m`), and S-curved Seussian ice-wave wing portals.
  */
 export function buildGrinchSnowPortals(
   rockTex: THREE.CanvasTexture
@@ -308,7 +339,7 @@ export function buildGrinchSnowPortals(
     roughness: 0.55,
     metalness: 0.08,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.94,
   });
 
   for (const side of [-1, 1] as const) {
@@ -316,15 +347,17 @@ export function buildGrinchSnowPortals(
     sideGroup.name = side === -1 ? 'SnowPortal_DSR' : 'SnowPortal_DSL';
 
     // ------------------------------------------------------------------------
-    // A. Outer Downstage Sculpted Snow-Cliff Tower (x ≈ ±5.55m, z = -0.15m)
+    // A. Outer Downstage Sculpted Snow-Cliff Tower
+    //    Positioned at x = ±5.65m, z = +0.18m with depth 0.76m (z ∈ [-0.20m, +0.56m])
+    //    so it sits 100% downstage of the Line #1 Pre-Show Scrim at z = -0.35m!
     // ------------------------------------------------------------------------
     const outerTowerGroup = new THREE.Group();
-    outerTowerGroup.position.set(side * 5.58, 0, -0.15);
-    outerTowerGroup.rotation.y = side * -0.2;
+    outerTowerGroup.position.set(side * 5.65, 0, 0.18);
+    outerTowerGroup.rotation.y = side * -0.16;
 
-    // Lower & upper stacked snow rock strata
+    // Lower & upper stacked snow rock strata (depth = 0.76m)
     const lowerStratum = new THREE.Mesh(
-      new RoundedBoxGeometry(2.42, 2.35, 0.96, 3, 0.16),
+      new RoundedBoxGeometry(2.38, 2.35, 0.76, 3, 0.15),
       snowCliffMat
     );
     lowerStratum.position.set(0, 1.18, 0);
@@ -333,44 +366,48 @@ export function buildGrinchSnowPortals(
     outerTowerGroup.add(lowerStratum);
 
     const upperStratum = new THREE.Mesh(
-      new RoundedBoxGeometry(2.36, 1.75, 0.92, 3, 0.16),
+      new RoundedBoxGeometry(2.32, 1.75, 0.72, 3, 0.15),
       snowCliffMat
     );
-    upperStratum.position.set(side * -0.05, 2.82, 0.04);
+    upperStratum.position.set(side * -0.05, 2.82, 0.03);
     upperStratum.rotation.z = side * -0.03;
     upperStratum.castShadow = true;
     upperStratum.receiveShadow = true;
     outerTowerGroup.add(upperStratum);
 
-    // Overhanging sculpted snow-drift cap with scalloped drips and icicles (matching model_1A & 1B)
+    // Overhanging sculpted snow-drift cap with continuous valance & fluted icicles
     const outerDriftCap = createSculptedSnowDriftCap(
-      2.62,
-      1.18,
-      1.08,
+      2.56,
+      1.16,
+      0.78,
       6,
       snowCapMat,
       underShadowMat,
-      icicleMat
+      icicleMat,
+      iceWaveRibMat,
+      side === -1 ? 1 : 2
     );
-    outerDriftCap.position.set(side * -0.04, 3.22, 0.09);
+    outerDriftCap.position.set(side * -0.04, 3.22, 0.05);
     outerDriftCap.rotation.z = side * -0.06;
     outerTowerGroup.add(outerDriftCap);
 
-    // Secondary lower snow ledge shelf + icicle cluster at y = 1.95m
+    // Secondary lower snow ledge shelf + sculpted icicle valance at y = 2.02m
     const midShelfCap = createSculptedSnowDriftCap(
-      2.48,
+      2.44,
       0.56,
-      1.02,
+      0.74,
       5,
       snowCapMat,
       underShadowMat,
-      icicleMat
+      icicleMat,
+      iceWaveRibMat,
+      side === -1 ? 3 : 4
     );
-    midShelfCap.position.set(side * 0.03, 2.02, 0.06);
+    midShelfCap.position.set(side * 0.03, 2.02, 0.04);
     midShelfCap.rotation.z = side * -0.04;
     outerTowerGroup.add(midShelfCap);
 
-    // Carved Seussian horizontal contour ledges across the face (staggered at z = +0.51m)
+    // Carved Seussian horizontal contour ledges across the front face (staggered at z = +0.42m)
     for (const [ly, lw, lzRot] of [
       [0.75, 1.65, -0.04],
       [1.35, 1.85, 0.03],
@@ -378,22 +415,22 @@ export function buildGrinchSnowPortals(
       [3.38, 1.72, 0.04],
     ] as const) {
       const contourStroke = new THREE.Mesh(
-        new RoundedBoxGeometry(lw, 0.045, 0.06, 2, 0.015),
+        new RoundedBoxGeometry(lw, 0.045, 0.05, 2, 0.015),
         contourInkMat
       );
-      contourStroke.position.set(side * -0.1, ly, 0.51);
+      contourStroke.position.set(side * -0.1, ly, 0.42);
       contourStroke.rotation.z = side * lzRot;
       outerTowerGroup.add(contourStroke);
     }
 
-    // Sculpted snow boulder outcrops resting on the stage deck at the tower base
+    // Sculpted snow boulder outcrops resting on the downstage deck at the tower base
     for (const [bx, by, bz, sx, sy, sz] of [
-      [side * -0.95, 0.34, 0.46, 0.78, 0.68, 0.62],
-      [side * -0.35, 0.26, 0.56, 0.64, 0.52, 0.54],
-      [side * 0.55, 0.3, 0.5, 0.72, 0.58, 0.56],
+      [side * -0.92, 0.34, 0.32, 0.76, 0.68, 0.52],
+      [side * -0.32, 0.26, 0.38, 0.62, 0.52, 0.48],
+      [side * 0.52, 0.3, 0.34, 0.7, 0.58, 0.5],
     ] as const) {
       const boulder = new THREE.Mesh(
-        new RoundedBoxGeometry(sx, sy, sz, 3, 0.18),
+        new RoundedBoxGeometry(sx, sy, sz, 3, 0.16),
         snowCapMat
       );
       boulder.position.set(bx, by, bz);
@@ -406,14 +443,16 @@ export function buildGrinchSnowPortals(
     sideGroup.add(outerTowerGroup);
 
     // ------------------------------------------------------------------------
-    // B. Mid-Wing Stepped Seussian Snow-Cliff Flat (x ≈ ±4.42m, z = -0.88m)
+    // B. Mid-Wing Stepped Seussian Snow-Cliff Flat
+    //    Positioned at x = ±4.65m, z = -0.92m, depth = 0.42m (z ∈ [-1.13m, -0.71m]),
+    //    cleanly upstage of the Line #1 Pre-Show Scrim at z = -0.35m!
     // ------------------------------------------------------------------------
     const midFlatGroup = new THREE.Group();
-    midFlatGroup.position.set(side * 4.42, 0, -0.88);
-    midFlatGroup.rotation.y = side * -0.12;
+    midFlatGroup.position.set(side * 4.65, 0, -0.92);
+    midFlatGroup.rotation.y = side * -0.11;
 
     const midFlatBody = new THREE.Mesh(
-      new RoundedBoxGeometry(1.92, 3.12, 0.44, 3, 0.14),
+      new RoundedBoxGeometry(1.92, 3.12, 0.42, 3, 0.14),
       midSnowFlatMat
     );
     midFlatBody.position.set(0, 1.56, 0);
@@ -422,17 +461,19 @@ export function buildGrinchSnowPortals(
     midFlatBody.receiveShadow = true;
     midFlatGroup.add(midFlatBody);
 
-    // Sloping snow-drift crest on top of the mid-wing flat (staggered at z = +0.05m)
+    // Sloping snow-drift crest on top of the mid-wing flat (staggered at z = +0.04m)
     const midFlatCap = createSculptedSnowDriftCap(
-      2.04,
+      2.02,
       0.62,
-      0.52,
+      0.46,
       4,
       snowCapMat,
       underShadowMat,
-      icicleMat
+      icicleMat,
+      iceWaveRibMat,
+      side === -1 ? 5 : 6
     );
-    midFlatCap.position.set(side * -0.06, 2.98, 0.05);
+    midFlatCap.position.set(side * -0.06, 2.98, 0.04);
     midFlatCap.rotation.z = side * -0.14;
     midFlatGroup.add(midFlatCap);
 
@@ -447,7 +488,7 @@ export function buildGrinchSnowPortals(
         new RoundedBoxGeometry(cw, 0.04, 0.05, 2, 0.012),
         contourInkMat
       );
-      hatchBar.position.set(side * -0.18, cy, 0.25);
+      hatchBar.position.set(side * -0.18, cy, 0.24);
       hatchBar.rotation.z = side * cAngle;
       midFlatGroup.add(hatchBar);
     }
@@ -491,28 +532,31 @@ export function buildGrinchSnowPortals(
   }
 
   // --------------------------------------------------------------------------
-  // E. Sculpted Upper Snow-Border / Teaser Arch (y ≈ 6.1m–7.1m, z = -0.25m)
-  //    Frames the top of the portal opening with scalloped drifts and icicles.
+  // E. Sculpted Upper Snow-Border / Teaser Arch (y = 6.65m, z = +0.12m)
+  //    Sits cleanly downstage of the Line #1 scrim batten pipe (z = -0.35m)
+  //    and frames the top of the portal opening with sculpted valance icicles.
   // --------------------------------------------------------------------------
   const teaserArchGroup = new THREE.Group();
   teaserArchGroup.name = 'SnowPortal_UpperTeaserArch';
-  teaserArchGroup.position.set(0, 6.55, -0.25);
+  teaserArchGroup.position.set(0, 6.65, 0.12);
 
   const teaserSpan = createSculptedSnowDriftCap(
     13.2,
-    1.05,
-    0.46,
+    1.02,
+    0.42,
     14,
     snowCapMat,
     underShadowMat,
-    icicleMat
+    icicleMat,
+    iceWaveRibMat,
+    7
   );
   teaserArchGroup.add(teaserSpan);
 
   // Left and right sculpted corner haunches tying the teaser arch into the outer towers
   for (const side of [-1, 1] as const) {
     const cornerHaunch = new THREE.Mesh(
-      new RoundedBoxGeometry(2.35, 1.45, 0.54, 3, 0.18),
+      new RoundedBoxGeometry(2.35, 1.45, 0.48, 3, 0.18),
       snowCliffMat
     );
     cornerHaunch.position.set(side * 5.35, -0.58, 0.05);
@@ -529,8 +573,10 @@ export function buildGrinchSnowPortals(
 /**
  * 2. LINESET #1 (0'-10") PRE-SHOW STORYBOOK SCRIM
  *    (`'grinch-preshow-scrim'`)
- *    11.8m × 6.6m translucent storybook scrim plane with top batten pipe,
- *    rigging hanger clamps, bottom weighted pocket pipe, and vertical side hems.
+ *    9.4m × 6.6m translucent storybook scrim plane (`x ∈ [-4.7m, +4.7m]` at
+ *    `z = -0.35m`, with dark velour masking wing borders extending to `±6.0m`
+ *    behind the downstage snow towers), top batten pipe, rigging hanger clamps,
+ *    bottom weighted pocket pipe, and vertical side hems.
  */
 export function buildGrinchPreShowScrim(
   preshowScrimTex: THREE.CanvasTexture
@@ -538,11 +584,12 @@ export function buildGrinchPreShowScrim(
   const preshowScrimGroup = new THREE.Group();
   preshowScrimGroup.name = 'Element_grinch-preshow-scrim';
 
-  const scrimWidth = 11.8;
+  const scrimWidth = 9.4;
+  const fullBattenWidth = 11.8;
   const scrimHeight = 6.6;
   const scrimZ = -0.35;
 
-  // Main translucent storybook scrim plane (centered at y = 3.3m, z = -0.35m)
+  // Main translucent storybook scrim plane (x ∈ [-4.7m, +4.7m], y = 3.3m, z = -0.35m)
   const scrimMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(scrimWidth, scrimHeight),
     new THREE.MeshStandardMaterial({
@@ -573,14 +620,33 @@ export function buildGrinchPreShowScrim(
     roughness: 0.78,
     metalness: 0.04,
   });
+  const wingMaskingMat = new THREE.MeshStandardMaterial({
+    color: 0x161422,
+    roughness: 0.88,
+    metalness: 0.02,
+  });
+
+  // Black velour side masking borders behind the downstage snow-cliff towers (z = scrimZ - 0.035m)
+  for (const side of [-1, 1] as const) {
+    const maskingWing = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.3, scrimHeight),
+      wingMaskingMat
+    );
+    maskingWing.position.set(
+      side * (scrimWidth * 0.5 + 0.62),
+      scrimHeight * 0.5,
+      scrimZ - 0.035
+    );
+    preshowScrimGroup.add(maskingWing);
+  }
 
   // Top schedule-40 steel batten pipe at y = 6.62m
   const topBattenPipe = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.032, 0.032, scrimWidth + 0.45, 14),
+    new THREE.CylinderGeometry(0.032, 0.032, fullBattenWidth + 0.4, 14),
     steelPipeMat
   );
   topBattenPipe.rotation.z = Math.PI * 0.5;
-  topBattenPipe.position.set(0, scrimHeight + 0.02, scrimZ - 0.035);
+  topBattenPipe.position.set(0, scrimHeight + 0.02, scrimZ - 0.04);
   topBattenPipe.castShadow = true;
   preshowScrimGroup.add(topBattenPipe);
 
@@ -598,24 +664,24 @@ export function buildGrinchPreShowScrim(
       new RoundedBoxGeometry(0.09, 0.14, 0.09, 2, 0.015),
       clampMat
     );
-    clampBracket.position.set(clampX, scrimHeight + 0.05, scrimZ - 0.035);
+    clampBracket.position.set(clampX, scrimHeight + 0.05, scrimZ - 0.04);
     preshowScrimGroup.add(clampBracket);
 
     const wireDrop = new THREE.Mesh(
       new THREE.CylinderGeometry(0.006, 0.006, 1.8, 6),
       clampMat
     );
-    wireDrop.position.set(clampX, scrimHeight + 0.95, scrimZ - 0.035);
+    wireDrop.position.set(clampX, scrimHeight + 0.95, scrimZ - 0.04);
     preshowScrimGroup.add(wireDrop);
   }
 
-  // Bottom weighted chain/pipe pocket at y = 0.035m (staggered at z = scrimZ - 0.03m)
+  // Bottom weighted chain/pipe pocket at y = 0.035m (staggered at z = scrimZ - 0.04m)
   const bottomPocketPipe = new THREE.Mesh(
     new THREE.CylinderGeometry(0.026, 0.026, scrimWidth + 0.12, 12),
     steelPipeMat
   );
   bottomPocketPipe.rotation.z = Math.PI * 0.5;
-  bottomPocketPipe.position.set(0, 0.035, scrimZ - 0.03);
+  bottomPocketPipe.position.set(0, 0.035, scrimZ - 0.04);
   preshowScrimGroup.add(bottomPocketPipe);
 
   const bottomPocketSleeve = new THREE.Mesh(
@@ -625,7 +691,7 @@ export function buildGrinchPreShowScrim(
   bottomPocketSleeve.position.set(0, 0.055, scrimZ + 0.03);
   preshowScrimGroup.add(bottomPocketSleeve);
 
-  // Subtle vertical reinforced fabric side hems (staggered at z = scrimZ + 0.032m)
+  // Subtle vertical reinforced fabric side hems framing the 9.4m scrim opening (z = scrimZ + 0.032m)
   for (const side of [-1, 1] as const) {
     const sideHem = new THREE.Mesh(
       new THREE.BoxGeometry(0.11, scrimHeight, 0.016),
@@ -1067,7 +1133,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   // D. Towering Crooked S-Curved Peak of Mt. Crumpit (z = -7.25m)
   //    Matches the dramatic sweeping mountain silhouette in `model_1B_whoville.jpg`:
   //    rising from the left/stage-right foothills up to an overhanging hooked
-  //    summit with jagged hanging icicles on the right cliff wall, a glowing
+  //    summit with sculpted hanging icicles on the right cliff wall, a glowing
   //    cave mouth, and the winding "dump-it-to-Crumpit" trail.
   // --------------------------------------------------------------------------
   const crumpitGroup = new THREE.Group();
@@ -1131,27 +1197,38 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     4,
     snowCrestMat,
     crumpitShadowCliffMat,
-    snowCrestMat
+    snowCrestMat,
+    crumpitShadowCliffMat,
+    9
   );
   summitSnowCap.position.set(0.38, 4.92, 0.26);
   summitSnowCap.rotation.z = -0.24;
   crumpitGroup.add(summitSnowCap);
 
-  // Long hanging icicle & ice-stalactite curtains beneath the right overhang of Mt. Crumpit
+  // Sculpted Seussian icicle valance + fluted icicle drips hanging beneath the right overhang of Mt. Crumpit
   // (Clearly visible in `model_1B_whoville.jpg` right next to the star of the tree!)
-  for (const [ix, iy, len, rad] of [
-    [0.58, 3.68, 0.52, 0.055],
-    [0.68, 3.82, 0.78, 0.068],
-    [0.78, 4.02, 0.64, 0.058],
-    [0.86, 4.24, 0.46, 0.048],
+  const cliffValance = createSeussianIcicleValance(
+    0.68,
+    0.46,
+    6,
+    snowCrestMat,
+    crumpitShadowCliffMat,
+    0.05,
+    11
+  );
+  cliffValance.position.set(0.7, 4.18, 0.22);
+  cliffValance.rotation.z = 0.32;
+  crumpitGroup.add(cliffValance);
+
+  for (const [ix, iy, len, rad, bend] of [
+    [0.56, 3.78, 0.56, 0.044, -0.032],
+    [0.68, 3.96, 0.82, 0.054, 0.038],
+    [0.78, 4.12, 0.68, 0.046, -0.028],
+    [0.86, 4.3, 0.48, 0.038, 0.024],
   ] as const) {
-    const cliffIcicle = new THREE.Mesh(
-      new THREE.ConeGeometry(rad, len, 7),
-      snowCrestMat
-    );
-    cliffIcicle.position.set(ix, iy - len * 0.45, 0.22);
-    cliffIcicle.rotation.x = Math.PI;
-    cliffIcicle.rotation.z = -0.08;
+    const cliffIcicle = createSculptedIcicleDrip(len, rad, snowCrestMat, bend);
+    cliffIcicle.position.set(ix, iy, 0.19);
+    cliffIcicle.rotation.z = -0.06;
     crumpitGroup.add(cliffIcicle);
   }
 

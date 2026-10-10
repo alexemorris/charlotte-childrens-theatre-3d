@@ -1,0 +1,2402 @@
+/* ============================================================================
+   Children's Theatre of Charlotte — Hugh McColl Family Theatre (ImaginOn)
+   Crox Farmhouse Glassmorphic Preact App Shell
+   Fixed layout: top bar · 533-seat navigator (left) · stage & workshop panel (right) · tool dock.
+   Calm light-on-dark glass panels; zero floating/overlapping legacy windows.
+   ============================================================================ */
+
+:root {
+  --shell-topbar-h: 54px;
+  --shell-nav-w: 316px;
+  --shell-panel-w: 364px;
+  --shell-gap: 12px;
+  --shell-radius: 14px;
+  --shell-radius-sm: 9px;
+
+  --shell-bg: #0f1217;
+  --shell-surface: rgba(20, 23, 29, 0.82);
+  --shell-surface-strong: rgba(16, 19, 25, 0.94);
+  --shell-border: rgba(255, 255, 255, 0.09);
+  --shell-border-strong: rgba(255, 255, 255, 0.16);
+
+  --shell-glass: var(--shell-surface);
+  --shell-glass-strong: var(--shell-surface-strong);
+  --shell-line: var(--shell-border);
+  --shell-line-strong: var(--shell-border-strong);
+
+  --shell-fg: #eef0f4;
+  --shell-fg-muted: #9ca5b2;
+  --shell-fg-faint: #6d7684;
+  --shell-hover: rgba(255, 255, 255, 0.065);
+  --shell-active: rgba(255, 255, 255, 0.13);
+
+  --shell-accent: #f2c46d;
+  --shell-accent-ink: #231a06;
+  --shell-accent-soft: rgba(242, 196, 109, 0.16);
+  --shell-cyan: #48d6ff;
+  --shell-cyan-soft: rgba(72, 214, 255, 0.15);
+  --shell-green: #38ef8c;
+  --shell-green-soft: rgba(56, 239, 140, 0.15);
+  --shell-warm: #f08a5d;
+  --shell-danger: #f57870;
+
+  --shell-shadow: 0 12px 34px rgba(0, 0, 0, 0.44);
+  --shell-font: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --shell-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.shell-glass {
+  background: var(--shell-glass);
+  border: 1px solid var(--shell-line);
+  box-shadow: var(--shell-shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+#shell-root,
+#shell-root button,
+#shell-root input,
+#shell-root select,
+#shell-root textarea {
+  font-family: var(--shell-font);
+}
+
+#shell-root {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--shell-fg);
+}
+
+#shell-root input,
+#shell-root textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.shell-icon {
+  flex: none;
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons & Primitives
+   --------------------------------------------------------------------------- */
+
+.shell-btn,
+.shell-icon-btn,
+.shell-seg-btn,
+.shell-chip,
+.shell-action,
+.shell-dock-btn,
+.shell-tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
+}
+
+.shell-btn:focus-visible,
+.shell-icon-btn:focus-visible,
+.shell-seg-btn:focus-visible,
+.shell-chip:focus-visible,
+.shell-action:focus-visible,
+.shell-dock-btn:focus-visible,
+.shell-switch:focus-visible,
+.shell-tab:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.shell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--shell-fg);
+  white-space: nowrap;
+}
+
+.shell-btn:hover:not(:disabled) {
+  background: var(--shell-hover);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.shell-btn.is-active,
+.shell-btn.active {
+  background: var(--shell-accent-soft);
+  border-color: rgba(242, 196, 109, 0.45);
+  color: var(--shell-accent);
+}
+
+.shell-btn-primary {
+  background: var(--shell-accent);
+  border-color: transparent;
+  color: var(--shell-accent-ink);
+  font-weight: 650;
+}
+
+.shell-btn-primary:hover:not(:disabled) {
+  background: #f7d38c;
+  color: var(--shell-accent-ink);
+}
+
+.shell-btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11.5px;
+}
+
+.shell-btn-xs {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.shell-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--shell-fg-muted);
+}
+
+.shell-icon-btn:hover:not(:disabled) {
+  background: var(--shell-hover);
+  color: var(--shell-fg);
+}
+
+.shell-icon-btn.is-active,
+.shell-icon-btn.active {
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+
+.shell-icon-btn-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.shell-icon-btn-xs {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.shell-seg {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--shell-line);
+}
+
+.shell-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--shell-fg-muted);
+  white-space: nowrap;
+}
+
+.shell-seg-btn:hover:not(:disabled) {
+  color: var(--shell-fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.shell-seg-btn.is-active,
+.shell-seg-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--shell-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.shell-seg-sm .shell-seg-btn {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11.5px;
+}
+
+.shell-select,
+.shell-input {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--shell-fg);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  outline: none;
+}
+
+.shell-select:focus,
+.shell-input:focus {
+  border-color: var(--shell-accent);
+}
+
+.shell-select option {
+  background: #181b21;
+  color: var(--shell-fg);
+}
+
+.shell-select-sm {
+  height: 26px;
+  font-size: 12px;
+}
+
+.shell-input {
+  width: 100%;
+}
+
+.shell-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shell-fg);
+  white-space: nowrap;
+}
+
+.shell-chip:hover:not(:disabled) {
+  background: var(--shell-hover);
+}
+
+.shell-chip.is-active,
+.shell-chip.active {
+  background: var(--shell-accent-soft);
+  border-color: rgba(242, 196, 109, 0.5);
+  color: var(--shell-accent);
+}
+
+.shell-chip-lg {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.shell-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shell-pill {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--shell-fg-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.shell-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.shell-muted {
+  color: var(--shell-fg-muted);
+  font-size: 12px;
+}
+
+.shell-empty {
+  color: var(--shell-fg-muted);
+  font-size: 12.5px;
+  padding: 6px 2px;
+}
+
+.shell-empty-lg {
+  padding: 16px 14px;
+  border-radius: var(--shell-radius-sm);
+  border: 1px dashed var(--shell-line-strong);
+  text-align: center;
+}
+
+/* Toggle Switch */
+.shell-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.shell-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s ease;
+}
+
+.shell-switch.is-on {
+  background: var(--shell-accent);
+}
+
+.shell-switch.is-on .shell-switch-knob {
+  transform: translateX(16px);
+}
+
+.shell-switch-sm {
+  width: 30px;
+  height: 17px;
+}
+
+.shell-switch-sm .shell-switch-knob {
+  width: 13px;
+  height: 13px;
+}
+
+.shell-switch-sm.is-on .shell-switch-knob {
+  transform: translateX(13px);
+}
+
+/* Range Sliders */
+.shell-range {
+  --fill: 0%;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--shell-accent) var(--fill), rgba(255, 255, 255, 0.16) var(--fill));
+  outline: none;
+  cursor: pointer;
+}
+
+.shell-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.shell-range::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.shell-lights {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shell-light {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shell-light-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.shell-light-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.shell-light-label > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-light-pct {
+  color: var(--shell-fg-muted);
+  font-family: var(--shell-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.shell-light:not(.is-on) .shell-light-label {
+  color: var(--shell-fg-muted);
+}
+
+.shell-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shell-fg-muted);
+}
+
+.shell-action:hover {
+  background: var(--shell-hover);
+  color: var(--shell-fg);
+}
+
+.shell-action.is-active {
+  background: var(--shell-accent-soft);
+  border-color: rgba(242, 196, 109, 0.45);
+  color: var(--shell-accent);
+}
+
+.btn-danger {
+  color: var(--shell-danger) !important;
+  border-color: rgba(245, 120, 112, 0.35) !important;
+}
+
+.shell-walk-exit {
+  border-color: rgba(245, 120, 112, 0.45);
+  color: #f9a8a3;
+}
+
+.shell-walk-exit:hover {
+  background: rgba(245, 120, 112, 0.14);
+}
+
+/* ---------------------------------------------------------------------------
+   Top Bar
+   --------------------------------------------------------------------------- */
+
+.shell-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: var(--shell-topbar-h);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(13, 15, 20, 0.92) 0%, rgba(13, 15, 20, 0.78) 100%);
+  border-bottom: 1px solid var(--shell-line);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.shell-topbar-left,
+.shell-topbar-right,
+.shell-topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shell-topbar-center {
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shell-topbar-center::-webkit-scrollbar {
+  display: none;
+}
+
+.shell-topbar-right {
+  justify-content: flex-end;
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--shell-accent);
+}
+
+.shell-brand-name {
+  color: var(--shell-fg);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell-viewas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--shell-fg-muted);
+  font-size: 12px;
+}
+
+.shell-viewas-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shell-scene-badge,
+.shell-seg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--shell-accent);
+  background: rgba(242, 196, 109, 0.1);
+  max-width: 195px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+   Left Seating Navigator & Right Stage Panel
+   --------------------------------------------------------------------------- */
+
+.shell-navigator,
+.shell-nav,
+.shell-roompanel,
+.shell-panel {
+  position: fixed;
+  top: calc(var(--shell-topbar-h) + var(--shell-gap));
+  bottom: 84px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--shell-radius);
+  overflow: hidden;
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+}
+
+.shell-navigator,
+.shell-nav {
+  left: var(--shell-gap);
+  width: var(--shell-nav-w);
+}
+
+.shell-roompanel,
+.shell-panel {
+  right: var(--shell-gap);
+  width: var(--shell-panel-w);
+}
+
+.shell-navigator:not(.is-open),
+.shell-nav:not(.is-open) {
+  transform: translateX(calc(-100% - 2 * var(--shell-gap)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shell-roompanel:not(.is-open),
+.shell-panel:not(.is-open) {
+  transform: translateX(calc(100% + 2 * var(--shell-gap)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shell-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 12px 10px 15px;
+  border-bottom: 1px solid var(--shell-line);
+  flex-shrink: 0;
+}
+
+.shell-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shell-panel-eyebrow {
+  color: var(--shell-fg-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--shell-fg);
+}
+
+.shell-panel-title .shell-icon {
+  color: var(--shell-accent);
+}
+
+.shell-panel-title-lg {
+  font-size: 15.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell-panel-tabs,
+.shell-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.18);
+  border-bottom: 1px solid var(--shell-line);
+  flex-shrink: 0;
+}
+
+.shell-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--shell-fg-muted);
+  white-space: nowrap;
+}
+
+.shell-tab:hover {
+  color: var(--shell-fg);
+  background: var(--shell-hover);
+}
+
+.shell-tab.is-active,
+.shell-tab.active {
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+  border: 1px solid rgba(242, 196, 109, 0.35);
+}
+
+.shell-nav-scroll,
+.shell-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Cards inside Left & Right Drawers */
+.shell-card {
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--shell-line);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.shell-card-accent {
+  background: rgba(242, 196, 109, 0.05);
+  border-color: rgba(242, 196, 109, 0.22);
+}
+
+.shell-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shell-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  font-size: 12.5px;
+  color: var(--shell-fg);
+}
+
+.shell-card-title .shell-icon {
+  color: var(--shell-accent);
+}
+
+.shell-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.shell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shell-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Left Seating Navigator: 2D SVG Chart & Sightline Telemetry
+   --------------------------------------------------------------------------- */
+
+.seating-chart-mount {
+  width: 100%;
+  background: rgba(11, 13, 18, 0.72);
+  border: 1px solid var(--shell-line);
+  border-radius: 9px;
+  padding: 6px;
+}
+
+.seating-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+}
+
+.chart-seat-dot {
+  cursor: pointer;
+  transition: r 0.12s ease, fill 0.12s ease;
+}
+
+.chart-seat-dot:hover {
+  r: 4.2;
+  stroke: #ffffff;
+  stroke-width: 1.1;
+}
+
+.quick-seat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.quick-seat-btn {
+  text-align: left;
+  padding: 5px 8px;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+.seat-telemetry-card {
+  background: rgba(12, 15, 20, 0.55);
+  border: 1px solid var(--shell-line);
+  border-radius: 9px;
+  padding: 9px 10px;
+}
+
+.telemetry-empty {
+  color: var(--shell-fg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.telemetry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.telemetry-seat-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.seat-score-badge {
+  font-size: 10px;
+  font-weight: 750;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.seat-score-badge.grade-optimal {
+  background: rgba(45, 190, 115, 0.18);
+  color: #5ce898;
+  border: 1px solid rgba(92, 232, 152, 0.4);
+}
+
+.seat-score-badge.grade-good {
+  background: rgba(56, 189, 248, 0.18);
+  color: #66d4ef;
+  border: 1px solid rgba(102, 212, 239, 0.4);
+}
+
+.seat-score-badge.grade-partial-overhang {
+  background: rgba(247, 182, 82, 0.18);
+  color: #f7b652;
+  border: 1px solid rgba(247, 182, 82, 0.4);
+}
+
+.seat-score-badge.grade-extreme-side {
+  background: rgba(245, 120, 112, 0.18);
+  color: #f57870;
+  border: 1px solid rgba(245, 120, 112, 0.4);
+}
+
+.telemetry-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.telemetry-stat-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--shell-line);
+  border-radius: 7px;
+  padding: 5px 6px;
+}
+
+.telemetry-stat-label {
+  font-size: 9.5px;
+  color: var(--shell-fg-faint);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.telemetry-stat-val {
+  font-family: var(--shell-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--shell-fg);
+  margin-top: 1px;
+}
+
+.telemetry-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.telemetry-bar-row {
+  display: grid;
+  grid-template-columns: 94px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+}
+
+.telemetry-bar-track {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.telemetry-bar-fill {
+  height: 100%;
+  background: #46c67c;
+  border-radius: inherit;
+}
+
+.telemetry-notes {
+  border-top: 1px solid var(--shell-line);
+  padding-top: 6px;
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.venue-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.venue-photo-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--shell-line);
+  border-radius: 7px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.venue-photo-card:hover {
+  border-color: var(--shell-accent);
+}
+
+.venue-photo-card img {
+  display: block;
+  width: 100%;
+  height: 54px;
+  object-fit: cover;
+}
+
+.venue-photo-card figcaption {
+  font-size: 9.5px;
+  padding: 3px 4px;
+  text-align: center;
+  color: var(--shell-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.venue-research-summary {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--shell-line);
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Right Stage & Scenic Controls Panel
+   --------------------------------------------------------------------------- */
+
+.scene-pills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.scene-pill-btn {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 6px 7px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--shell-fg-muted);
+  min-width: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scene-pill-btn:hover {
+  background: var(--shell-hover);
+  color: var(--shell-fg);
+}
+
+.scene-pill-btn.active,
+.scene-pill-btn.is-active {
+  background: var(--shell-accent-soft);
+  border-color: rgba(242, 196, 109, 0.55);
+  color: var(--shell-fg);
+}
+
+.scene-pill-code {
+  font-family: var(--shell-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--shell-cyan);
+}
+
+.scene-pill-btn.active .scene-pill-code,
+.scene-pill-btn.is-active .scene-pill-code {
+  color: var(--shell-accent);
+}
+
+.scene-pill-name {
+  font-size: 11px;
+  font-weight: 600;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scene-synopsis-box {
+  background: rgba(0, 0, 0, 0.26);
+  border: 1px solid var(--shell-line);
+  border-radius: 9px;
+  padding: 8px 10px;
+}
+
+.scene-synopsis-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.scene-code-pill {
+  font-family: var(--shell-mono);
+  font-size: 10px;
+  font-weight: 750;
+  padding: 2px 6px;
+  background: var(--shell-cyan-soft);
+  color: var(--shell-cyan);
+  border-radius: 5px;
+}
+
+.scene-synopsis-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.scene-act-tag {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--shell-fg-faint);
+}
+
+.scene-synopsis-text {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--shell-fg-muted);
+}
+
+.scene-reference-media {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.scene-ref-card {
+  margin: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.scene-ref-card:hover {
+  border-color: var(--shell-accent);
+  transform: translateY(-1px);
+}
+
+.scene-ref-card img {
+  display: block;
+  width: 100%;
+  height: 76px;
+  object-fit: cover;
+  background: #0d0e12;
+}
+
+.scene-ref-card figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--shell-fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ref-zoom-hint {
+  color: var(--shell-accent);
+  font-size: 10px;
+}
+
+/* Scenic Elements List */
+.scenic-elements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.scenic-element-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.scenic-element-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--shell-line-strong);
+}
+
+.scenic-element-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.scenic-element-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--shell-fg);
+  font-weight: 550;
+}
+
+.scenic-element-dim {
+  font-family: var(--shell-mono);
+  font-size: 10px;
+  color: var(--shell-fg-faint);
+  flex-shrink: 0;
+}
+
+.scenic-element-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.scenic-shop-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 239, 140, 0.35);
+  background: rgba(56, 239, 140, 0.1);
+  color: #6df2ac;
+  font-size: 10.5px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.scenic-shop-btn:hover {
+  background: rgba(56, 239, 140, 0.2);
+  border-color: rgba(56, 239, 140, 0.6);
+}
+
+/* Sliders & Spawner inside Right Stage Panel */
+.batten-sliders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.hud-slider-row,
+.shell-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hud-slider-label,
+.shell-slider-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--shell-fg-muted);
+}
+
+.spawner-grid,
+.camera-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.custom-piece-inspector {
+  margin-top: 6px;
+  padding: 9px 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.custom-piece-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--shell-cyan);
+}
+
+/* Workshop Tab Cards in StagePanel */
+.workshop-info-banner {
+  background: rgba(56, 239, 140, 0.07);
+  border: 1px solid rgba(56, 239, 140, 0.25);
+  border-radius: 10px;
+  padding: 10px 11px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-info-banner strong {
+  color: var(--shell-fg);
+}
+
+.workshop-unit-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--shell-line);
+  border-radius: 10px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.workshop-unit-card:hover {
+  border-color: var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.workshop-unit-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workshop-unit-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+/* ---------------------------------------------------------------------------
+   Bottom Tool Dock
+   --------------------------------------------------------------------------- */
+
+.shell-dock-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  z-index: 55;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+
+.shell-dock-hint {
+  min-height: 18px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: rgba(14, 17, 23, 0.75);
+  border: 1px solid var(--shell-line);
+  color: rgba(238, 240, 244, 0.88);
+  font-size: 11.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.shell-dock {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--shell-glass-strong);
+  border: 1px solid var(--shell-line-strong);
+  box-shadow: var(--shell-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.shell-dock-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 62px;
+  padding: 6px 10px 5px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--shell-fg-muted);
+  white-space: nowrap;
+}
+
+.shell-dock-btn:hover:not(:disabled) {
+  background: var(--shell-hover);
+  color: var(--shell-fg);
+}
+
+.shell-dock-btn.is-active,
+.shell-dock-btn.active {
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+
+.shell-dock-btn.is-cnc {
+  color: #6df2ac;
+}
+
+.shell-dock-btn.is-cnc:hover {
+  background: rgba(56, 239, 140, 0.14);
+}
+
+.shell-dock-sep {
+  width: 1px;
+  height: 28px;
+  margin: 0 4px;
+  background: var(--shell-line-strong);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   1st-Person Seated Sightline Overlay & Hover Tooltip
+   --------------------------------------------------------------------------- */
+
+.shell-seat-overlay,
+.walkthrough-hud {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 56;
+  width: min(860px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--shell-glass-strong);
+  border: 1px solid var(--shell-line-strong);
+  box-shadow: var(--shell-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.walkthrough-hud-top,
+.shell-seat-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.walkthrough-hud-brand,
+.shell-seat-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.walkthrough-pos-readout,
+.shell-seat-readout {
+  font-family: var(--shell-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--shell-cyan);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(72, 214, 255, 0.25);
+  white-space: nowrap;
+}
+
+.walkthrough-hud-actions,
+.shell-seat-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.walkthrough-hint-row,
+.shell-seat-hints {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 5px;
+  border-top: 1px solid var(--shell-line);
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+  flex-wrap: wrap;
+}
+
+.seat-hover-tooltip,
+.shell-hover-tooltip {
+  position: fixed;
+  z-index: 85;
+  pointer-events: none;
+  background: rgba(16, 19, 25, 0.95);
+  border: 1px solid rgba(72, 214, 255, 0.55);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: var(--shell-fg);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  max-width: 340px;
+}
+
+/* ---------------------------------------------------------------------------
+   Modals: Base Backdrop, Card, Help Overlay & Reference Lightbox
+   --------------------------------------------------------------------------- */
+
+.shell-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(6, 8, 12, 0.68);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: shell-fade-in 0.18s ease;
+}
+
+@keyframes shell-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shell-modal {
+  width: min(640px, 100%);
+  max-height: min(90vh, 860px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: var(--shell-glass-strong);
+  border: 1px solid var(--shell-line-strong);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+
+.shell-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--shell-line);
+  background: rgba(255, 255, 255, 0.025);
+  flex-shrink: 0;
+}
+
+.shell-modal-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.shell-modal-body {
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Reference Lightbox Modal */
+.shell-lightbox-modal {
+  width: min(1080px, 95vw);
+  max-height: 90dvh;
+}
+
+.ref-lightbox-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.ref-lightbox-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-family: var(--shell-mono);
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  background: var(--shell-accent-soft);
+  border: 1px solid rgba(242, 196, 109, 0.45);
+  color: var(--shell-accent);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.ref-lightbox-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.ref-lightbox-body {
+  padding: 14px;
+  background: #0b0d12;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ref-lightbox-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(90dvh - 84px);
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   Scenic Workshop & CNC Fabrication Inspector Modal (.workshop-*)
+   --------------------------------------------------------------------------- */
+
+.workshop-modal-card {
+  width: min(1060px, 96vw);
+  max-height: min(92dvh, 920px);
+}
+
+.workshop-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.workshop-element-title {
+  font-size: 16px;
+  font-weight: 750;
+  color: var(--shell-fg);
+}
+
+.workshop-prod-sub {
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--shell-fg-muted);
+}
+
+/* Fabrication Method Badges */
+.workshop-method-badge.method-cnc-primary {
+  background: rgba(56, 239, 140, 0.16);
+  border-color: rgba(56, 239, 140, 0.5);
+  color: #52f29c;
+}
+
+.workshop-method-badge.method-hybrid-cnc-carpentry {
+  background: rgba(72, 214, 255, 0.16);
+  border-color: rgba(72, 214, 255, 0.5);
+  color: #66dcff;
+}
+
+.workshop-method-badge.method-soft-goods-paint {
+  background: rgba(242, 196, 109, 0.16);
+  border-color: rgba(242, 196, 109, 0.5);
+  color: #f7cf7d;
+}
+
+.workshop-method-badge.method-steel-rigging-carpentry {
+  background: rgba(169, 184, 255, 0.16);
+  border-color: rgba(169, 184, 255, 0.45);
+  color: #b8c5ff;
+}
+
+.workshop-method-badge.method-props-or-blocking {
+  background: rgba(240, 138, 93, 0.16);
+  border-color: rgba(240, 138, 93, 0.45);
+  color: #f6a47e;
+}
+
+.workshop-summary-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 12px;
+}
+
+.workshop-spec-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--shell-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workshop-card-kicker {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--shell-fg-faint);
+}
+
+.workshop-dims-headline {
+  font-family: var(--shell-mono);
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--shell-accent);
+}
+
+.workshop-dims-metric {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-construction-note {
+  font-size: 12.5px;
+  line-height: 1.48;
+  color: var(--shell-fg);
+}
+
+.workshop-metrics-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.workshop-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--shell-line-strong);
+  color: var(--shell-fg-muted);
+}
+
+.workshop-pill strong {
+  color: var(--shell-fg);
+  font-family: var(--shell-mono);
+}
+
+.workshop-pill.is-cnc {
+  background: rgba(56, 239, 140, 0.11);
+  border-color: rgba(56, 239, 140, 0.35);
+  color: #9ef7c4;
+}
+
+.workshop-pill.is-cnc strong {
+  color: #42f598;
+}
+
+.workshop-pill.is-non-cnc {
+  background: rgba(242, 196, 109, 0.12);
+  border-color: rgba(242, 196, 109, 0.38);
+  color: var(--shell-accent);
+}
+
+.workshop-pill.is-muted {
+  color: var(--shell-fg-faint);
+  border-style: dashed;
+}
+
+/* Department Breakdown Rows */
+.workshop-departments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.workshop-dept-row {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--shell-line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.workshop-dept-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workshop-dept-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.workshop-dept-badge {
+  font-family: var(--shell-mono);
+  font-size: 9.5px;
+  font-weight: 750;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.workshop-dept-badge.role-primary-cnc {
+  background: rgba(56, 239, 140, 0.16);
+  color: #4ef29b;
+  border: 1px solid rgba(56, 239, 140, 0.4);
+}
+
+.workshop-dept-badge.role-cnc-sub-assembly {
+  background: rgba(72, 214, 255, 0.16);
+  color: #66dcff;
+  border: 1px solid rgba(72, 214, 255, 0.4);
+}
+
+.workshop-dept-badge.role-traditional-shop {
+  background: rgba(242, 196, 109, 0.14);
+  color: #f5ca76;
+  border: 1px solid rgba(242, 196, 109, 0.35);
+}
+
+.workshop-dept-badge.role-non-fabricated {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--shell-fg-muted);
+  border: 1px solid var(--shell-line-strong);
+}
+
+.workshop-dept-scope {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--shell-fg-muted);
+}
+
+/* Interactive 4'x8' CNC Preview Canvas Section */
+.workshop-canvas-section {
+  background: rgba(11, 16, 25, 0.85);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workshop-canvas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workshop-sheet-tabs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.workshop-sheet-btn {
+  appearance: none;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--shell-fg-muted);
+  font-family: var(--shell-mono);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.workshop-sheet-btn:hover {
+  background: var(--shell-hover);
+  color: var(--shell-fg);
+}
+
+.workshop-sheet-btn.active,
+.workshop-sheet-btn.is-active {
+  background: rgba(255, 152, 56, 0.18);
+  border-color: #ff9838;
+  color: #ffb974;
+}
+
+.workshop-no-cnc-tag {
+  font-family: var(--shell-mono);
+  font-size: 11px;
+  color: var(--shell-accent);
+  background: var(--shell-accent-soft);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.workshop-canvas-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(88, 180, 255, 0.22);
+  background: #0c121d;
+}
+
+.workshop-preview-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Download Bar */
+.workshop-downloads-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(56, 239, 140, 0.06);
+  border: 1px solid rgba(56, 239, 140, 0.25);
+}
+
+.workshop-downloads-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workshop-downloads-label strong {
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  color: #6df2ac;
+}
+
+.workshop-downloads-label span {
+  font-size: 11.5px;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-download-btns {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.workshop-dl-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--shell-fg);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+
+.workshop-dl-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.workshop-dl-btn.is-primary {
+  background: #28c76f;
+  border-color: #38ef8c;
+  color: #061a0e;
+  font-weight: 750;
+}
+
+.workshop-dl-btn.is-primary:hover {
+  background: #38ef8c;
+}
+
+/* Cut-List Table */
+.workshop-cutlist-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.workshop-cutlist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.workshop-cutlist-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--shell-fg-muted);
+}
+
+.workshop-legend-sep {
+  color: var(--shell-fg-faint);
+}
+
+.workshop-table-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--shell-line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.workshop-cutlist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.workshop-cutlist-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #171b22;
+  color: var(--shell-fg-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--shell-line-strong);
+}
+
+.workshop-cutlist-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--shell-fg);
+}
+
+.workshop-cutlist-table tbody tr.row-is-cnc {
+  cursor: pointer;
+}
+
+.workshop-cutlist-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.part-code-badge {
+  display: inline-block;
+  font-family: var(--shell-mono);
+  font-size: 10.5px;
+  font-weight: 750;
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+
+.part-code-badge.is-cnc {
+  background: rgba(56, 239, 140, 0.16);
+  color: #52f29c;
+  border: 1px solid rgba(56, 239, 140, 0.4);
+}
+
+.part-code-badge.is-shp {
+  background: rgba(242, 196, 109, 0.15);
+  color: #f5ca76;
+  border: 1px solid rgba(242, 196, 109, 0.35);
+}
+
+.sheet-ref-pill {
+  font-family: var(--shell-mono);
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #ffb974;
+}
+
+.muted-cell {
+  color: var(--shell-fg-faint);
+  font-size: 11px;
+}
+
+.cell-mono {
+  font-family: var(--shell-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cell-component-name {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Help Overlay & Keyboard Shortcuts
+   --------------------------------------------------------------------------- */
+
+.shell-help {
+  position: relative;
+  width: min(490px, 100%);
+  max-height: min(90dvh, 760px);
+  overflow-y: auto;
+  padding: 26px 24px 20px;
+  border-radius: 20px;
+  background: var(--shell-glass-strong);
+  border: 1px solid var(--shell-line-strong);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.shell-help-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.shell-help-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+
+.shell-help-step {
+  color: var(--shell-fg-faint);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shell-help h2 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--shell-fg);
+}
+
+.shell-help-body {
+  color: var(--shell-fg);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.shell-help-tips {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--shell-fg-muted);
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--shell-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.shell-help-tips li::before {
+  content: "• ";
+  color: var(--shell-accent);
+  font-weight: 700;
+}
+
+.shell-help-shortcuts {
+  width: 100%;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--shell-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 2px;
+}
+
+.shell-help-shortcuts-title {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--shell-fg-faint);
+  margin-bottom: 6px;
+}
+
+.shell-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.shell-shortcut {
+  display: grid;
+  grid-template-columns: 165px 1fr;
+  gap: 10px;
+  align-items: center;
+  font-size: 11.5px;
+}
+
+.shell-shortcut dd {
+  color: var(--shell-fg-muted);
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.07);
+  font-family: var(--shell-mono);
+  font-size: 10.5px;
+  color: var(--shell-fg);
+}
+
+.shell-help-dots {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+
+.shell-help-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.shell-help-dot:hover {
+  transform: scale(1.25);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.shell-help-dot.is-active {
+  background: var(--shell-accent);
+}
+
+.shell-help-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.shell-help-nav {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   Toast & Mobile Scrim
+   --------------------------------------------------------------------------- */
+
+.shell-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  z-index: 95;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(244, 246, 249, 0.96);
+  color: #14171d;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shell-shadow);
+  animation: shell-toast-in 0.2s ease;
+}
+
+@keyframes shell-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.shell-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+  background: rgba(4, 6, 10, 0.45);
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive Breakpoints (Tablets & Phones)
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1260px) {
+  .shell-viewas-label,
+  .shell-brand-sub {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .workshop-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --shell-topbar-h: 92px;
+  }
+
+  .shell-topbar {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 46px 40px;
+    row-gap: 0;
+    padding-bottom: 4px;
+  }
+
+  .shell-topbar-center {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+
+  .shell-navigator,
+  .shell-nav,
+  .shell-roompanel,
+  .shell-panel {
+    top: calc(var(--shell-topbar-h) + 8px);
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 70;
+    width: min(350px, calc(100vw - 20px));
+  }
+
+  .shell-dock-hint {
+    display: none;
+  }
+
+  .shell-shortcut {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell-brand-name {
+    max-width: 150px;
+  }
+
+  .shell-dock-btn {
+    min-width: 50px;
+    padding: 6px 8px;
+  }
+
+  .shell-dock-btn span {
+    font-size: 10px;
+  }
+}

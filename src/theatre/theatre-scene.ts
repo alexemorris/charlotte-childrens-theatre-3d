@@ -18,6 +18,7 @@ import type {
   CustomSetPieceKind,
   LightingPresetId,
   LightingState,
+  ProductionElementSpec,
   ProductionId,
   ProductionSceneCue,
   ProductionSpec,
@@ -40,6 +41,15 @@ export type GraphicsQualityMode = 'ultra' | 'balanced' | 'performance';
 export interface TheatreSceneCallbacks {
   onSeatSelected?: (metrics: SeatSightlineMetrics | null, inSeatView: boolean) => void;
   onSeatHovered?: (seat: SeatRecord | null, clientX: number, clientY: number) => void;
+  onScenicElementClicked?: (
+    element: ProductionElementSpec,
+    objectGroup: THREE.Object3D
+  ) => void;
+  onScenicElementHovered?: (
+    element: ProductionElementSpec | null,
+    clientX: number,
+    clientY: number
+  ) => void;
   onProductionChanged?: (spec: ProductionSpec) => void;
   onSceneChanged?: (scene: ProductionSceneCue, spec: ProductionSpec) => void;
   onCustomPiecesChanged?: (
@@ -500,6 +510,17 @@ export class TheatreSceneController {
 
   public isElementVisible(elementId: string): boolean {
     return this.productionSets.isElementVisible(elementId);
+  }
+
+  public getScenicElementTarget(
+    elementId: string
+  ): { readonly element: ProductionElementSpec; readonly objectGroup: THREE.Object3D } | null {
+    const spec = this.productionSets.getActiveProduction();
+    const element = spec.elements.find((e) => e.id === elementId);
+    if (!element) return null;
+    const nodes = this.productionSets.getElementNodes(elementId);
+    const objectGroup = nodes[0] ?? this.productionSets.root;
+    return { element, objectGroup };
   }
 
   public setBattenTrimHeight(lineNumber: number, heightM: number): void {
@@ -1136,14 +1157,24 @@ export class TheatreSceneController {
         this.refreshSeatColorsAndMetrics();
       }
       this.canvas.style.cursor = 'pointer';
+      this.callbacks.onScenicElementHovered?.(null, e.clientX, e.clientY);
       this.callbacks.onSeatHovered?.(this.seats[instanceId]!, e.clientX, e.clientY);
+      return;
+    }
+
+    if (this.hoveredSeatIndex !== null) {
+      this.hoveredSeatIndex = null;
+      this.refreshSeatColorsAndMetrics();
+    }
+    this.callbacks.onSeatHovered?.(null, e.clientX, e.clientY);
+
+    const scenicHover = this.productionSets.pickScenicElementAtRay(this.raycaster);
+    if (scenicHover) {
+      this.canvas.style.cursor = 'pointer';
+      this.callbacks.onScenicElementHovered?.(scenicHover, e.clientX, e.clientY);
     } else {
-      if (this.hoveredSeatIndex !== null) {
-        this.hoveredSeatIndex = null;
-        this.refreshSeatColorsAndMetrics();
-      }
-      this.canvas.style.cursor = this.inSeatView ? 'grab' : 'grab';
-      this.callbacks.onSeatHovered?.(null, e.clientX, e.clientY);
+      this.canvas.style.cursor = 'grab';
+      this.callbacks.onScenicElementHovered?.(null, e.clientX, e.clientY);
     }
   }
 
@@ -1167,7 +1198,7 @@ export class TheatreSceneController {
       }
     }
 
-    // 2. Check if user clicked one of the 570 auditorium seats
+    // 2. Check if user clicked one of the auditorium seats
     const seatHits = this.raycaster.intersectObjects(
       [
         this.architecture.seatCushionInstanced,
@@ -1180,6 +1211,16 @@ export class TheatreSceneController {
       const idx = seatHits[0]?.instanceId;
       if (idx !== undefined && this.seats[idx]) {
         this.selectSeatByIndex(idx, true);
+        return;
+      }
+    }
+
+    // 3. Check if user clicked a Scenic Set Element on stage -> Open Scenic Workshop & CNC Inspector
+    const pickedElement = this.productionSets.pickScenicElementAtRay(this.raycaster);
+    if (pickedElement) {
+      const target = this.getScenicElementTarget(pickedElement.id);
+      if (target) {
+        this.callbacks.onScenicElementClicked?.(target.element, target.objectGroup);
       }
     }
   }

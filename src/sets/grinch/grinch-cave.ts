@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import {
+  createGrinchCharacter,
+  createMaxDogCharacter,
+  createSculptedIcicleDrip,
+  createSeussianIcicleValance,
+} from '../shared-scenic-helpers.ts';
 
 /**
  * Creates a custom high-contrast Seussian pen-and-ink striated ice/rock canvas
@@ -110,7 +116,7 @@ function createExtrudedRockSlab(
   depth: number,
   material: THREE.Material,
   zPos: number,
-  bevelSize = 0.025
+  bevelSize = 0.015
 ): THREE.Mesh {
   const shape = new THREE.Shape();
   points.forEach(([x, y], idx) => {
@@ -160,7 +166,13 @@ function createSeussianStrataLedge(
     if (len < 0.02) continue;
 
     const seg = new THREE.Mesh(
-      new RoundedBoxGeometry(len + thickness * 0.4, thickness, depth, 2, thickness * 0.3),
+      new RoundedBoxGeometry(
+        len + thickness * 0.4,
+        thickness,
+        depth,
+        2,
+        thickness * 0.3
+      ),
       mat
     );
     seg.position.set((p0[0] + p1[0]) * 0.5, (p0[1] + p1[1]) * 0.5, zPos);
@@ -227,7 +239,7 @@ function createMiniatureWhoCottage(
   // Scalloped snow-eave collar around top of pink wall
   const eaveCount = 7;
   for (let e = 0; e < eaveCount; e++) {
-    const t = (e / (eaveCount - 1)) - 0.5;
+    const t = e / (eaveCount - 1) - 0.5;
     const lobe = new THREE.Mesh(
       new THREE.SphereGeometry(width * 0.14, 10, 8),
       snowRoofMat
@@ -243,19 +255,27 @@ function createMiniatureWhoCottage(
 
   // Onion-dome snowy roof cap (seen clearly in `model_1C_cave_closeup.jpg`)
   const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(width * 0.54, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62),
+    new THREE.SphereGeometry(
+      width * 0.54,
+      16,
+      12,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI * 0.62
+    ),
     snowRoofMat
   );
   dome.scale.set(1.02, 0.88, 0.6);
   dome.position.set(0, bodyH * 0.88, 0);
   cottage.add(dome);
 
-  // Crooked Seussian roof spire & round ball finial with dark ink outline ring
+  // Sculpted Seussian roof spire finial & collar ring
   const spire = new THREE.Mesh(
-    new THREE.ConeGeometry(width * 0.11, height * 0.26, 10),
+    new THREE.CylinderGeometry(width * 0.025, width * 0.095, height * 0.24, 10),
     snowRoofMat
   );
-  spire.position.set(width * 0.04, bodyH + height * 0.36, 0.02);
+  spire.position.set(width * 0.04, bodyH + height * 0.35, 0.02);
   spire.rotation.z = -0.14;
   cottage.add(spire);
 
@@ -308,8 +328,9 @@ function createMiniatureWhoCottage(
 }
 
 /**
- * Builds the forced-perspective distant Whoville Vista (`z = -5.4m`) seen through
- * the Grinch's Cave mouth in `model_1C_cave_vista.jpg` and `model_1C_cave_closeup.jpg`.
+ * Builds the forced-perspective distant Whoville Vista (`z ∈ [-5.88m, -5.05m]`)
+ * seen through the Grinch's Cave mouth in `model_1C_cave_vista.jpg` and
+ * `model_1C_cave_closeup.jpg`.
  */
 function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   const vistaGroup = new THREE.Group();
@@ -349,7 +370,6 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   });
 
   // 1. Illuminated Winter Vista Sky Backing Plate (`z = -5.88m`)
-  // Provides the bright periwinkle/ice-white horizon glow seen behind the blue crag in `model_1C_cave_closeup.jpg`
   const skyBacking = new THREE.Mesh(
     new THREE.PlaneGeometry(5.6, 3.8),
     new THREE.MeshStandardMaterial({
@@ -363,7 +383,6 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   vistaGroup.add(skyBacking);
 
   // 2. Far Sweeping Snow Mountain Slopes (`z = -5.76m` and `z = -5.66m`)
-  // Left high snow peak sweeping down toward center (`model_1C_cave_closeup.jpg` upper-left)
   const farLeftPeakPts: ReadonlyArray<readonly [number, number]> = [
     [-2.65, 0.0],
     [-2.65, 1.85],
@@ -375,14 +394,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   ];
   const farLeftMountain = createExtrudedRockSlab(
     farLeftPeakPts,
-    0.06,
+    0.05,
     snowMountainFarMat,
     -5.76,
-    0.015
+    0.012
   );
   vistaGroup.add(farLeftMountain);
 
-  // Right sweeping snow hill behind the village (`model_1C_cave_closeup.jpg` mid-right)
   const farRightHillPts: ReadonlyArray<readonly [number, number]> = [
     [-0.15, 0.0],
     [-0.15, 0.95],
@@ -394,14 +412,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   ];
   const farRightMountain = createExtrudedRockSlab(
     farRightHillPts,
-    0.06,
+    0.05,
     snowHillMidMat,
     -5.66,
-    0.015
+    0.012
   );
   vistaGroup.add(farRightMountain);
 
-  // Dark Seussian ink ridge contour along far right snow slope (`z = -5.58m`)
   vistaGroup.add(
     createSeussianStrataLedge(
       [
@@ -412,14 +429,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
         [2.35, 1.68],
       ],
       0.032,
-      0.03,
+      0.025,
       -5.58,
       inkContourMat
     )
   );
 
   // 3. Signature Blue 3-Fingered Seussian Rock Crag Spire (`z = -5.54m`)
-  // Seen directly behind the miniature Christmas tree in `model_1C_cave_closeup.jpg`!
   const blueCragPts: ReadonlyArray<readonly [number, number]> = [
     [-0.48, 0.65],
     [-0.42, 1.45],
@@ -441,14 +457,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   ];
   const blueCragSpire = createExtrudedRockSlab(
     blueCragPts,
-    0.055,
+    0.045,
     cragBlueMat,
     -5.54,
-    0.015
+    0.012
   );
   vistaGroup.add(blueCragSpire);
 
-  // Vertical black Seussian hatch strokes on the blue crag spire (`z = -5.46m`)
   for (const [hx, hy0, hy1] of [
     [-0.22, 1.15, 1.95],
     [-0.12, 1.05, 1.88],
@@ -463,14 +478,14 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
           [hx + 0.06, hy1],
         ],
         0.024,
-        0.025,
-        -5.46,
+        0.02,
+        -5.47,
         inkContourMat
       )
     );
   }
 
-  // 4. Mid-Left Snow Shoulder Hill (`z = -5.45m`)
+  // 4. Mid-Left Snow Shoulder Hill (`z = -5.44m`)
   const midLeftSlopePts: ReadonlyArray<readonly [number, number]> = [
     [-2.55, 0.0],
     [-2.55, 1.68],
@@ -480,7 +495,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     [-0.52, 0.0],
   ];
   vistaGroup.add(
-    createExtrudedRockSlab(midLeftSlopePts, 0.04, snowHillMidMat, -5.45, 0.012)
+    createExtrudedRockSlab(midLeftSlopePts, 0.035, snowHillMidMat, -5.44, 0.01)
   );
   vistaGroup.add(
     createSeussianStrataLedge(
@@ -491,14 +506,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
         [-0.58, 1.06],
       ],
       0.03,
-      0.025,
+      0.02,
       -5.39,
       inkContourMat
     )
   );
 
   // 5. Central Whoville Village Snow Hill (`x ≈ -0.15m`, `z = -5.36m`)
-  // And the 7 Miniature Pink/Lavender Onion-Domed Who Cottages + Glowing Tree!
   const centralVillageHillPts: ReadonlyArray<readonly [number, number]> = [
     [-1.18, 0.0],
     [-1.08, 0.42],
@@ -512,14 +526,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   ];
   const centralHill = createExtrudedRockSlab(
     centralVillageHillPts,
-    0.08,
+    0.06,
     snowHillFrontMat,
     -5.36,
-    0.02
+    0.015
   );
   vistaGroup.add(centralHill);
 
-  // Dark Seussian contour arc crowning the central Whoville hill (`z = -5.25m`)
   vistaGroup.add(
     createSeussianStrataLedge(
       [
@@ -532,13 +545,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
         [0.82, 0.48],
       ],
       0.028,
-      0.025,
-      -5.25,
+      0.02,
+      -5.26,
       inkContourMat
     )
   );
 
-  // Winding Snowy Trail curling from Whoville up toward Mt. Crumpit (`z = -5.22m`)
+  // Winding Snowy Trail curling from Whoville up toward Mt. Crumpit (`z = -5.23m`)
   const trailMat = new THREE.MeshStandardMaterial({
     color: 0xd0d6e4,
     roughness: 0.58,
@@ -552,7 +565,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     [-0.12, 0.04],
   ];
   vistaGroup.add(
-    createSeussianStrataLedge(trailPts, 0.065, 0.025, -5.22, trailMat)
+    createSeussianStrataLedge(trailPts, 0.065, 0.02, -5.23, trailMat)
   );
 
   // 7 Miniature Pink & Rose-Lavender Onion-Domed Who Cottages arranged along the curved hilltop
@@ -566,19 +579,12 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     readonly roofHex: number;
     readonly tiltZ: number;
   }> = [
-    // Far-left outer tilted cottage
     { x: -0.82, y: 0.64, z: -5.33, w: 0.28, h: 0.42, wallHex: 0xd06298, roofHex: 0xbcc6dc, tiltZ: 0.38 },
-    // Mid-left background cottage (peeking slightly higher)
     { x: -0.62, y: 0.82, z: -5.40, w: 0.26, h: 0.40, wallHex: 0xc2588e, roofHex: 0xb4c0d8, tiltZ: 0.26 },
-    // Inner-left foreground cottage
     { x: -0.44, y: 0.82, z: -5.31, w: 0.32, h: 0.46, wallHex: 0xd86aa2, roofHex: 0xc2cce0, tiltZ: 0.16 },
-    // Center-left behind the tree
-    { x: -0.24, y: 0.90, z: -5.42, w: 0.25, h: 0.38, wallHex: 0xc85e94, roofHex: 0xb8c4dc, tiltZ: 0.06 },
-    // Inner-right foreground cottage
+    { x: -0.24, y: 0.90, z: -5.41, w: 0.25, h: 0.38, wallHex: 0xc85e94, roofHex: 0xb8c4dc, tiltZ: 0.06 },
     { x: 0.18, y: 0.84, z: -5.31, w: 0.32, h: 0.45, wallHex: 0xd6689e, roofHex: 0xc0cae0, tiltZ: -0.14 },
-    // Mid-right background cottage
     { x: 0.40, y: 0.80, z: -5.40, w: 0.26, h: 0.39, wallHex: 0xc0568c, roofHex: 0xb4c0d8, tiltZ: -0.24 },
-    // Far-right outer tilted cottage
     { x: 0.58, y: 0.64, z: -5.33, w: 0.30, h: 0.44, wallHex: 0xd2649a, roofHex: 0xbcc6dc, tiltZ: -0.36 },
   ];
 
@@ -596,6 +602,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   }
 
   // Glowing Miniature Town Square Christmas Tree (`x = -0.13m, y = 0.90m, z = -5.29m`)
+  // Built from sculpted Seussian bell-tiered pine whorls (`LatheGeometry`)
   const miniTreeGroup = new THREE.Group();
   miniTreeGroup.position.set(-0.13, 0.90, -5.29);
 
@@ -607,16 +614,23 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   });
 
   for (let tier = 0; tier < 5; tier++) {
-    const coneR = 0.21 - tier * 0.032;
-    const coneH = 0.26 - tier * 0.02;
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(coneR, coneH, 12),
+    const baseR = 0.21 - tier * 0.032;
+    const tierH = 0.25 - tier * 0.018;
+    const profilePts = [
+      new THREE.Vector2(0.005, tierH),
+      new THREE.Vector2(baseR * 0.42, tierH * 0.58),
+      new THREE.Vector2(baseR * 0.86, tierH * 0.22),
+      new THREE.Vector2(baseR, 0.04),
+      new THREE.Vector2(baseR * 0.72, 0.0),
+    ];
+    const whorl = new THREE.Mesh(
+      new THREE.LatheGeometry(profilePts, 14),
       foliageMat
     );
-    cone.position.y = 0.12 + tier * 0.15;
-    cone.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.08;
-    cone.scale.set(1.0, 1.0, 0.65);
-    miniTreeGroup.add(cone);
+    whorl.position.y = 0.02 + tier * 0.15;
+    whorl.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.08;
+    whorl.scale.set(1.0, 1.0, 0.65);
+    miniTreeGroup.add(whorl);
   }
 
   // Glowing Gold Star Topper on Miniature Tree
@@ -626,7 +640,10 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     emissiveIntensity: 1.4,
     roughness: 0.22,
   });
-  const miniStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), starMat);
+  const miniStar = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.065, 0),
+    starMat
+  );
   miniStar.position.y = 0.92;
   miniTreeGroup.add(miniStar);
 
@@ -693,8 +710,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     vistaGroup.add(lamp);
   }
 
-  // 6. Foreground Left & Right Flanking Snow Hills inside the Vista (`z = -5.18m` and `z = -5.12m`)
-  // Left foreground snow mound (`model_1C_cave_closeup.jpg` lower-left)
+  // 6. Foreground Left & Right Flanking Snow Hills inside the Vista (`z = -5.18m`)
   const fgLeftHillPts: ReadonlyArray<readonly [number, number]> = [
     [-2.55, 0.0],
     [-2.55, 1.18],
@@ -704,7 +720,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     [-0.68, 0.0],
   ];
   vistaGroup.add(
-    createExtrudedRockSlab(fgLeftHillPts, 0.06, snowHillFrontMat, -5.18, 0.015)
+    createExtrudedRockSlab(fgLeftHillPts, 0.045, snowHillFrontMat, -5.18, 0.012)
   );
   vistaGroup.add(
     createSeussianStrataLedge(
@@ -716,13 +732,12 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
         [-0.70, 0.08],
       ],
       0.028,
-      0.025,
-      -5.10,
+      0.02,
+      -5.11,
       inkContourMat
     )
   );
 
-  // Right foreground snow mound (`model_1C_cave_closeup.jpg` lower-right)
   const fgRightHillPts: ReadonlyArray<readonly [number, number]> = [
     [0.52, 0.0],
     [0.78, 0.68],
@@ -732,7 +747,13 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     [2.45, 0.0],
   ];
   vistaGroup.add(
-    createExtrudedRockSlab(fgRightHillPts, 0.06, snowHillFrontMat, -5.18, 0.015)
+    createExtrudedRockSlab(
+      fgRightHillPts,
+      0.045,
+      snowHillFrontMat,
+      -5.18,
+      0.012
+    )
   );
   vistaGroup.add(
     createSeussianStrataLedge(
@@ -744,14 +765,14 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
         [2.32, 1.08],
       ],
       0.028,
-      0.025,
-      -5.10,
+      0.02,
+      -5.11,
       inkContourMat
     )
   );
 
-  // Signature Blue 3-Fingered Seussian Rock Claw Outcrop on the Right Foreground Hill (`z = -5.06m`)
-  // Visible in the lower-right corner of the cave opening in `model_1C_cave_closeup.jpg`!
+  // Signature Blue 3-Fingered Seussian Rock Claw Outcrop on the Right Foreground Hill (`z = -5.08m`)
+  // Span: `z ∈ [-5.09m, -5.05m]` -> strictly within `z ∈ [-5.88m, -5.05m]`!
   const rightBlueClawPts: ReadonlyArray<readonly [number, number]> = [
     [1.18, 0.06],
     [1.02, 0.42],
@@ -767,7 +788,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     [1.75, 0.06],
   ];
   vistaGroup.add(
-    createExtrudedRockSlab(rightBlueClawPts, 0.045, cragBlueMat, -5.06, 0.012)
+    createExtrudedRockSlab(rightBlueClawPts, 0.025, cragBlueMat, -5.08, 0.008)
   );
 
   return vistaGroup;
@@ -775,14 +796,16 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
 
 /**
  * Builds the Grinch's crooked Seussian spyglass/listening horn aimed down at
- * Whoville, twisted scrap-metal cave pipes, and Max the dog's rocky perch.
+ * Whoville, the expressive 3D Grinch character peering through it (`x = -2.15m,
+ * y = 0, z = -3.05m`), twisted scrap-metal cave pipes, and Max the dog sitting
+ * cleanly atop his flat rocky perch (`x = +2.85m, z = -3.08m`).
  */
 function buildGrinchCaveSideDetails(
   slateMat: THREE.Material,
   snowMat: THREE.Material
 ): THREE.Group {
   const detailsGroup = new THREE.Group();
-  detailsGroup.name = 'GrinchCave_PropsAndOutcrops';
+  detailsGroup.name = 'GrinchCave_PropsAndCharacters';
 
   const ironMat = new THREE.MeshStandardMaterial({
     color: 0x364254,
@@ -803,83 +826,103 @@ function buildGrinchCaveSideDetails(
   });
 
   // -------------------------------------------------------------------------
-  // A. Crooked Seussian Telescope / Whoville Listening Horn (`x = -2.62m, z = -2.96m`)
-  //    Tucked beside the DSR cave boulder, aimed down toward Whoville!
+  // A1. Expressive 3D Grinch Character (`x = -2.15m, y = 0, z = -3.05m`)
+  //     Standing firmly on the stage deck (`y = 0`) right behind his crooked
+  //     Whoville spyglass/listening horn, rotated toward center-right (`0.58 rad`)
+  //     so he peers down at Whoville without clipping into the tripod or boulder.
+  // -------------------------------------------------------------------------
+  const grinch = createGrinchCharacter({
+    heightM: 1.84,
+    spyglassPose: true,
+  });
+  grinch.position.set(-2.15, 0.0, -3.05);
+  grinch.rotation.y = 0.58;
+  detailsGroup.add(grinch);
+
+  // -------------------------------------------------------------------------
+  // A2. Crooked Seussian Telescope / Whoville Listening Horn (`x = -1.76m, z = -2.82m`)
+  //     Positioned directly in front of the Grinch along his sightline (`0.45m` clear)
   // -------------------------------------------------------------------------
   const hornRig = new THREE.Group();
-  hornRig.position.set(-2.62, 0.0, -2.96);
-  hornRig.rotation.y = 0.42;
+  hornRig.position.set(-1.76, 0.0, -2.82);
+  hornRig.rotation.y = 0.54;
 
   // Tripod legs
   for (let leg = 0; leg < 3; leg++) {
     const a = (leg / 3) * Math.PI * 2 + 0.3;
     const strut = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.03, 0.92, 8),
+      new THREE.CylinderGeometry(0.022, 0.03, 0.98, 8),
       ironMat
     );
-    strut.position.set(Math.cos(a) * 0.18, 0.42, Math.sin(a) * 0.18);
-    strut.rotation.z = -Math.cos(a) * 0.28;
-    strut.rotation.x = Math.sin(a) * 0.28;
+    strut.position.set(Math.cos(a) * 0.16, 0.46, Math.sin(a) * 0.16);
+    strut.rotation.z = -Math.cos(a) * 0.24;
+    strut.rotation.x = Math.sin(a) * 0.24;
     hornRig.add(strut);
   }
 
   // Gear mount hub
   const gearWheel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.14, 0.05, 14),
+    new THREE.CylinderGeometry(0.13, 0.13, 0.048, 14),
     brassMat
   );
   gearWheel.rotation.x = Math.PI / 2;
-  gearWheel.position.set(0, 0.86, 0);
+  gearWheel.position.set(0, 0.94, 0);
   hornRig.add(gearWheel);
 
   // Segmented crooked Seussian spyglass / ear-trumpet tube
   const barrelGroup = new THREE.Group();
-  barrelGroup.position.set(0, 0.90, 0);
-  barrelGroup.rotation.z = -0.22;
-  barrelGroup.rotation.y = -0.18;
+  barrelGroup.position.set(0, 0.98, 0);
+  barrelGroup.rotation.z = -0.18;
+  barrelGroup.rotation.y = -0.12;
 
   for (let segIdx = 0; segIdx < 4; segIdx++) {
-    const r0 = 0.045 + segIdx * 0.026;
-    const r1 = 0.065 + segIdx * 0.032;
+    const r0 = 0.042 + segIdx * 0.024;
+    const r1 = 0.062 + segIdx * 0.03;
     const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(r1, r0, 0.28, 12),
+      new THREE.CylinderGeometry(r1, r0, 0.24, 12),
       segIdx % 2 === 0 ? brassMat : ironMat
     );
     tube.rotation.x = Math.PI / 2;
     tube.position.set(
       0,
-      Math.sin(segIdx * 0.6) * 0.04,
-      segIdx * 0.24 - 0.18
+      Math.sin(segIdx * 0.6) * 0.035,
+      segIdx * 0.21 - 0.14
     );
-    tube.rotation.z = (segIdx % 2 === 0 ? 1 : -1) * 0.08;
+    tube.rotation.z = (segIdx % 2 === 0 ? 1 : -1) * 0.07;
     barrelGroup.add(tube);
   }
 
-  // Wide flared Seussian listening horn bell at the front end
+  // Sculpted flared Seussian listening horn bell at the front end (`LatheGeometry`)
+  const bellPts = [
+    new THREE.Vector2(0.08, 0.0),
+    new THREE.Vector2(0.11, 0.12),
+    new THREE.Vector2(0.17, 0.22),
+    new THREE.Vector2(0.26, 0.32),
+  ];
   const hornBell = new THREE.Mesh(
-    new THREE.ConeGeometry(0.28, 0.34, 16, 1, true),
+    new THREE.LatheGeometry(bellPts, 16),
     brassMat
   );
-  hornBell.rotation.x = -Math.PI / 2;
-  hornBell.position.set(0, 0.03, 0.72);
+  hornBell.rotation.x = Math.PI / 2;
+  hornBell.position.set(0, 0.03, 0.52);
   barrelGroup.add(hornBell);
 
   const bellRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.024, 10, 18),
+    new THREE.TorusGeometry(0.26, 0.022, 10, 18),
     ironMat
   );
-  bellRim.position.set(0, 0.03, 0.88);
+  bellRim.position.set(0, 0.03, 0.84);
   barrelGroup.add(bellRim);
 
   hornRig.add(barrelGroup);
   detailsGroup.add(hornRig);
 
   // -------------------------------------------------------------------------
-  // B. Twisted Scrap-Metal Cave Pipes (`x = -3.28m, z = -3.28m` & `x = +3.28m, z = -3.28m`)
+  // B. Twisted Scrap-Metal Cave Pipes (`x = -3.85m, z = -3.28m` & `x = +3.85m, z = -3.28m`)
   // -------------------------------------------------------------------------
   for (const side of [-1, 1] as const) {
     const pipeCluster = new THREE.Group();
-    pipeCluster.position.set(side * 3.28, 0.0, -3.28);
+    pipeCluster.position.set(side * 3.85, 0.0, -3.28);
 
     const curve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(0, 0.0, 0),
@@ -895,7 +938,6 @@ function buildGrinchCaveSideDetails(
     mainPipe.castShadow = true;
     pipeCluster.add(mainPipe);
 
-    // Flanged pipe collars along the crooked pipe
     for (const t of [0.28, 0.58, 0.85]) {
       const pt = curve.getPoint(t);
       const collar = new THREE.Mesh(
@@ -907,60 +949,72 @@ function buildGrinchCaveSideDetails(
       pipeCluster.add(collar);
     }
 
-    // Crooked conical exhaust cap at top of pipe
+    // Domed exhaust cap at top of pipe
     const topPt = curve.getPoint(1.0);
     const pipeCap = new THREE.Mesh(
-      new THREE.ConeGeometry(0.14, 0.18, 10),
+      new THREE.CylinderGeometry(0.04, 0.14, 0.16, 12),
       ironMat
     );
-    pipeCap.position.set(topPt.x, topPt.y + 0.1, topPt.z);
-    pipeCap.rotation.z = -side * 0.25;
+    pipeCap.position.set(topPt.x, topPt.y + 0.09, topPt.z);
+    pipeCap.rotation.z = -side * 0.22;
     pipeCluster.add(pipeCap);
 
     detailsGroup.add(pipeCluster);
   }
 
   // -------------------------------------------------------------------------
-  // C. Max the Dog's Rocky Perch & Dish (`x = +2.85m, z = -3.08m`)
+  // C. Max the Dog's Flat Rocky Perch, Cushion & Sitting Max Character
+  //    (`x = +2.85m, z = -3.08m`)
+  //    - `perchBase`: `y ∈ [0.00m, 0.42m]`
+  //    - `perchSnowStep`: `y ∈ [0.42m, 0.54m]`
+  //    - `cushion`: `y ∈ [0.54m, 0.62m]` (exact flat top surface at `y = 0.62m`)
+  //    - `maxDog`: placed at `y = 0.62m` so Max sits flush on the cushion!
   // -------------------------------------------------------------------------
   const maxPerchGroup = new THREE.Group();
   maxPerchGroup.position.set(2.85, 0.0, -3.08);
-  maxPerchGroup.rotation.y = -0.22;
+  maxPerchGroup.rotation.y = -0.32;
 
   const perchBase = new THREE.Mesh(
-    new RoundedBoxGeometry(0.96, 0.44, 0.68, 3, 0.12),
+    new RoundedBoxGeometry(0.92, 0.42, 0.66, 3, 0.08),
     slateMat
   );
-  perchBase.position.set(0, 0.22, 0);
+  perchBase.position.set(0, 0.21, 0);
   perchBase.castShadow = true;
+  perchBase.receiveShadow = true;
   maxPerchGroup.add(perchBase);
 
   const perchSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.84, 0.16, 0.58, 3, 0.06),
+    new RoundedBoxGeometry(0.80, 0.12, 0.56, 3, 0.04),
     snowMat
   );
-  perchSnowStep.position.set(-0.04, 0.48, 0.02);
-  perchSnowStep.rotation.z = 0.05;
+  perchSnowStep.position.set(0, 0.48, 0);
   maxPerchGroup.add(perchSnowStep);
 
-  // Frayed red patchwork dog cushion on top of the rocky perch
+  // Flat red patchwork dog cushion (`y ∈ [0.54m, 0.62m]`, top surface = `0.62m`)
   const cushion = new THREE.Mesh(
-    new RoundedBoxGeometry(0.54, 0.11, 0.42, 3, 0.05),
+    new RoundedBoxGeometry(0.54, 0.08, 0.44, 3, 0.025),
     new THREE.MeshStandardMaterial({
       color: 0xa82834,
       roughness: 0.72,
     })
   );
-  cushion.position.set(-0.02, 0.59, 0.02);
-  cushion.rotation.z = 0.05;
+  cushion.position.set(0, 0.58, 0);
   maxPerchGroup.add(cushion);
 
-  // Max's crooked metal dog dish & bone beside the perch
+  // Expressive 3D Max the Dog Character sitting cleanly on top of the cushion (`y = 0.62m`)
+  const maxDog = createMaxDogCharacter({
+    sitting: true,
+    withAntler: false,
+  });
+  maxDog.position.set(0, 0.62, 0);
+  maxPerchGroup.add(maxDog);
+
+  // Max's crooked metal dog dish & bone beside the perch on the stage floor (`y = 0`)
   const dogBowl = new THREE.Mesh(
     new THREE.CylinderGeometry(0.11, 0.14, 0.08, 12),
     brassMat
   );
-  dogBowl.position.set(-0.56, 0.04, 0.28);
+  dogBowl.position.set(-0.62, 0.04, 0.24);
   maxPerchGroup.add(dogBowl);
 
   const boneShaft = new THREE.Mesh(
@@ -969,7 +1023,7 @@ function buildGrinchCaveSideDetails(
   );
   boneShaft.rotation.z = Math.PI / 2 - 0.2;
   boneShaft.rotation.y = 0.35;
-  boneShaft.position.set(-0.56, 0.09, 0.28);
+  boneShaft.position.set(-0.62, 0.09, 0.24);
   maxPerchGroup.add(boneShaft);
 
   detailsGroup.add(maxPerchGroup);
@@ -979,8 +1033,8 @@ function buildGrinchCaveSideDetails(
 
 /**
  * Builds the Grinch's Cave Portal (`grinch-cave-portal`, Lineset #17 at `11'-10"`,
- * `z = -3.65m`, spanning `x ∈ [-5.8m, +5.8m]`, `y ∈ [0, 6.2m]`) and the
- * Forced-Perspective Distant Whoville Vista (`z = -5.4m`).
+ * `z ∈ [-3.85m, -3.38m]`, spanning `x ∈ [-5.1m, +5.1m]`, `y ∈ [0, 6.2m]`) and the
+ * Forced-Perspective Distant Whoville Vista (`z ∈ [-5.88m, -5.05m]`).
  */
 export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group {
   const caveGroup = new THREE.Group();
@@ -1019,9 +1073,16 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
 
   const icicleFangMat = new THREE.MeshStandardMaterial({
     map: rockTex,
-    color: 0x9ec0d8,
+    color: 0xa4c4d8,
     roughness: 0.55,
     metalness: 0.08,
+  });
+
+  const icicleGlazeBackMat = new THREE.MeshStandardMaterial({
+    map: rockTex,
+    color: 0x6290c8,
+    roughness: 0.58,
+    metalness: 0.06,
   });
 
   const snowBoulderMat = new THREE.MeshStandardMaterial({
@@ -1037,43 +1098,42 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
   });
 
   // =========================================================================
-  // LAYER 1 (z = -3.82m, depth = 0.08m):
-  // Outer Jagged Seussian Sawtooth Cavern Arch Silhouette (`x ∈ [-5.8m, +5.8m]`, `y ∈ [0, 6.2m]`)
+  // LAYER 1 (z = -3.83m, depth = 0.055m -> z ∈ [-3.845m, -3.76m]):
+  // Outer Jagged Seussian Sawtooth Cavern Arch Silhouette (`x ∈ [-5.1m, +5.1m]`, `y ∈ [0, 6.2m]`)
   // =========================================================================
   const outerArchShape = new THREE.Shape();
   const outerPerimeter: ReadonlyArray<readonly [number, number]> = [
-    // Inner right cave mouth edge going clockwise around the outer jagged crest
     [2.32, 0.0],
-    [5.80, 0.0],
-    [5.74, 1.58],
-    [5.35, 1.42],
-    [5.48, 2.48],
-    [4.95, 2.22],
-    [5.08, 3.35],
-    [4.42, 3.05],
-    [4.62, 4.18],
-    [3.88, 3.85],
-    [3.65, 5.38],
-    [3.08, 4.52],
-    [2.58, 5.78],
-    [2.05, 4.88],
-    [1.42, 6.08],
-    [0.65, 6.20],
+    [5.08, 0.0],
+    [5.04, 1.58],
+    [4.72, 1.42],
+    [4.86, 2.48],
+    [4.42, 2.22],
+    [4.55, 3.35],
+    [4.02, 3.05],
+    [4.18, 4.18],
+    [3.58, 3.85],
+    [3.42, 5.38],
+    [2.88, 4.52],
+    [2.44, 5.78],
+    [1.92, 4.88],
+    [1.36, 6.08],
+    [0.62, 6.20],
     [-0.12, 5.68],
     [-0.38, 6.14],
     [-0.85, 6.02],
-    [-1.45, 5.25],
-    [-1.82, 5.65],
-    [-2.42, 4.78],
-    [-2.78, 5.35],
-    [-3.42, 4.42],
-    [-3.72, 4.88],
-    [-4.35, 3.78],
-    [-4.58, 3.25],
-    [-5.02, 2.85],
-    [-5.38, 2.18],
-    [-5.80, 1.62],
-    [-5.80, 0.0],
+    [-1.42, 5.25],
+    [-1.78, 5.65],
+    [-2.32, 4.78],
+    [-2.68, 5.35],
+    [-3.24, 4.42],
+    [-3.52, 4.88],
+    [-4.05, 3.78],
+    [-4.28, 3.25],
+    [-4.65, 2.85],
+    [-4.88, 2.18],
+    [-5.08, 1.62],
+    [-5.08, 0.0],
     [-2.32, 0.0],
     // Inner cave mouth arch opening (`x ∈ [-2.32, +2.32]`, crown `y = 3.22m`)
     [-2.26, 0.95],
@@ -1093,32 +1153,31 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
   outerArchShape.closePath();
 
   const outerArchGeo = new THREE.ExtrudeGeometry(outerArchShape, {
-    depth: 0.08,
+    depth: 0.055,
     bevelEnabled: true,
-    bevelThickness: 0.02,
-    bevelSize: 0.02,
+    bevelThickness: 0.015,
+    bevelSize: 0.015,
     bevelSegments: 2,
   });
   const outerArchMesh = new THREE.Mesh(outerArchGeo, rearSlateBlueMat);
-  outerArchMesh.position.z = -3.82;
+  outerArchMesh.position.z = -3.83;
   outerArchMesh.castShadow = true;
   outerArchMesh.receiveShadow = true;
   caveGroup.add(outerArchMesh);
 
   // =========================================================================
-  // LAYER 2A (z = -3.68m, depth = 0.07m):
-  // Mid-Stage Left & Right Striated Seussian Rock Wings (`model_1C_cave_vista.jpg`)
+  // LAYER 2A (z = -3.71m, depth = 0.05m -> z ∈ [-3.725m, -3.645m]):
+  // Mid-Stage Left & Right Striated Seussian Rock Wings (`x ∈ [-4.95m, +4.95m]`)
   // =========================================================================
-  // Stage-Right (viewer left) sweeping striated wing slab
   const leftMidWingPts: ReadonlyArray<readonly [number, number]> = [
-    [-5.55, 0.0],
-    [-5.52, 1.48],
-    [-4.85, 2.45],
-    [-4.38, 2.28],
-    [-4.35, 3.68],
-    [-3.52, 4.18],
-    [-2.68, 4.72],
-    [-1.65, 5.28],
+    [-4.92, 0.0],
+    [-4.88, 1.48],
+    [-4.42, 2.45],
+    [-4.02, 2.28],
+    [-3.98, 3.68],
+    [-3.28, 4.18],
+    [-2.54, 4.72],
+    [-1.58, 5.28],
     [-0.65, 5.88],
     [0.12, 5.45],
     [0.24, 3.16],
@@ -1129,45 +1188,48 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     [-2.32, 0.0],
   ];
   caveGroup.add(
-    createExtrudedRockSlab(leftMidWingPts, 0.07, midGlacierBlueMat, -3.68, 0.02)
+    createExtrudedRockSlab(leftMidWingPts, 0.05, midGlacierBlueMat, -3.71, 0.015)
   );
 
-  // Stage-Left (viewer right) lower-mid striated wing slab
   const rightMidWingPts: ReadonlyArray<readonly [number, number]> = [
     [2.32, 0.0],
     [2.24, 0.94],
     [1.92, 1.85],
     [1.36, 2.58],
-    [1.82, 3.12],
-    [3.92, 3.85],
-    [4.48, 3.05],
-    [4.96, 3.22],
-    [4.88, 2.18],
-    [5.38, 2.32],
-    [5.58, 1.38],
-    [5.62, 0.0],
+    [1.76, 3.12],
+    [3.62, 3.85],
+    [4.05, 3.05],
+    [4.48, 3.22],
+    [4.38, 2.18],
+    [4.78, 2.32],
+    [4.92, 1.38],
+    [4.95, 0.0],
   ];
   caveGroup.add(
-    createExtrudedRockSlab(rightMidWingPts, 0.07, midGlacierBlueMat, -3.68, 0.02)
+    createExtrudedRockSlab(
+      rightMidWingPts,
+      0.05,
+      midGlacierBlueMat,
+      -3.71,
+      0.015
+    )
   );
 
   // =========================================================================
-  // LAYER 2B (z = -3.58m, depth = 0.06m):
+  // LAYER 2B (z = -3.60m, depth = 0.045m -> z ∈ [-3.612m, -3.543m]):
   // Overlapping Upper-Right Sweeping Glacier Rock Lobe (`model_1C_cave_closeup.jpg`)
-  // Notice in `model_1C_cave_closeup.jpg` how the upper-right rock lobe sweeps from
-  // top-center (`x = -0.32m`) across to the upper-right teeth (`x = +3.95m`)!
   // =========================================================================
   const upperRightLobePts: ReadonlyArray<readonly [number, number]> = [
     [-0.32, 5.75],
     [0.58, 6.08],
-    [1.38, 5.95],
-    [1.98, 4.78],
-    [2.52, 5.65],
-    [3.02, 4.42],
-    [3.58, 5.25],
-    [3.98, 3.92],
-    [2.85, 3.25],
-    [1.68, 2.86],
+    [1.34, 5.95],
+    [1.88, 4.78],
+    [2.42, 5.65],
+    [2.86, 4.42],
+    [3.38, 5.25],
+    [3.68, 3.92],
+    [2.68, 3.25],
+    [1.62, 2.86],
     [0.72, 2.95],
     [0.12, 3.38],
     [-0.22, 4.35],
@@ -1175,166 +1237,193 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
   caveGroup.add(
     createExtrudedRockSlab(
       upperRightLobePts,
-      0.06,
+      0.045,
       upperOverlapBlueMat,
-      -3.58,
-      0.02
+      -3.60,
+      0.012
     )
   );
 
   // =========================================================================
-  // LAYER 3 (z = -3.49m, depth = 0.06m):
-  // Front Lower Cave Base Mounds & Upper Dripping Glacier Stalactite Fingers
+  // LAYER 3 (z = -3.50m, depth = 0.045m -> z ∈ [-3.512m, -3.443m]):
+  // Front Lower Cave Base Mounds (`x ∈ [-5.08m, +5.08m]`)
   // =========================================================================
-  // Left base mound (`x ∈ [-5.8m, -2.28m]`, `y ∈ [0, 1.35m]`)
   const leftBaseMoundPts: ReadonlyArray<readonly [number, number]> = [
-    [-5.80, 0.0],
-    [-5.75, 1.32],
-    [-4.65, 1.18],
-    [-3.45, 0.82],
+    [-5.08, 0.0],
+    [-5.02, 1.32],
+    [-4.18, 1.18],
+    [-3.25, 0.82],
     [-2.32, 0.24],
     [-2.32, 0.0],
   ];
   caveGroup.add(
-    createExtrudedRockSlab(leftBaseMoundPts, 0.06, frontBaseRockMat, -3.49, 0.02)
+    createExtrudedRockSlab(leftBaseMoundPts, 0.045, frontBaseRockMat, -3.50, 0.012)
   );
 
-  // Right base mound (`x ∈ [2.28m, 5.8m]`, `y ∈ [0, 1.38m]`)
   const rightBaseMoundPts: ReadonlyArray<readonly [number, number]> = [
     [2.32, 0.0],
     [2.32, 0.22],
-    [3.18, 0.88],
-    [4.28, 1.24],
-    [5.18, 1.08],
-    [5.80, 0.35],
-    [5.80, 0.0],
+    [3.08, 0.88],
+    [3.98, 1.24],
+    [4.68, 1.08],
+    [5.08, 0.35],
+    [5.08, 0.0],
   ];
   caveGroup.add(
-    createExtrudedRockSlab(rightBaseMoundPts, 0.06, frontBaseRockMat, -3.49, 0.02)
+    createExtrudedRockSlab(
+      rightBaseMoundPts,
+      0.045,
+      frontBaseRockMat,
+      -3.50,
+      0.012
+    )
   );
 
-  // Two long vertical blue-ice stalactite fingers dripping down the upper arch face
-  // (Clearly visible at `x ≈ -0.82m` and `x ≈ +1.08m` in `model_1C_cave_closeup.jpg`)
-  const leftUpperIceFingerPts: ReadonlyArray<readonly [number, number]> = [
-    [-1.08, 5.85],
-    [-0.58, 5.98],
-    [-0.64, 4.45],
-    [-0.78, 3.68],
-    [-0.92, 4.35],
-  ];
-  caveGroup.add(
-    createExtrudedRockSlab(leftUpperIceFingerPts, 0.04, icicleFangMat, -3.49, 0.015)
-  );
+  // Sculpted Upper Glacier Stalactite Drips on the Upper Rock Face (`z = -3.42m`)
+  // Using `createSculptedIcicleDrip` for organic fluted Seussian ice drips!
+  for (const [ux, uy, uLen, uRad, uBend] of [
+    [-0.92, 5.88, 1.65, 0.12, 0.05],
+    [-0.68, 5.95, 2.25, 0.16, -0.06],
+    [0.96, 5.96, 2.42, 0.17, 0.07],
+    [1.22, 5.88, 1.72, 0.13, -0.05],
+  ] as const) {
+    const upperDrip = createSculptedIcicleDrip(
+      uLen,
+      uRad,
+      icicleFangMat,
+      uBend
+    );
+    upperDrip.position.set(ux, uy, -3.42);
+    upperDrip.scale.set(1.0, 1.0, 0.35);
+    caveGroup.add(upperDrip);
+  }
 
-  const rightUpperIceFingerPts: ReadonlyArray<readonly [number, number]> = [
-    [0.82, 6.02],
-    [1.36, 5.92],
-    [1.26, 4.38],
-    [1.08, 3.45],
-    [0.92, 4.22],
-  ];
-  caveGroup.add(
-    createExtrudedRockSlab(rightUpperIceFingerPts, 0.04, icicleFangMat, -3.49, 0.015)
-  );
-
-  // Bold 3D Seussian Charcoal-Black Ink Fissure Ribs across the Arch Face (`z = -3.41m`)
-  const majorStrataFissures: ReadonlyArray<ReadonlyArray<readonly [number, number]>> = [
-    // Left sweeping diagonal fissure from outer wing into cave mouth
+  // Bold 3D Seussian Charcoal-Black Ink Fissure Ribs across the Arch Face (`z = -3.40m`)
+  const majorStrataFissures: ReadonlyArray<
+    ReadonlyArray<readonly [number, number]>
+  > = [
     [
-      [-4.28, 3.65],
-      [-3.42, 3.22],
-      [-2.58, 2.52],
+      [-3.95, 3.65],
+      [-3.22, 3.22],
+      [-2.48, 2.52],
       [-1.85, 1.78],
     ],
-    // Center-top overlapping lobe crease
     [
       [-0.32, 5.72],
       [-0.18, 4.35],
       [0.12, 3.38],
       [0.72, 2.95],
-      [1.68, 2.86],
-      [2.85, 3.25],
-      [3.92, 3.88],
+      [1.62, 2.86],
+      [2.68, 3.25],
+      [3.62, 3.88],
     ],
-    // Left base mound contour
     [
-      [-5.68, 1.32],
-      [-4.62, 1.18],
-      [-3.45, 0.82],
+      [-5.00, 1.32],
+      [-4.16, 1.18],
+      [-3.25, 0.82],
       [-2.35, 0.25],
     ],
-    // Right base mound contour
     [
       [2.35, 0.22],
-      [3.18, 0.88],
-      [4.28, 1.24],
-      [5.18, 1.08],
-      [5.72, 0.38],
+      [3.08, 0.88],
+      [3.98, 1.24],
+      [4.68, 1.08],
+      [5.04, 0.38],
     ],
   ];
   for (const fissure of majorStrataFissures) {
     caveGroup.add(
-      createSeussianStrataLedge(fissure, 0.055, 0.03, -3.41, darkInkFissureMat)
+      createSeussianStrataLedge(fissure, 0.05, 0.022, -3.40, darkInkFissureMat)
     );
   }
 
   // =========================================================================
-  // 20 JAGGED TRANSLUCENT/ICE-BLUE STALACTITE & ICICLE TEETH (`z = -3.44m` & `-3.38m`)
-  // Hanging along the upper cave mouth rim (`model_1C_cave_closeup.jpg`)
+  // SCULPTED SEUSSIAN ICICLE VALANCES & FLUTED STALACTITES AROUND CAVE MOUTH
+  // (`z ∈ [-3.46m, -3.39m]`, using `createSeussianIcicleValance` & `createSculptedIcicleDrip`)
   // =========================================================================
-  const icicleSpecs: ReadonlyArray<{
+  // 1. Wavy Seussian Ice-Glaze Valance Curtains tucked along the upper cavern rim (`z = -3.45m`)
+  const archValanceSegments: ReadonlyArray<{
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly drop: number;
+    readonly fingers: number;
+    readonly rotZ: number;
+    readonly seed: number;
+  }> = [
+    { x: -1.62, y: 2.38, width: 1.05, drop: 0.42, fingers: 5, rotZ: 0.62, seed: 1 },
+    { x: -0.78, y: 3.04, width: 1.08, drop: 0.48, fingers: 6, rotZ: 0.26, seed: 2 },
+    { x: 0.08, y: 3.20, width: 1.12, drop: 0.46, fingers: 6, rotZ: -0.08, seed: 3 },
+    { x: 0.92, y: 2.94, width: 1.08, drop: 0.48, fingers: 6, rotZ: -0.34, seed: 4 },
+    { x: 1.66, y: 2.32, width: 1.02, drop: 0.40, fingers: 5, rotZ: -0.66, seed: 5 },
+  ];
+
+  for (const vSeg of archValanceSegments) {
+    const valance = createSeussianIcicleValance(
+      vSeg.width,
+      vSeg.drop,
+      vSeg.fingers,
+      icicleFangMat,
+      icicleGlazeBackMat,
+      0.036,
+      vSeg.seed
+    );
+    valance.position.set(vSeg.x, vSeg.y, -3.45);
+    valance.rotation.z = vSeg.rotZ;
+    caveGroup.add(valance);
+  }
+
+  // 2. 20 Sculpted Fluted Seussian Stalactites (`createSculptedIcicleDrip`)
+  //    Whose flared roots blend smoothly into the upper cave rock arch (`z = -3.41m`)
+  const stalactiteSpecs: ReadonlyArray<{
     readonly x: number;
     readonly topY: number;
     readonly len: number;
-    readonly halfW: number;
+    readonly topR: number;
+    readonly bend: number;
     readonly tiltZ: number;
-    readonly zPos: number;
   }> = [
-    { x: -2.06, topY: 1.74, len: 0.44, halfW: 0.09, tiltZ: 0.14, zPos: -3.44 },
-    { x: -1.86, topY: 2.04, len: 0.62, halfW: 0.11, tiltZ: 0.10, zPos: -3.38 },
-    { x: -1.64, topY: 2.34, len: 0.48, halfW: 0.09, tiltZ: 0.08, zPos: -3.44 },
-    { x: -1.42, topY: 2.58, len: 1.04, halfW: 0.15, tiltZ: 0.05, zPos: -3.38 },
-    { x: -1.18, topY: 2.78, len: 0.52, halfW: 0.10, tiltZ: 0.04, zPos: -3.44 },
-    { x: -0.96, topY: 2.94, len: 0.68, halfW: 0.12, tiltZ: 0.02, zPos: -3.38 },
-    { x: -0.74, topY: 3.06, len: 0.46, halfW: 0.09, tiltZ: -0.02, zPos: -3.44 },
-    { x: -0.52, topY: 3.16, len: 0.88, halfW: 0.16, tiltZ: 0.06, zPos: -3.38 },
-    { x: -0.28, topY: 3.21, len: 0.42, halfW: 0.09, tiltZ: -0.04, zPos: -3.44 },
-    { x: -0.04, topY: 3.23, len: 0.82, halfW: 0.15, tiltZ: -0.03, zPos: -3.38 },
-    { x: 0.20, topY: 3.20, len: 0.48, halfW: 0.09, tiltZ: 0.04, zPos: -3.44 },
-    { x: 0.44, topY: 3.14, len: 0.72, halfW: 0.13, tiltZ: -0.05, zPos: -3.38 },
-    { x: 0.68, topY: 3.06, len: 0.44, halfW: 0.09, tiltZ: -0.02, zPos: -3.44 },
-    { x: 0.90, topY: 2.92, len: 1.08, halfW: 0.14, tiltZ: -0.04, zPos: -3.38 },
-    { x: 1.12, topY: 2.76, len: 0.56, halfW: 0.11, tiltZ: -0.06, zPos: -3.44 },
-    { x: 1.34, topY: 2.58, len: 0.86, halfW: 0.12, tiltZ: -0.05, zPos: -3.38 },
-    { x: 1.56, topY: 2.38, len: 0.52, halfW: 0.10, tiltZ: -0.08, zPos: -3.44 },
-    { x: 1.76, topY: 2.14, len: 0.76, halfW: 0.12, tiltZ: -0.10, zPos: -3.38 },
-    { x: 1.94, topY: 1.88, len: 0.64, halfW: 0.11, tiltZ: -0.12, zPos: -3.44 },
-    { x: 2.10, topY: 1.58, len: 0.46, halfW: 0.09, tiltZ: -0.14, zPos: -3.38 },
+    { x: -2.06, topY: 1.76, len: 0.46, topR: 0.068, bend: 0.032, tiltZ: 0.12 },
+    { x: -1.86, topY: 2.06, len: 0.66, topR: 0.082, bend: -0.038, tiltZ: 0.09 },
+    { x: -1.64, topY: 2.36, len: 0.50, topR: 0.072, bend: 0.028, tiltZ: 0.06 },
+    { x: -1.42, topY: 2.60, len: 1.06, topR: 0.112, bend: 0.055, tiltZ: 0.04 },
+    { x: -1.18, topY: 2.80, len: 0.54, topR: 0.076, bend: -0.032, tiltZ: 0.03 },
+    { x: -0.96, topY: 2.96, len: 0.72, topR: 0.088, bend: 0.042, tiltZ: 0.02 },
+    { x: -0.74, topY: 3.08, len: 0.48, topR: 0.070, bend: -0.026, tiltZ: -0.02 },
+    { x: -0.52, topY: 3.18, len: 0.92, topR: 0.115, bend: 0.048, tiltZ: 0.05 },
+    { x: -0.28, topY: 3.22, len: 0.44, topR: 0.068, bend: -0.025, tiltZ: -0.03 },
+    { x: -0.04, topY: 3.24, len: 0.86, topR: 0.108, bend: -0.045, tiltZ: -0.02 },
+    { x: 0.20, topY: 3.21, len: 0.50, topR: 0.072, bend: 0.030, tiltZ: 0.03 },
+    { x: 0.44, topY: 3.15, len: 0.74, topR: 0.092, bend: -0.038, tiltZ: -0.04 },
+    { x: 0.68, topY: 3.07, len: 0.46, topR: 0.070, bend: 0.026, tiltZ: -0.02 },
+    { x: 0.90, topY: 2.94, len: 1.10, topR: 0.108, bend: -0.052, tiltZ: -0.04 },
+    { x: 1.12, topY: 2.78, len: 0.58, topR: 0.080, bend: 0.034, tiltZ: -0.05 },
+    { x: 1.34, topY: 2.60, len: 0.88, topR: 0.095, bend: -0.044, tiltZ: -0.05 },
+    { x: 1.56, topY: 2.40, len: 0.54, topR: 0.075, bend: 0.030, tiltZ: -0.07 },
+    { x: 1.76, topY: 2.16, len: 0.78, topR: 0.088, bend: -0.040, tiltZ: -0.09 },
+    { x: 1.94, topY: 1.90, len: 0.66, topR: 0.082, bend: 0.035, tiltZ: -0.11 },
+    { x: 2.10, topY: 1.60, len: 0.48, topR: 0.068, bend: -0.028, tiltZ: -0.12 },
   ];
 
-  for (const ic of icicleSpecs) {
-    const fangPts: ReadonlyArray<readonly [number, number]> = [
-      [ic.x - ic.halfW, ic.topY + 0.08],
-      [ic.x + ic.halfW, ic.topY + 0.08],
-      [ic.x + ic.halfW * 0.42 + ic.tiltZ * 0.2, ic.topY - ic.len * 0.52],
-      [ic.x + ic.tiltZ * 0.4, ic.topY - ic.len],
-      [ic.x - ic.halfW * 0.38 + ic.tiltZ * 0.2, ic.topY - ic.len * 0.48],
-    ];
-    const fangMesh = createExtrudedRockSlab(
-      fangPts,
-      0.032,
+  for (const st of stalactiteSpecs) {
+    const drip = createSculptedIcicleDrip(
+      st.len,
+      st.topR,
       icicleFangMat,
-      ic.zPos,
-      0.01
+      st.bend
     );
-    caveGroup.add(fangMesh);
+    drip.position.set(st.x, st.topY, -3.41);
+    drip.rotation.z = st.tiltZ;
+    drip.scale.set(1.0, 1.0, 0.52);
+    caveGroup.add(drip);
   }
 
   // =========================================================================
   // DSL & DSR SCULPTED SNOW BOULDERS & CRAGGY CAVE FLOOR OUTCROPS (`plan_1C_cave.jpg`)
+  // Carefully spaced so the Grinch (`x = -2.15m, z = -3.05m`), spyglass tripod
+  // (`x = -1.76m, z = -2.82m`), and Max's perch (`x = +2.85m, z = -3.08m`) have
+  // 100% clear floor space with zero overlap!
   // =========================================================================
-  // Inner cave mouth snow boulders seen in `model_1C_cave_vista.jpg` (`x = -2.18m`, `x = +2.12m`)
-  // Plus outer craggy floor outcrops at `x = ±2.9m, z = -3.1m` (`plan_1C_cave.jpg`)
   const floorBoulderSpecs: ReadonlyArray<{
     readonly x: number;
     readonly z: number;
@@ -1343,12 +1432,10 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     readonly rotZ: number;
     readonly mat: THREE.Material;
   }> = [
-    { x: -2.18, z: -3.02, w: 0.76, h: 0.56, rotZ: 0.06, mat: snowBoulderMat },
-    { x: 2.12, z: -3.02, w: 0.74, h: 0.54, rotZ: -0.06, mat: snowBoulderMat },
-    { x: -2.92, z: -3.14, w: 1.12, h: 0.68, rotZ: 0.11, mat: frontBaseRockMat },
-    { x: 2.92, z: -3.14, w: 1.08, h: 0.64, rotZ: -0.10, mat: frontBaseRockMat },
-    { x: -3.55, z: -3.24, w: 0.88, h: 0.48, rotZ: 0.08, mat: snowBoulderMat },
-    { x: 3.52, z: -3.24, w: 0.86, h: 0.46, rotZ: -0.08, mat: snowBoulderMat },
+    { x: -2.74, z: -3.14, w: 0.74, h: 0.56, rotZ: 0.05, mat: snowBoulderMat },
+    { x: 2.08, z: -3.04, w: 0.68, h: 0.54, rotZ: -0.05, mat: snowBoulderMat },
+    { x: -3.42, z: -3.22, w: 0.96, h: 0.66, rotZ: 0.09, mat: frontBaseRockMat },
+    { x: 3.58, z: -3.22, w: 0.92, h: 0.62, rotZ: -0.08, mat: frontBaseRockMat },
   ];
 
   for (const bSpec of floorBoulderSpecs) {
@@ -1363,15 +1450,14 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
     ];
     const boulder = createExtrudedRockSlab(
       boulderPts,
-      0.18,
+      0.14,
       bSpec.mat,
       bSpec.z,
-      0.035
+      0.025
     );
     boulder.rotation.z = bSpec.rotZ;
     caveGroup.add(boulder);
 
-    // Dark Seussian outline crest on each floor boulder (`bSpec.z + 0.22m`)
     caveGroup.add(
       createSeussianStrataLedge(
         [
@@ -1381,17 +1467,17 @@ export function buildGrinchCavePortal(rockTex: THREE.CanvasTexture): THREE.Group
           [bSpec.x + hw * 0.80, bSpec.h * 0.70],
         ],
         0.026,
-        0.025,
-        bSpec.z + 0.22,
+        0.02,
+        bSpec.z + 0.17,
         darkInkFissureMat
       )
     );
   }
 
-  // Grinch Cave Props & Outcrop Details (Spyglass/Listening Horn, Scrap Pipes, Max's Perch)
+  // Grinch Character, Spyglass/Listening Horn, Scrap Pipes, and Max on his Rocky Perch
   caveGroup.add(buildGrinchCaveSideDetails(frontBaseRockMat, snowBoulderMat));
 
-  // Forced-Perspective Distant Whoville Vista (`z = -5.4m`)
+  // Forced-Perspective Distant Whoville Vista (`z ∈ [-5.88m, -5.05m]`)
   caveGroup.add(buildDistantWhovilleVista(rockTex));
 
   caveGroup.visible = false;
@@ -1420,13 +1506,11 @@ function createUndulatingMylarStreamer(
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
       const vy = pos.getY(i);
-      // Normalized vertical coordinate from 0 (top batten) to 1 (stage floor)
       const normY = 0.5 - vy / height;
       const waveZ =
         Math.sin(vy * freqY + phaseOffset) * ampZ +
         Math.cos(vy * (freqY * 2.1) - phaseOffset * 1.4) * (ampZ * 0.42);
       const swayX = Math.sin(vy * 1.6 + phaseOffset * 0.8) * ampX * normY;
-      // Slight ribbon twist around its vertical axis so left and right edges catch different light angles
       const twistAngle = Math.sin(vy * 2.4 + phaseOffset) * 0.36;
       const twistedX = vx * Math.cos(twistAngle) + swayX;
       const twistedZ = vx * Math.sin(twistAngle) + waveZ;
@@ -1444,9 +1528,9 @@ function createUndulatingMylarStreamer(
 }
 
 /**
- * Builds the Lineset #19 (`13'-2"`, `z = -4.15m`) Metallic Mylar Streamer Curtain
+ * Builds the Lineset #19 (`13'-2"`, `z ∈ [-4.26m, -4.10m]`) Metallic Mylar Streamer Curtain
  * (`grinch-mylar-curtain`, `width = 7.4m, height = 4.6m`) with a dark backing drape
- * at `z = -4.26m` and 56+ individual undulating reflective gold, champagne,
+ * at `z = -4.26m` and 80 individual undulating reflective gold, champagne,
  * silver-chrome, and icy-blue metallic streamer ribbons (`model_1C_cave_mylar.jpg`).
  */
 export function buildGrinchMylarCurtain(): THREE.Group {
@@ -1487,7 +1571,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
 
   // 2. Reflective Metallic Mylar Foil Materials (Gold, Champagne, Silver-Chrome, Icy-Blue, Bronze-Gold)
   const mylarPalette: ReadonlyArray<THREE.MeshStandardMaterial> = [
-    // Bright Metallic Gold
     new THREE.MeshStandardMaterial({
       color: 0xffd468,
       emissive: 0x7a5014,
@@ -1496,7 +1579,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
       metalness: 0.94,
       side: THREE.DoubleSide,
     }),
-    // Warm Champagne Foil
     new THREE.MeshStandardMaterial({
       color: 0xecd6b2,
       emissive: 0x5c4422,
@@ -1505,7 +1587,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
       metalness: 0.93,
       side: THREE.DoubleSide,
     }),
-    // Mirror Silver-Chrome
     new THREE.MeshStandardMaterial({
       color: 0xd6e0ec,
       emissive: 0x384658,
@@ -1514,7 +1595,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
       metalness: 0.96,
       side: THREE.DoubleSide,
     }),
-    // Icy-Blue Metallic
     new THREE.MeshStandardMaterial({
       color: 0x9ac4ec,
       emissive: 0x224068,
@@ -1523,7 +1603,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
       metalness: 0.92,
       side: THREE.DoubleSide,
     }),
-    // Rich Amber-Bronze Gold
     new THREE.MeshStandardMaterial({
       color: 0xf2aa46,
       emissive: 0x6a380e,
@@ -1541,7 +1620,6 @@ export function buildGrinchMylarCurtain(): THREE.Group {
 
   for (let i = 0; i < primaryRibbonCount; i++) {
     const xPos = (i - (primaryRibbonCount - 1) * 0.5) * stepX;
-    // Alternate between z = -4.20m and z = -4.16m (0.04m stagger so neighboring ribbons never z-fight)
     const zPos = i % 2 === 0 ? -4.20 : -4.16;
     const mat = mylarPalette[i % mylarPalette.length] ?? mylarPalette[0]!;
     const ribbonWidth = 0.125 + (i % 3) * 0.015;
@@ -1553,7 +1631,7 @@ export function buildGrinchMylarCurtain(): THREE.Group {
       curtainHeight - 0.06,
       phase,
       freqY,
-      0.014,
+      0.012,
       0.018,
       mat
     );
@@ -1567,19 +1645,19 @@ export function buildGrinchMylarCurtain(): THREE.Group {
   const frontRibbonCount = 24;
   for (let j = 0; j < frontRibbonCount; j++) {
     const fx = (j - (frontRibbonCount - 1) * 0.5) * 0.22;
-    const mat = mylarPalette[(j * 2 + 1) % mylarPalette.length] ?? mylarPalette[0]!;
+    const mat =
+      mylarPalette[(j * 2 + 1) % mylarPalette.length] ?? mylarPalette[0]!;
     const frontStreamer = createUndulatingMylarStreamer(
       0.095,
       curtainHeight - 0.08,
       j * 1.37 + 0.5,
       3.1 + (j % 3) * 0.4,
-      0.016,
+      0.012,
       0.022,
       mat
     );
     frontStreamer.position.set(fx, centerY - 0.02, -4.12);
     frontStreamer.rotation.y = ((j * 3) % 5 - 2) * 0.11;
-    // Slight diagonal splay on a few right-side ribbons matching `model_1C_cave_mylar.jpg`
     if (j >= 16 && j <= 21) {
       frontStreamer.rotation.z = (j % 2 === 0 ? 1 : -1) * 0.14;
     }

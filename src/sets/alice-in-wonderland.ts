@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import {
   createProsceniumCheckerTexture,
   createQuiltedDiamondTexture,
+  drawSeussianDisplayText,
 } from '../engine/procedural-textures.ts';
 import { PROSCENIUM_HEIGHT_M, PROSCENIUM_WIDTH_M } from '../theatre/seating-layout.ts';
 import { createHumanScaleFigure } from './shared-scenic-helpers.ts';
@@ -10,7 +11,7 @@ import type { ProductionSetBuilderContext, ProductionSetModule } from './types.t
 
 /**
  * Generates a whimsical oversized Wonderland pocket-watch clock face texture
- * with Roman numerals, "TWO DAYS SLOW" inscription, and bent hands.
+ * using bold display typography and ornamental vector hands.
  */
 function createWonderlandPocketWatchTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -19,7 +20,11 @@ function createWonderlandPocketWatchTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    ctx.fillStyle = '#fdf8e8';
+    const bg = ctx.createRadialGradient(128, 128, 12, 128, 128, 122);
+    bg.addColorStop(0, '#fffdf4');
+    bg.addColorStop(0.75, '#f8ecc8');
+    bg.addColorStop(1, '#e2c478');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, 256, 256);
 
     ctx.strokeStyle = '#c89628';
@@ -28,43 +33,90 @@ function createWonderlandPocketWatchTexture(): THREE.CanvasTexture {
     ctx.arc(128, 128, 118, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = '#221c28';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#221832';
+    ctx.lineWidth = 3.5;
     ctx.beginPath();
     ctx.arc(128, 128, 102, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Hour numerals around the dial
-    const numerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-    ctx.fillStyle = '#1e1628';
-    ctx.font = 'bold 20px Georgia, serif';
+    // Whimsical display hour numerals around the dial
+    const numerals = ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
+    ctx.fillStyle = '#241438';
+    ctx.font = '900 22px "Fredoka", "Luckiest Guy", "Arial Black", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     numerals.forEach((num, idx) => {
       const ang = (idx / 12) * Math.PI * 2 - Math.PI / 2;
-      const nx = 128 + Math.cos(ang) * 84;
-      const ny = 128 + Math.sin(ang) * 84;
+      const nx = 128 + Math.cos(ang) * 82;
+      const ny = 128 + Math.sin(ang) * 82;
       ctx.fillText(num, nx, ny);
     });
 
-    // Perpetual 6 o'clock Tea-Time hands!
-    ctx.strokeStyle = '#1a1424';
-    ctx.lineWidth = 6;
+    drawSeussianDisplayText(ctx, 'TEA TIME', 128, 92, {
+      fontSize: 16,
+      fillTopColor: '#ff4081',
+      fillBottomColor: '#b81448',
+      outlineColor: '#1e1028',
+      bounceAmp: 1.2,
+      tiltAmp: 0.06,
+      letterSpacing: 10,
+    });
+
+    // Perpetual 6 o'clock Tea-Time ornate hands
+    ctx.strokeStyle = '#1a1228';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 6.5;
     ctx.beginPath();
     ctx.moveTo(128, 128);
-    ctx.lineTo(128, 182); // Hour hand at 6
+    ctx.lineTo(128, 184); // Hour hand at 6
     ctx.stroke();
 
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 4.5;
     ctx.beginPath();
     ctx.moveTo(128, 128);
-    ctx.lineTo(128, 52); // Minute hand at 12
+    ctx.lineTo(128, 50); // Minute hand at 12
     ctx.stroke();
 
-    ctx.fillStyle = '#c82432';
+    ctx.fillStyle = '#d41e36';
     ctx.beginPath();
-    ctx.arc(128, 128, 8, 0, Math.PI * 2);
+    ctx.arc(128, 128, 8.5, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates the Mad Hatter's iconic "IN THIS STYLE 10/6" hatband price tag texture
+ * using bold custom Seussian/Wonderland display typography.
+ */
+function createHatterPriceCardTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    ctx.fillStyle = '#fbf6e6';
+    ctx.fillRect(0, 0, 256, 256);
+
+    ctx.strokeStyle = '#24182e';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(8, 8, 240, 240);
+
+    drawSeussianDisplayText(ctx, '10/6', 128, 138, {
+      fontSize: 82,
+      fillTopColor: '#2c1838',
+      fillBottomColor: '#140a1c',
+      bevelHighlightColor: 'rgba(255, 240, 200, 0.45)',
+      outlineColor: '#fbf6e6',
+      shadowColor: '#c8b898',
+      bounceAmp: 3,
+      tiltAmp: 0.08,
+      letterSpacing: 46,
+    });
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -272,6 +324,19 @@ function buildCrookedUnbirthdayCake(
 }
 
 /**
+ * Helper to create a curved padded armrest tube at a given X offset.
+ */
+function createArmrestTubeGeometry(xOffset: number): THREE.TubeGeometry {
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(xOffset, 0.68, -0.20),
+    new THREE.Vector3(xOffset * 1.08, 0.72, 0.0),
+    new THREE.Vector3(xOffset * 1.04, 0.66, 0.20),
+    new THREE.Vector3(xOffset, 0.48, 0.21),
+  ]);
+  return new THREE.TubeGeometry(curve, 12, 0.038, 8, false);
+}
+
+/**
  * Builds a mismatched crooked Wonderland chair (either the Mad Hatter's towering high-back
  * velvet throne armchair or one of the 4 quirky tea-party guest chairs).
  */
@@ -387,19 +452,6 @@ function buildWonderlandChair(
 
   chair.add(backGroup);
   return chair;
-}
-
-/**
- * Helper to create a curved padded armrest tube at a given X offset.
- */
-function createArmrestTubeGeometry(xOffset: number): THREE.TubeGeometry {
-  const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(xOffset, 0.68, -0.20),
-    new THREE.Vector3(xOffset * 1.08, 0.72, 0.0),
-    new THREE.Vector3(xOffset * 1.04, 0.66, 0.20),
-    new THREE.Vector3(xOffset, 0.48, 0.21),
-  ]);
-  return new THREE.TubeGeometry(curve, 12, 0.038, 8, false);
 }
 
 /**
@@ -1014,7 +1066,7 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       }
     }
 
-    // 2b. White Damask Table Skirt (y ∈ [0.16, 0.78], raised slightly at bottom to reveal cabriole feet)
+    // 2b. White Damask Table Skirt (x ∈ [-1.42, 1.42], z ∈ [-0.45, 0.45])
     const whiteSkirt = new THREE.Mesh(
       new RoundedBoxGeometry(2.84, 0.62, 0.90, 2, 0.03),
       whiteDamaskMat
@@ -1037,7 +1089,7 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       teaTableGroup.add(scallop);
     }
 
-    // 2c. Rich Crimson Velvet Over-Drape Runner with Scalloped Gold Bullion Trim (y = 0.70, width 2.98, depth 1.00)
+    // 2c. Rich Crimson Velvet Over-Drape Runner with Scalloped Gold Bullion Trim (x ∈ [-1.49, 1.49], z ∈ [-0.50, 0.50])
     const redRunner = new THREE.Mesh(
       new RoundedBoxGeometry(2.98, 0.32, 1.00, 2, 0.04),
       swagMat
@@ -1058,7 +1110,7 @@ export const aliceInWonderlandSet: ProductionSetModule = {
     }
 
     // 2d. Towering Mismatched High-Back Velvet Throne for Mad Hatter + 4 Crooked Wonderland Chairs
-    // Mad Hatter's oversized purple & gold tufted wingback throne at Stage-Left head of table
+    //     Positioned cleanly outside the cast standing positions so there is zero chair/character intersection!
     const hatterThrone = buildWonderlandChair(
       1.38,
       0x68246e,
@@ -1067,11 +1119,11 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       true,
       -0.14
     );
-    hatterThrone.position.set(1.58, 0, -0.18);
-    hatterThrone.rotation.y = -1.15;
+    hatterThrone.position.set(2.14, 0, 0.08);
+    hatterThrone.rotation.y = -1.25;
     teaTableGroup.add(hatterThrone);
 
-    // Alice's royal-blue crooked armchair at Stage-Right head of table
+    // Alice's royal-blue crooked armchair at Stage-Right head of table (behind Alice at x = -1.72)
     const aliceChair = buildWonderlandChair(
       0.86,
       0x246eb8,
@@ -1080,15 +1132,15 @@ export const aliceInWonderlandSet: ProductionSetModule = {
       false,
       0.12
     );
-    aliceChair.position.set(-1.62, 0, 0.06);
+    aliceChair.position.set(-2.12, 0, 0.08);
     aliceChair.rotation.y = 1.25;
     teaTableGroup.add(aliceChair);
 
-    // 3 Crooked Upstage Chairs for March Hare, Dormouse, and White Rabbit
+    // 3 Crooked Upstage Chairs pushed back to z = -0.94m (behind March Hare, Dormouse & White Rabbit at z = -0.58m)
     const upstageChairs = [
-      { x: -0.82, z: -0.72, rotY: 0.14, h: 1.08, uph: 0x1e8278, frm: 0x5c3422, tilt: 0.16 },
-      { x: -0.12, z: -0.70, rotY: -0.08, h: 0.74, uph: 0xc83248, frm: 0xd8a428, tilt: -0.11 },
-      { x: 0.58, z: -0.72, rotY: -0.18, h: 1.02, uph: 0x8ea824, frm: 0x4a2c1d, tilt: 0.15 },
+      { x: -0.82, z: -0.94, rotY: 0.14, h: 1.08, uph: 0x1e8278, frm: 0x5c3422, tilt: 0.16 },
+      { x: -0.12, z: -0.94, rotY: -0.08, h: 0.74, uph: 0xc83248, frm: 0xd8a428, tilt: -0.11 },
+      { x: 0.58, z: -0.94, rotY: -0.18, h: 1.02, uph: 0x8ea824, frm: 0x4a2c1d, tilt: 0.15 },
     ] as const;
     for (const uc of upstageChairs) {
       const ch = buildWonderlandChair(
@@ -1308,8 +1360,9 @@ export const aliceInWonderlandSet: ProductionSetModule = {
     }
 
     // ========================================================================
-    // 3. CAST BLOCKING FIGURES AROUND THE TABLE
+    // 3. EXPRESSIVE CAST BLOCKING FIGURES AROUND THE TABLE
     //    (Alice, March Hare, Dormouse, White Rabbit, Mad Hatter — 'alice-characters')
+    //    Positioned cleanly between the table perimeter and the 5 Wonderland chairs!
     // ========================================================================
     const aliceCastGroup = new THREE.Group();
     aliceCastGroup.position.copy(teaTableGroup.position);
@@ -1317,58 +1370,70 @@ export const aliceInWonderlandSet: ProductionSetModule = {
     aliceGroup.add(aliceCastGroup);
     registerElement('alice-characters', aliceCastGroup);
 
-    // Alice (Stage Right end of table, sky-blue dress + white pinafore apron + black hair ribbon)
-    const aliceFig = createHumanScaleFigure(1.36, 0x62b4f5);
-    aliceFig.position.set(-1.38, 0, 0.05);
-    aliceFig.rotation.y = 0.45;
-    const pinaforeApron = new THREE.Mesh(
-      new RoundedBoxGeometry(0.28, 0.44, 0.04, 1, 0.01),
-      whiteDamaskMat
-    );
-    pinaforeApron.position.set(0, 0.78, 0.095);
-    aliceFig.add(pinaforeApron);
+    // 1. Alice (Stage-Right table end at x = -1.72, z = 0.08, between table x = -1.49 and chair x = -2.12)
+    const aliceFig = createHumanScaleFigure(1.38, 0x4aa8f0, 0, 0, false, {
+      hasApron: true,
+      hairColorHex: 0xf4d048,
+      trimColorHex: 0xffffff,
+      pantsColorHex: 0xf5f5fa,
+      armPose: 'presenting',
+    });
+    aliceFig.position.set(-1.72, 0, 0.08);
+    aliceFig.rotation.y = 0.55;
     aliceCastGroup.add(aliceFig);
 
-    // March Hare (Upstage Right-Center, maroon coat + tall crooked ears + bow tie)
-    const hareFig = createHumanScaleFigure(1.68, 0x9c4252, 0, 0, true);
-    hareFig.position.set(-0.78, 0, -0.48);
+    // 2. March Hare (Upstage Right at x = -0.82, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    const hareFig = createHumanScaleFigure(1.68, 0x9c4252, 0, 0, true, {
+      hairColorHex: 0x8c4a28,
+      pantsColorHex: 0x3b2328,
+      trimColorHex: 0xf5d468,
+      armPose: 'cheering',
+    });
+    hareFig.position.set(-0.82, 0, -0.60);
+    hareFig.rotation.y = 0.12;
     aliceCastGroup.add(hareFig);
 
-    // Dormouse (Upstage Center, warm russet coat + round mouse ears)
-    const dormouseFig = createHumanScaleFigure(1.42, 0xd85c2a, 0.18, 0xc43c24);
-    dormouseFig.position.set(-0.12, 0, -0.46);
+    // 3. Dormouse (Upstage Center at x = -0.12, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    const dormouseFig = createHumanScaleFigure(1.42, 0xd85c2a, 0.18, 0xc43c24, false, {
+      hairColorHex: 0x6e3b1e,
+      pantsColorHex: 0x422618,
+      trimColorHex: 0xf5e6c8,
+      armPose: 'relaxed',
+    });
+    dormouseFig.position.set(-0.12, 0, -0.60);
     aliceCastGroup.add(dormouseFig);
 
-    // White Rabbit (Upstage Left-Center, cream coat + tall rabbit ears + crimson royal heraldic tabard)
-    const rabbitFig = createHumanScaleFigure(1.62, 0xded8ce, 0, 0, true);
-    rabbitFig.position.set(0.54, 0, -0.48);
-    const royalTabard = new THREE.Mesh(
-      new RoundedBoxGeometry(0.32, 0.48, 0.04, 1, 0.01),
-      new THREE.MeshStandardMaterial({ color: 0xb81d2c, roughness: 0.45 })
-    );
-    royalTabard.position.set(0, 0.94, 0.115);
-    rabbitFig.add(royalTabard);
+    // 4. White Rabbit (Upstage Left at x = 0.58, z = -0.60, between table z = -0.50 and chair z = -0.94)
+    const rabbitFig = createHumanScaleFigure(1.62, 0xc81e2e, 0, 0, true, {
+      hairColorHex: 0xf5f2eb,
+      pantsColorHex: 0xded8ce,
+      trimColorHex: 0xf5c842,
+      armPose: 'presenting',
+    });
+    rabbitFig.position.set(0.58, 0, -0.60);
+    rabbitFig.rotation.y = -0.14;
     aliceCastGroup.add(rabbitFig);
 
-    // Mad Hatter (Stage Left head of table, striped amber coat + towering tilted gold top hat with "10/6" card)
-    const hatterFig = createHumanScaleFigure(1.78, 0xd88a28, 0.52, 0xe8b928);
-    hatterFig.position.set(1.26, 0, -0.25);
-    hatterFig.rotation.y = -0.35;
+    // 5. Mad Hatter (Stage-Left table head at x = 1.72, z = 0.08, between table x = +1.49 and throne x = +2.14)
+    const hatterFig = createHumanScaleFigure(1.78, 0xd88a28, 0.46, 0xe8b928, false, {
+      hairColorHex: 0xe85c24,
+      pantsColorHex: 0x48245c,
+      trimColorHex: 0xff4081,
+      armPose: 'presenting',
+    });
+    hatterFig.position.set(1.72, 0, 0.08);
+    hatterFig.rotation.y = -0.55;
 
+    // Custom hand-lettered "10/6" price card tucked into the Hatter's top hat band
+    const hatPriceCardTex = createHatterPriceCardTexture();
     const hatPriceCard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, 0.14, 0.015),
-      whiteDamaskMat
+      new THREE.BoxGeometry(0.12, 0.14, 0.016),
+      new THREE.MeshBasicMaterial({ map: hatPriceCardTex })
     );
-    hatPriceCard.position.set(0.16, 1.98, 0.08);
-    hatPriceCard.rotation.z = -0.24;
+    hatPriceCard.position.set(0.15, 1.92, 0.09);
+    hatPriceCard.rotation.z = -0.22;
     hatterFig.add(hatPriceCard);
 
-    const hatterBowTie = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.09, 0.04),
-      new THREE.MeshStandardMaterial({ color: 0xd81b60, roughness: 0.45 })
-    );
-    hatterBowTie.position.set(0, 1.48, 0.135);
-    hatterFig.add(hatterBowTie);
     aliceCastGroup.add(hatterFig);
 
     return aliceGroup;

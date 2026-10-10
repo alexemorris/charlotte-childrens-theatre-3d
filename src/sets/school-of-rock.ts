@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { drawSeussianDisplayText } from '../engine/procedural-textures.ts';
 import { createHumanScaleFigure } from './shared-scenic-helpers.ts';
 import type { ProductionSetBuilderContext, ProductionSetModule } from './types.ts';
 
 /**
  * Generates a high-detail procedural drumhead texture with the iconic
- * "SCHOOL OF ROCK" crest and stage-authentic "Roland" bottom logo.
+ * "SCHOOL OF ROCK" crest and stage-authentic "ROLAND" bottom logo using
+ * bold custom display typography.
  */
 function createDrumheadLogoTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -14,7 +16,7 @@ function createDrumheadLogoTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    ctx.fillStyle = '#12141a';
+    ctx.fillStyle = '#101218';
     ctx.fillRect(0, 0, 512, 512);
 
     // Outer silver tension rim & crimson pinstripe
@@ -24,41 +26,67 @@ function createDrumheadLogoTexture(): THREE.CanvasTexture {
     ctx.arc(256, 256, 238, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = '#d42030';
+    ctx.strokeStyle = '#e01e32';
     ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.arc(256, 256, 214, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Shield emblem in center
-    ctx.fillStyle = '#9e1b28';
+    // Heraldic rock shield emblem in center
+    const shieldGrad = ctx.createLinearGradient(156, 118, 356, 365);
+    shieldGrad.addColorStop(0, '#c81e2e');
+    shieldGrad.addColorStop(0.5, '#8e1420');
+    shieldGrad.addColorStop(1, '#580a12');
+    ctx.fillStyle = shieldGrad;
     ctx.beginPath();
-    ctx.moveTo(156, 130);
-    ctx.lineTo(356, 130);
-    ctx.lineTo(344, 260);
-    ctx.quadraticCurveTo(256, 355, 256, 365);
-    ctx.quadraticCurveTo(256, 355, 168, 260);
+    ctx.moveTo(148, 122);
+    ctx.lineTo(364, 122);
+    ctx.lineTo(350, 262);
+    ctx.quadraticCurveTo(256, 358, 256, 372);
+    ctx.quadraticCurveTo(256, 358, 162, 262);
     ctx.closePath();
     ctx.fill();
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     ctx.strokeStyle = '#f5c842';
     ctx.stroke();
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 44px Impact, sans-serif';
+    // Custom extruded 3D display typography
+    drawSeussianDisplayText(ctx, 'SCHOOL', 256, 178, {
+      fontSize: 44,
+      fillTopColor: '#ffffff',
+      fillBottomColor: '#dce6f5',
+      outlineColor: '#12080c',
+      shadowColor: '#080406',
+      bounceAmp: 1.5,
+      tiltAmp: 0.04,
+      letterSpacing: 26,
+    });
+    drawSeussianDisplayText(ctx, 'OF', 256, 226, {
+      fontSize: 30,
+      fillTopColor: '#ffe568',
+      fillBottomColor: '#e5a424',
+      outlineColor: '#1a0c06',
+      shadowColor: '#0c0602',
+      bounceAmp: 1.0,
+      tiltAmp: 0.03,
+      letterSpacing: 20,
+    });
+    drawSeussianDisplayText(ctx, 'ROCK', 256, 276, {
+      fontSize: 54,
+      fillTopColor: '#ffffff',
+      fillBottomColor: '#f8d048',
+      outlineColor: '#12080c',
+      shadowColor: '#080406',
+      bounceAmp: 2.0,
+      tiltAmp: 0.05,
+      letterSpacing: 34,
+    });
+
+    ctx.fillStyle = '#d8e0ee';
+    ctx.font = '900 28px "Space Grotesk", "Arial Black", Impact, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('SCHOOL', 256, 190);
-    ctx.fillStyle = '#f5c842';
-    ctx.font = 'bold 30px Georgia, serif';
-    ctx.fillText('OF', 256, 232);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px Impact, sans-serif';
-    ctx.fillText('ROCK', 256, 276);
-
-    ctx.fillStyle = '#cfd8e6';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText('ROLAND', 256, 405);
+    ctx.fillText('ROLAND', 256, 412);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -67,7 +95,8 @@ function createDrumheadLogoTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Generates an illuminated "BATTLE OF THE BANDS" rock concert marquee banner texture.
+ * Generates an illuminated "BATTLE OF THE BANDS" rock concert marquee banner texture
+ * with 3D extruded bevel typography, neon glow outlines, and rock lightning bolts.
  */
 function createBattleOfTheBandsMarqueeTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -77,9 +106,9 @@ function createBattleOfTheBandsMarqueeTexture(): THREE.CanvasTexture {
 
   if (ctx) {
     const grad = ctx.createLinearGradient(0, 0, 1024, 256);
-    grad.addColorStop(0, '#180828');
-    grad.addColorStop(0.5, '#3a0c4e');
-    grad.addColorStop(1, '#180828');
+    grad.addColorStop(0, '#140624');
+    grad.addColorStop(0.5, '#3d0c54');
+    grad.addColorStop(1, '#140624');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 256);
 
@@ -103,33 +132,82 @@ function createBattleOfTheBandsMarqueeTexture(): THREE.CanvasTexture {
 
     // Rock lightning bolts on left and right
     ctx.fillStyle = '#00e5ff';
-    for (const sideX of [95, 929]) {
+    for (const sideX of [86, 938]) {
       ctx.beginPath();
-      ctx.moveTo(sideX + 12, 52);
-      ctx.lineTo(sideX - 22, 132);
-      ctx.lineTo(sideX + 4, 132);
-      ctx.lineTo(sideX - 16, 204);
-      ctx.lineTo(sideX + 28, 116);
-      ctx.lineTo(sideX + 2, 116);
+      ctx.moveTo(sideX + 12, 48);
+      ctx.lineTo(sideX - 24, 130);
+      ctx.lineTo(sideX + 4, 130);
+      ctx.lineTo(sideX - 16, 206);
+      ctx.lineTo(sideX + 28, 114);
+      ctx.lineTo(sideX + 2, 114);
       ctx.closePath();
       ctx.fill();
     }
 
-    // Glowing marquee title text
-    ctx.save();
-    ctx.shadowColor = '#ff1e68';
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = '#ffe066';
-    ctx.font = 'bold 68px Impact, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('BATTLE OF THE BANDS', 512, 112);
-    ctx.restore();
+    // 3D extruded bevel display headline
+    drawSeussianDisplayText(ctx, 'BATTLE OF THE BANDS', 512, 106, {
+      fontSize: 56,
+      fillTopColor: '#fff278',
+      fillBottomColor: '#ff8c24',
+      bevelHighlightColor: 'rgba(255, 255, 240, 0.85)',
+      outlineColor: '#28062e',
+      shadowColor: '#120218',
+      bounceAmp: 2.2,
+      tiltAmp: 0.04,
+      letterSpacing: 33,
+    });
 
     ctx.fillStyle = '#70f0ff';
-    ctx.font = 'bold 26px sans-serif';
+    ctx.font = '800 24px "Space Grotesk", "Fredoka", "Arial Black", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('★ LIVE AT THE PALACE THEATRE · FINALS ★', 512, 186);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★ LIVE AT THE PALACE THEATRE · FINALS ★', 512, 190);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates an embossed brass & enamel Horace Green Prep School crest texture.
+ */
+function createHoraceGreenCrestTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    ctx.fillStyle = '#182b49';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Quadrant fills (crimson & navy)
+    ctx.fillStyle = '#9e1b28';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillRect(128, 128, 128, 128);
+
+    // Gold heraldic cross
+    ctx.fillStyle = '#f2c444';
+    ctx.fillRect(116, 0, 24, 256);
+    ctx.fillRect(0, 116, 256, 24);
+
+    drawSeussianDisplayText(ctx, 'H', 64, 68, {
+      fontSize: 64,
+      fillTopColor: '#fff6c8',
+      fillBottomColor: '#d89e24',
+      outlineColor: '#1a0c06',
+      bounceAmp: 0,
+      tiltAmp: 0,
+    });
+    drawSeussianDisplayText(ctx, 'G', 192, 188, {
+      fontSize: 64,
+      fillTopColor: '#fff6c8',
+      fillBottomColor: '#d89e24',
+      outlineColor: '#1a0c06',
+      bounceAmp: 0,
+      tiltAmp: 0,
+    });
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -542,9 +620,12 @@ function buildTrophyAndBookCabinet(
 }
 
 /**
- * Builds the brass Horace Green Prep School heraldic shield plaque.
+ * Builds the brass Horace Green Prep School heraldic shield plaque with custom graphic crest face.
  */
-function buildHoraceGreenCrestPlaque(brassMat: THREE.Material): THREE.Group {
+function buildHoraceGreenCrestPlaque(
+  brassMat: THREE.Material,
+  crestFaceMat: THREE.Material
+): THREE.Group {
   const crest = new THREE.Group();
 
   // Outer ornate brass shield backing
@@ -555,29 +636,13 @@ function buildHoraceGreenCrestPlaque(brassMat: THREE.Material): THREE.Group {
   outerShield.rotation.x = Math.PI / 2;
   crest.add(outerShield);
 
-  // Recessed crimson & navy heraldic face (stepped +0.035m forward)
+  // Recessed crimson & navy heraldic face (stepped +0.04m forward)
   const innerFace = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.29, 0.19, 0.04, 6),
-    new THREE.MeshStandardMaterial({ color: 0x8e1b26, roughness: 0.45 })
+    new THREE.CircleGeometry(0.24, 6),
+    crestFaceMat
   );
-  innerFace.rotation.x = Math.PI / 2;
-  innerFace.position.z = 0.035;
+  innerFace.position.z = 0.04;
   crest.add(innerFace);
-
-  // Raised brass cross dividers (stepped +0.07m forward)
-  const crossH = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.045, 0.03),
-    brassMat
-  );
-  crossH.position.set(0, 0.02, 0.07);
-  crest.add(crossH);
-
-  const crossV = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, 0.46, 0.03),
-    brassMat
-  );
-  crossV.position.set(0, 0, 0.07);
-  crest.add(crossV);
 
   // Lower motto ribbon bar
   const ribbon = new THREE.Mesh(
@@ -961,9 +1026,9 @@ export const schoolOfRockSet: ProductionSetModule = {
     playwrightOrComposer: 'Andrew Lloyd Webber, Glenn Slater & Julian Fellowes · CTC Mainstage',
     ageRecommendation: 'Ages 6+ · Rock Musical Mainstage',
     description:
-      'Recreated directly from your two McColl Family Theatre production photos: 4 vertical silver box-truss concert towers, angled Horace Green chalkboard doorway walls with fluted walnut pilasters & trophy cabinets, painted tartan plaid & "H G" crest stage floor, stepped pyramid wall of 24 rock speaker cabinets, flyable center chalkboard with teacher & student desks, Marshall/Ampeg backline, and full multi-piece drum kit.',
+      'Recreated directly from your two McColl Family Theatre production photos: 4 vertical silver box-truss concert towers, angled Horace Green chalkboard doorway walls with fluted walnut pilasters & trophy cabinets, painted tartan plaid & "H G" crest stage floor, stepped pyramid wall of 24 rock speaker cabinets, flyable center chalkboard with classroom desks, Marshall/Ampeg backline, and full multi-piece drum kit.',
     scenicNotes:
-      'Use the Line 3 Batten slider (or toggle "Center Classroom Chalkboard") to fly out the Horace Green classroom wall and reveal the 5.4m Battle of the Bands speaker stack pyramid. Check House Left/Right Wing sightlines past the 4 vertical truss towers.',
+      'Use the Line 3 Batten slider (or toggle "Center Classroom Chalkboard") to fly out the Horace Green classroom wall and classroom desks, revealing the 5.4m Battle of the Bands speaker stack pyramid and open concert stage. Check House Left/Right Wing sightlines past the 4 vertical truss towers.',
     cycTopColor: 0x160a2c,
     cycBottomColor: 0x3b0f4c,
     stageWashColor: 0xffd8e8,
@@ -994,18 +1059,18 @@ export const schoolOfRockSet: ProductionSetModule = {
       },
       {
         id: 'sor-center-chalkboard-fly',
-        name: 'Flyable Center Classroom Chalkboard (Fly Line 3)',
+        name: 'Flyable Center Classroom Chalkboard & Desks (Line 3)',
         category: 'fly-rig',
         battenLine: 3,
         defaultVisible: false,
-        dimensionsLabel: '4.9m W × 3.5m H (Toggle for Classroom)',
+        dimensionsLabel: '4.9m W × 3.5m H + 6 Student Desks',
       },
       {
         id: 'sor-band-risers-and-cast',
         name: 'Dewey Finn, Drum/Keys Risers, Road Cases & Monitors',
         category: 'blocking',
         defaultVisible: true,
-        dimensionsLabel: 'Full Band + Desks + Road Cases + 4 Wedges',
+        dimensionsLabel: 'Full Band + Road Cases + 4 Wedges',
       },
       {
         id: 'sor-plaid-crest-floor',
@@ -1030,7 +1095,7 @@ export const schoolOfRockSet: ProductionSetModule = {
         title: 'Horace Green Prep School Classroom',
         actLabel: 'Act I · Scene 2 (Classroom)',
         synopsis:
-          'Center Classroom Chalkboard wall (Line 3) flies in to enclose the Horace Green Prep School classroom with cherry-wood wainscoting, fluted pilasters, trophy cabinets, student desks, teacher pedestal desk, and the "H G" school crest floor.',
+          'Center Classroom Chalkboard wall (Line 3) flies in with the 6 student desks and teacher pedestal desk to enclose the Horace Green Prep School classroom with cherry-wood wainscoting, fluted pilasters, trophy cabinets, and the "H G" school crest floor.',
         visibleElementIds: [
           'sor-classroom-wing-walls',
           'sor-center-chalkboard-fly',
@@ -1102,7 +1167,7 @@ export const schoolOfRockSet: ProductionSetModule = {
         title: 'Battle of the Bands Concert Finale',
         actLabel: 'Act II · Finale ("Teacher\'s Pet")',
         synopsis:
-          'Full concert rig active: Center chalkboard flies completely out to reveal the 24-cabinet speaker stack pyramid, 4 glowing aluminum box-truss towers, 8 moving-head beam fixtures, "BATTLE OF THE BANDS" marquee, road cases, and rolling band risers.',
+          'Full concert rig active: Center chalkboard & classroom desks clear out completely to reveal the 24-cabinet speaker stack pyramid, 4 glowing aluminum box-truss towers, 8 moving-head beam fixtures, "BATTLE OF THE BANDS" marquee, road cases, and rolling band risers.',
         visibleElementIds: [
           'sor-truss-towers',
           'sor-classroom-wing-walls',
@@ -1147,6 +1212,11 @@ export const schoolOfRockSet: ProductionSetModule = {
       color: 0xe6b84c,
       roughness: 0.25,
       metalness: 0.85,
+    });
+    const crestFaceMat = new THREE.MeshStandardMaterial({
+      map: createHoraceGreenCrestTexture(),
+      roughness: 0.35,
+      metalness: 0.2,
     });
     const aluEdgeMat = new THREE.MeshStandardMaterial({
       color: 0xd0d6e0,
@@ -1249,7 +1319,7 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     // Overhead Upstage Concert Box-Truss Bridge with full 3D diagonal webbing
     const upstageBridge = buildHorizontalBoxTrussSpan(6.4);
-    upstageBridge.position.set(0, 5.85, -4.2);
+    upstageBridge.position.set(0, 5.85, -4.45);
     trussGroup.add(upstageBridge);
 
     // 8 Moving-Head Concert Beam Fixtures along the overhead truss bridge
@@ -1262,14 +1332,14 @@ export const schoolOfRockSet: ProductionSetModule = {
       const beamCol = movingHeadColors[m] ?? 0x38e2ff;
       const tilt = (m % 2 === 0 ? 1 : -1) * 0.24;
       const mh = buildMovingHeadFixture(cabBodyMat, beamCol, tilt);
-      mh.position.set(mx, 5.66, -4.02);
+      mh.position.set(mx, 5.66, -4.27);
       trussGroup.add(mh);
     }
 
     // High-Detail Illuminated "BATTLE OF THE BANDS" Marquee Sign suspended from the overhead bridge
     const marqueeTex = createBattleOfTheBandsMarqueeTexture();
     const marqueeGroup = new THREE.Group();
-    marqueeGroup.position.set(0, 6.38, -3.88);
+    marqueeGroup.position.set(0, 6.38, -4.12);
 
     const marqueeBacking = new THREE.Mesh(
       new RoundedBoxGeometry(3.85, 0.86, 0.14, 1, 0.03),
@@ -1294,11 +1364,11 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     // Glowing Magenta & Cyan Rock Concert Haze Clouds & Volumetric Beam Cones
     const hazePalette = [
-      { x: -2.4, y: 5.5, z: -2.6, r: 1.15, col: 0xff1e56 },
-      { x: -0.9, y: 5.8, z: -3.2, r: 1.25, col: 0x2979ff },
-      { x: 0.2, y: 5.4, z: -2.8, r: 1.1, col: 0xff1e68 },
-      { x: 1.8, y: 5.6, z: -2.7, r: 1.2, col: 0xd500f9 },
-      { x: 3.1, y: 5.2, z: -2.2, r: 1.05, col: 0xff1744 },
+      { x: -2.4, y: 5.5, z: -2.8, r: 1.15, col: 0xff1e56 },
+      { x: -0.9, y: 5.8, z: -3.4, r: 1.25, col: 0x2979ff },
+      { x: 0.2, y: 5.4, z: -3.0, r: 1.1, col: 0xff1e68 },
+      { x: 1.8, y: 5.6, z: -2.9, r: 1.2, col: 0xd500f9 },
+      { x: 3.1, y: 5.2, z: -2.4, r: 1.05, col: 0xff1744 },
     ];
     for (const h of hazePalette) {
       const puff = new THREE.Mesh(
@@ -1332,7 +1402,7 @@ export const schoolOfRockSet: ProductionSetModule = {
           toneMapped: false,
         })
       );
-      beamCone.position.set(bx, 4.95, -4.02);
+      beamCone.position.set(bx, 4.95, -4.25);
       beamCone.rotation.z = tilt;
       trussGroup.add(beamCone);
     }
@@ -1349,7 +1419,7 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     for (const side of [-1, 1]) {
       const wallUnit = new THREE.Group();
-      wallUnit.position.set(side * 4.0, 0, -2.3);
+      wallUnit.position.set(side * 4.15, 0, -2.35);
       wallUnit.rotation.y = side * -0.58; // Raked between outer & inner truss towers
 
       // Slate-green chalkboard wall face (z ∈ [-0.07, +0.07])
@@ -1431,7 +1501,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       wallUnit.add(doorHeader);
 
       // Brass Horace Green crest plaque mounted above the doorway pediment
-      const doorCrest = buildHoraceGreenCrestPlaque(brassMat);
+      const doorCrest = buildHoraceGreenCrestPlaque(brassMat, crestFaceMat);
       doorCrest.scale.setScalar(0.68);
       doorCrest.position.set(0, 3.05, 0.14);
       wallUnit.add(doorCrest);
@@ -1455,7 +1525,7 @@ export const schoolOfRockSet: ProductionSetModule = {
 
     // Overhead Prep-School Walnut Arch Header & Twin Schoolhouse Chandeliers (framing the classroom portal)
     const prepArchHeader = new THREE.Group();
-    prepArchHeader.position.set(0, 6.25, -3.15);
+    prepArchHeader.position.set(0, 6.25, -3.25);
 
     const archBeam = new THREE.Mesh(
       new THREE.BoxGeometry(6.1, 0.36, 0.32),
@@ -1463,7 +1533,7 @@ export const schoolOfRockSet: ProductionSetModule = {
     );
     prepArchHeader.add(archBeam);
 
-    const centralArchCrest = buildHoraceGreenCrestPlaque(brassMat);
+    const centralArchCrest = buildHoraceGreenCrestPlaque(brassMat, crestFaceMat);
     centralArchCrest.position.set(0, -0.05, 0.20);
     prepArchHeader.add(centralArchCrest);
 
@@ -1478,7 +1548,7 @@ export const schoolOfRockSet: ProductionSetModule = {
     // 3. UPSTAGE BATTLE OF THE BANDS 24-CABINET SPEAKER PYRAMID (Photo 1)
     // ========================================================================
     const speakerWallGroup = new THREE.Group();
-    speakerWallGroup.position.set(0, 0, -5.05);
+    speakerWallGroup.position.set(0, 0, -5.35);
     sorGroup.add(speakerWallGroup);
     registerElement('sor-speaker-stack-wall', speakerWallGroup);
 
@@ -1533,21 +1603,25 @@ export const schoolOfRockSet: ProductionSetModule = {
     });
 
     // ========================================================================
-    // 4. FLYABLE UPSTAGE CLASSROOM CHALKBOARD WALL, ROLLING CHALKBOARDS &
-    //    PULL-DOWN MUSIC CHART (Photo 2 · Batten Line 3)
+    // 4. FLYABLE UPSTAGE CLASSROOM CHALKBOARD WALL, ROLLING CHALKBOARDS,
+    //    TEACHER DESK & 6 STUDENT DESKS ('sor-center-chalkboard-fly')
+    //    - Attached to centerChalkboardGroup so classroom desks & teacher desk
+    //      appear in Classroom/Band Formation scenes and clear out completely
+    //      for the Battle of the Bands Concert Finale!
     // ========================================================================
     const centerChalkboardGroup = new THREE.Group();
-    centerChalkboardGroup.position.set(0, 0, -4.35);
+    centerChalkboardGroup.position.set(0, 0, 0);
     centerChalkboardGroup.visible = false;
     sorGroup.add(centerChalkboardGroup);
     registerElement('sor-center-chalkboard-fly', centerChalkboardGroup, 3);
     registerElement('sor-chalkboard-wagon', centerChalkboardGroup);
 
+    const boardZ = -4.65;
     const centerBoard = new THREE.Mesh(
       new THREE.BoxGeometry(4.9, 3.2, 0.14),
       chalkboardMat
     );
-    centerBoard.position.set(0, 2.55, 0);
+    centerBoard.position.set(0, 2.55, boardZ);
     centerBoard.castShadow = true;
     centerChalkboardGroup.add(centerBoard);
 
@@ -1555,7 +1629,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       new THREE.BoxGeometry(5.14, 0.24, 0.22),
       cherryTrimMat
     );
-    centerTopFrame.position.set(0, 4.20, 0.03);
+    centerTopFrame.position.set(0, 4.20, boardZ + 0.03);
     centerChalkboardGroup.add(centerTopFrame);
 
     // Side walnut frame stiles
@@ -1564,7 +1638,7 @@ export const schoolOfRockSet: ProductionSetModule = {
         new THREE.BoxGeometry(0.16, 3.36, 0.20),
         cherryTrimMat
       );
-      stile.position.set(sx, 2.55, 0.02);
+      stile.position.set(sx, 2.55, boardZ + 0.02);
       centerChalkboardGroup.add(stile);
     }
 
@@ -1572,10 +1646,10 @@ export const schoolOfRockSet: ProductionSetModule = {
       new THREE.BoxGeometry(5.14, 0.14, 0.26),
       cherryTrimMat
     );
-    centerBottomTray.position.set(0, 0.92, 0.05);
+    centerBottomTray.position.set(0, 0.92, boardZ + 0.05);
     centerChalkboardGroup.add(centerBottomTray);
 
-    // Felt chalk erasers & sticks resting on the chalk tray (stepped cleanly at y = 1.03m, z = 0.14m)
+    // Felt chalk erasers & sticks resting on the chalk tray
     const feltMat = new THREE.MeshStandardMaterial({ color: 0x2c3038, roughness: 0.9 });
     const whiteChalkMat = new THREE.MeshStandardMaterial({ color: 0xf7f7f2, roughness: 0.8 });
     const yellowChalkMat = new THREE.MeshStandardMaterial({ color: 0xffe066, roughness: 0.8 });
@@ -1584,14 +1658,14 @@ export const schoolOfRockSet: ProductionSetModule = {
         new THREE.BoxGeometry(0.16, 0.035, 0.055),
         feltMat
       );
-      eraserFelt.position.set(ex, 1.01, 0.14);
+      eraserFelt.position.set(ex, 1.01, boardZ + 0.14);
       centerChalkboardGroup.add(eraserFelt);
 
       const eraserWood = new THREE.Mesh(
         new THREE.BoxGeometry(0.16, 0.022, 0.052),
         oakMat
       );
-      eraserWood.position.set(ex, 1.04, 0.14);
+      eraserWood.position.set(ex, 1.04, boardZ + 0.14);
       centerChalkboardGroup.add(eraserWood);
     }
     for (let c = 0; c < 8; c++) {
@@ -1602,25 +1676,24 @@ export const schoolOfRockSet: ProductionSetModule = {
       );
       chalkStick.rotation.z = Math.PI / 2;
       chalkStick.rotation.y = ((c * 13) % 5 - 2) * 0.14;
-      chalkStick.position.set(cx, 1.005, 0.15);
+      chalkStick.position.set(cx, 1.005, boardZ + 0.15);
       centerChalkboardGroup.add(chalkStick);
     }
 
-    // Pull-down Classroom Music Staff Roller Chart on left side of center chalkboard (z = +0.11m)
+    // Pull-down Classroom Music Staff Roller Chart on left side of center chalkboard
     const chartSheet = new THREE.Mesh(
       new THREE.BoxGeometry(1.55, 1.18, 0.016),
       new THREE.MeshStandardMaterial({ color: 0xf5eedc, roughness: 0.65 })
     );
-    chartSheet.position.set(-1.35, 3.38, 0.11);
+    chartSheet.position.set(-1.35, 3.38, boardZ + 0.11);
     centerChalkboardGroup.add(chartSheet);
 
-    // 5 Music Staff lines on the pull-down chart (stepped at z = +0.145m)
     for (let s = 0; s < 5; s++) {
       const staffLine = new THREE.Mesh(
         new THREE.BoxGeometry(1.38, 0.008, 0.008),
         cabBodyMat
       );
-      staffLine.position.set(-1.35, 3.62 - s * 0.08, 0.145);
+      staffLine.position.set(-1.35, 3.62 - s * 0.08, boardZ + 0.145);
       centerChalkboardGroup.add(staffLine);
     }
     const chartDowel = new THREE.Mesh(
@@ -1628,20 +1701,20 @@ export const schoolOfRockSet: ProductionSetModule = {
       oakMat
     );
     chartDowel.rotation.z = Math.PI / 2;
-    chartDowel.position.set(-1.35, 2.78, 0.12);
+    chartDowel.position.set(-1.35, 2.78, boardZ + 0.12);
     centerChalkboardGroup.add(chartDowel);
 
     const pullRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.032, 0.006, 6, 12),
       brassMat
     );
-    pullRing.position.set(-1.35, 2.62, 0.12);
+    pullRing.position.set(-1.35, 2.62, boardZ + 0.12);
     centerChalkboardGroup.add(pullRing);
 
-    // Two smaller rolling chalkboards on tubular steel caster frames flanking the center board (Photo 2)
+    // Two smaller rolling chalkboards on tubular steel caster frames flanking the center board
     for (const side of [-1, 1]) {
       const wagonGroup = new THREE.Group();
-      wagonGroup.position.set(side * 2.35, 0, 0.65);
+      wagonGroup.position.set(side * 2.35, 0, -4.15);
 
       const smallBoard = new THREE.Mesh(
         new THREE.BoxGeometry(1.45, 1.55, 0.09),
@@ -1665,7 +1738,6 @@ export const schoolOfRockSet: ProductionSetModule = {
       smallTray.position.set(0, 1.06, 0.02);
       wagonGroup.add(smallTray);
 
-      // Tubular steel rolling A-frame legs & caster wheels
       for (const lx of [-0.74, 0.74]) {
         const upright = new THREE.Mesh(
           new THREE.CylinderGeometry(0.018, 0.018, 1.95, 8),
@@ -1695,26 +1767,15 @@ export const schoolOfRockSet: ProductionSetModule = {
       centerChalkboardGroup.add(wagonGroup);
     }
 
-    // ========================================================================
-    // 5. BAND RISERS (DRUM KIT, HAMMOND ORGAN/SYNTH, MARSHALL & AMPEG BACKLINE),
-    //    TEACHER DESK, 6 STUDENT DESKS, ROAD CASES, WEDGE MONITORS & CAST
-    //    ('sor-band-risers-and-cast' / 'sor-band-riser-amps' / 'sor-classroom-desks')
-    // ========================================================================
-    const bandAndCastGroup = new THREE.Group();
-    bandAndCastGroup.name = 'SchoolOfRockBandRisersDesksAndCast';
-    sorGroup.add(bandAndCastGroup);
-    registerElement('sor-band-risers-and-cast', bandAndCastGroup);
-    registerElement('sor-band-riser-amps', bandAndCastGroup);
-
-    // 5a. Teacher's Oak Pedestal Desk with Globe, Stack of Textbooks, Apple & Dewey's Red Gibson SG
-    //     (Positioned on Stage Left matching the wooden table & chair in school_of_rock_classroom.jpg)
+    // 4b. Teacher's Oak Pedestal Desk with Globe, Stack of Textbooks, Apple & Dewey's Red Gibson SG
+    //     Attached to centerChalkboardGroup at clean Stage-Left classroom coordinates (x = 2.65, z = -2.35)
     const teacherDeskGroup = new THREE.Group();
-    teacherDeskGroup.position.set(3.85, 0, -0.52);
-    teacherDeskGroup.rotation.y = -0.32;
-    bandAndCastGroup.add(teacherDeskGroup);
+    teacherDeskGroup.position.set(2.65, 0, -2.35);
+    teacherDeskGroup.rotation.y = -0.36;
+    centerChalkboardGroup.add(teacherDeskGroup);
 
     const teacherDesktop = new THREE.Mesh(
-      new RoundedBoxGeometry(1.36, 0.05, 0.72, 1, 0.015),
+      new RoundedBoxGeometry(1.32, 0.05, 0.68, 1, 0.015),
       oakMat
     );
     teacherDesktop.position.set(0, 0.76, 0);
@@ -1722,35 +1783,32 @@ export const schoolOfRockSet: ProductionSetModule = {
     teacherDesktop.receiveShadow = true;
     teacherDeskGroup.add(teacherDesktop);
 
-    // Left & right drawer pedestals
-    for (const px of [-0.46, 0.46]) {
+    for (const px of [-0.44, 0.44]) {
       const pedestal = new THREE.Mesh(
-        new THREE.BoxGeometry(0.36, 0.70, 0.64),
+        new THREE.BoxGeometry(0.34, 0.70, 0.60),
         cherryTrimMat
       );
       pedestal.position.set(px, 0.37, 0);
       pedestal.castShadow = true;
       teacherDeskGroup.add(pedestal);
 
-      // 3 drawer fronts with brass pulls (stepped +0.032m proud of pedestal face)
       for (const dy of [0.20, 0.39, 0.58]) {
         const drawerFront = new THREE.Mesh(
-          new THREE.BoxGeometry(0.30, 0.15, 0.025),
+          new THREE.BoxGeometry(0.28, 0.15, 0.025),
           darkWalnutMat
         );
-        drawerFront.position.set(px, dy, 0.335);
+        drawerFront.position.set(px, dy, 0.315);
         teacherDeskGroup.add(drawerFront);
 
         const pull = new THREE.Mesh(
           new THREE.BoxGeometry(0.08, 0.018, 0.02),
           brassMat
         );
-        pull.position.set(px, dy, 0.362);
+        pull.position.set(px, dy, 0.342);
         teacherDeskGroup.add(pull);
       }
     }
 
-    // Center modesty panel (recessed at z = 0.12)
     const modestyPanel = new THREE.Mesh(
       new THREE.BoxGeometry(0.54, 0.52, 0.03),
       darkWalnutMat
@@ -1758,12 +1816,11 @@ export const schoolOfRockSet: ProductionSetModule = {
     modestyPanel.position.set(0, 0.44, 0.12);
     teacherDeskGroup.add(modestyPanel);
 
-    // Terrestrial Classroom Globe on brass meridian stand atop Teacher's Desk
     const globeBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.06, 0.09, 0.04, 12),
       darkWalnutMat
     );
-    globeBase.position.set(-0.42, 0.805, 0.12);
+    globeBase.position.set(-0.40, 0.805, 0.10);
     teacherDeskGroup.add(globeBase);
 
     const globeMeridian = new THREE.Mesh(
@@ -1771,7 +1828,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       brassMat
     );
     globeMeridian.rotation.z = -Math.PI / 2 + 0.38;
-    globeMeridian.position.set(-0.42, 0.97, 0.12);
+    globeMeridian.position.set(-0.40, 0.97, 0.10);
     teacherDeskGroup.add(globeMeridian);
 
     const globeSphere = new THREE.Mesh(
@@ -1782,17 +1839,16 @@ export const schoolOfRockSet: ProductionSetModule = {
         metalness: 0.1,
       })
     );
-    globeSphere.position.set(-0.42, 0.97, 0.12);
+    globeSphere.position.set(-0.40, 0.97, 0.10);
     teacherDeskGroup.add(globeSphere);
 
-    // Stack of 3 Hardcover Textbooks & Red Apple on Teacher's Desk
     const stackColors = [0x8e1b26, 0x1d3b5c, 0x24583c];
     stackColors.forEach((col, sIdx) => {
       const book = new THREE.Mesh(
         new THREE.BoxGeometry(0.26, 0.042, 0.19),
         new THREE.MeshStandardMaterial({ color: col, roughness: 0.55 })
       );
-      book.position.set(0.36, 0.806 + sIdx * 0.044, 0.10);
+      book.position.set(0.35, 0.806 + sIdx * 0.044, 0.10);
       book.rotation.y = (sIdx - 1) * 0.16;
       teacherDeskGroup.add(book);
     });
@@ -1802,27 +1858,28 @@ export const schoolOfRockSet: ProductionSetModule = {
       new THREE.MeshStandardMaterial({ color: 0xd81b28, roughness: 0.22, metalness: 0.1 })
     );
     redApple.scale.set(1, 0.88, 1);
-    redApple.position.set(0.36, 0.955, 0.10);
+    redApple.position.set(0.35, 0.955, 0.10);
     teacherDeskGroup.add(redApple);
 
     const appleLeaf = new THREE.Mesh(
       new THREE.BoxGeometry(0.028, 0.008, 0.014),
       new THREE.MeshStandardMaterial({ color: 0x2e8b44, roughness: 0.5 })
     );
-    appleLeaf.position.set(0.375, 0.995, 0.10);
+    appleLeaf.position.set(0.365, 0.995, 0.10);
     appleLeaf.rotation.z = 0.35;
     teacherDeskGroup.add(appleLeaf);
 
-    // Dewey's Cherry-Red Gibson SG Electric Guitar on an A-Frame Stand next to the desk
     const gibsonSgStand = buildGibsonSgOnStand(tubularSteelMat, aluEdgeMat);
-    gibsonSgStand.position.set(-0.92, 0, 0.18);
-    gibsonSgStand.rotation.y = 0.42;
+    gibsonSgStand.position.set(-0.88, 0, 0.12);
+    gibsonSgStand.rotation.y = 0.38;
     teacherDeskGroup.add(gibsonSgStand);
 
-    // 5b. 6 Horace Green Student Desks with Tubular Steel Legs, Book Baskets, Open Notebooks & Molded Wood Chairs
+    // 4c. 6 Horace Green Student Desks in Mid-Downstage Classroom Area (z = -1.25m and z = -2.25m)
+    //     Attached to centerChalkboardGroup so they sit in clean open classroom floor in Scenes 1A/1B
+    //     and clear out completely in Scene 2B (Battle of the Bands Finale).
     const classroomDesksGroup = new THREE.Group();
     classroomDesksGroup.name = 'HoraceGreenStudentDesks';
-    bandAndCastGroup.add(classroomDesksGroup);
+    centerChalkboardGroup.add(classroomDesksGroup);
     registerElement('sor-classroom-desks', classroomDesksGroup);
 
     const deskPlacements: ReadonlyArray<{
@@ -1831,12 +1888,12 @@ export const schoolOfRockSet: ProductionSetModule = {
       readonly rotY: number;
       readonly bookCol: number;
     }> = [
-      { x: -4.55, z: -0.45, rotY: 0.35, bookCol: 0x8e1b26 },
-      { x: -3.65, z: -0.42, rotY: 0.28, bookCol: 0x1d446b },
-      { x: -2.65, z: -0.78, rotY: 0.22, bookCol: 0x265c3e },
-      { x: 2.35, z: -0.68, rotY: -0.22, bookCol: 0x6e2a54 },
-      { x: 2.85, z: -1.62, rotY: -0.28, bookCol: 0xb87624 },
-      { x: -2.45, z: -1.72, rotY: 0.26, bookCol: 0x8e1b26 },
+      { x: -2.05, z: -1.25, rotY: 0.16, bookCol: 0x8e1b26 },
+      { x: -0.78, z: -1.25, rotY: 0.08, bookCol: 0x1d446b },
+      { x: 0.82, z: -1.25, rotY: -0.08, bookCol: 0x265c3e },
+      { x: -2.05, z: -2.25, rotY: 0.16, bookCol: 0x6e2a54 },
+      { x: -0.78, z: -2.25, rotY: 0.08, bookCol: 0xb87624 },
+      { x: 0.82, z: -2.25, rotY: -0.08, bookCol: 0x8e1b26 },
     ];
     for (const dp of deskPlacements) {
       const deskUnit = buildStudentDeskAndChair(oakMat, tubularSteelMat, dp.bookCol);
@@ -1845,11 +1902,22 @@ export const schoolOfRockSet: ProductionSetModule = {
       classroomDesksGroup.add(deskUnit);
     }
 
-    // 5c. Downstage Left & Right Black Concert Road Cases with Silver Trim (Photo 1)
+    // ========================================================================
+    // 5. BAND RISERS (DRUM KIT, HAMMOND ORGAN/SYNTH, MARSHALL & AMPEG BACKLINE),
+    //    ROAD CASES, WEDGE MONITORS & ARTICULATED BAND CAST at z = -3.55m
+    //    ('sor-band-risers-and-cast' / 'sor-band-riser-amps')
+    // ========================================================================
+    const bandAndCastGroup = new THREE.Group();
+    bandAndCastGroup.name = 'SchoolOfRockBandRisersAndCast';
+    sorGroup.add(bandAndCastGroup);
+    registerElement('sor-band-risers-and-cast', bandAndCastGroup);
+    registerElement('sor-band-riser-amps', bandAndCastGroup);
+
+    // 5a. Downstage Left & Right Black Concert Road Cases with Silver Trim (Photo 1)
     for (const side of [-1, 1]) {
       const roadCase = new THREE.Group();
-      roadCase.position.set(side * 3.45, 0, -1.55);
-      roadCase.rotation.y = side * -0.12;
+      roadCase.position.set(side * 3.75, 0, -1.25);
+      roadCase.rotation.y = side * -0.14;
 
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(1.45, 0.78, 0.72),
@@ -1859,7 +1927,6 @@ export const schoolOfRockSet: ProductionSetModule = {
       body.castShadow = true;
       roadCase.add(body);
 
-      // Silver aluminum road-case edge extrusions & butterfly latches (cleanly proud by >= 0.03m)
       const topRim = new THREE.Mesh(
         new THREE.BoxGeometry(1.50, 0.045, 0.77),
         aluEdgeMat
@@ -1883,10 +1950,19 @@ export const schoolOfRockSet: ProductionSetModule = {
         roadCase.add(latch);
       }
 
-      // Student performer standing atop each road case (matching Photo 1!)
+      // Summer & Tomika cheering atop the road cases (feet cleanly on y = 0.85m top lid)
       const rockerOnCase = createHumanScaleFigure(
         1.42,
-        side < 0 ? 0x22262e : 0x6e1d2a
+        side < 0 ? 0x22262e : 0x6e1d2a,
+        0,
+        0,
+        false,
+        {
+          armPose: 'cheering',
+          pantsColorHex: 0x323846,
+          hairColorHex: side < 0 ? 0xd49a38 : 0x241814,
+          trimColorHex: 0xf2ede2,
+        }
       );
       rockerOnCase.position.set(0, 0.85, 0);
       roadCase.add(rockerOnCase);
@@ -1894,32 +1970,32 @@ export const schoolOfRockSet: ProductionSetModule = {
       bandAndCastGroup.add(roadCase);
     }
 
-    // 5d. Stage Right Rolling Keyboard Riser: Hammond B3 Organ + Yamaha S90 ES Synth Rig
+    // 5b. Stage Right Rolling Keyboard Riser at z = -3.55m: Hammond B3 Organ + Yamaha S90 ES Synth Rig
     const keysRiser = new THREE.Group();
-    keysRiser.position.set(-1.65, 0, -2.55);
+    keysRiser.position.set(-1.65, 0, -3.55);
     bandAndCastGroup.add(keysRiser);
 
     const keysDeck = new THREE.Mesh(
-      new THREE.BoxGeometry(1.85, 0.18, 1.15),
+      new THREE.BoxGeometry(1.85, 0.36, 1.25),
       cabBodyMat
     );
-    keysDeck.position.y = 0.09;
+    keysDeck.position.y = 0.18;
     keysDeck.castShadow = true;
+    keysDeck.receiveShadow = true;
     keysRiser.add(keysDeck);
 
-    // Vintage Walnut Hammond B3 Organ Cabinet & Dual Manuals
+    // Vintage Walnut Hammond B3 Organ Cabinet & Dual Manuals (resting on y = 0.36m riser deck)
     const hammondBody = new THREE.Mesh(
-      new RoundedBoxGeometry(1.26, 0.68, 0.52, 1, 0.02),
+      new RoundedBoxGeometry(1.26, 0.68, 0.48, 1, 0.02),
       cherryTrimMat
     );
-    hammondBody.position.set(-0.08, 0.52, 0.12);
+    hammondBody.position.set(-0.08, 0.36 + 0.34, 0.18);
     hammondBody.castShadow = true;
     keysRiser.add(hammondBody);
 
-    // Lower & Upper Waterfall Keybeds (white naturals & raised black sharps)
     for (const [ky, kz] of [
-      [0.82, 0.24],
-      [0.98, 0.12],
+      [1.00, 0.28],
+      [1.16, 0.16],
     ] as const) {
       const synthChassis = new THREE.Mesh(
         new THREE.BoxGeometry(1.32, 0.08, 0.32),
@@ -1943,30 +2019,36 @@ export const schoolOfRockSet: ProductionSetModule = {
       keysRiser.add(blackKeys);
     }
 
-    // Leslie Rotary Keyboard Amp Cabinet on the riser
     const leslieAmp = new THREE.Mesh(
       new RoundedBoxGeometry(0.46, 0.72, 0.42, 1, 0.02),
       darkWalnutMat
     );
-    leslieAmp.position.set(0.66, 0.54, 0.02);
+    leslieAmp.position.set(0.66, 0.36 + 0.36, 0.08);
     leslieAmp.castShadow = true;
     keysRiser.add(leslieAmp);
 
-    const lawrenceFig = createHumanScaleFigure(1.44, 0x5c1a24);
-    lawrenceFig.position.set(-0.1, 0.18, -0.25);
+    // Lawrence standing on the keyboard riser deck (y = 0.36m, z = -0.34m behind organ)
+    const lawrenceFig = createHumanScaleFigure(1.44, 0x5c1a24, 0, 0, false, {
+      armPose: 'playing',
+      pantsColorHex: 0x262936,
+      hairColorHex: 0x6e3b1e,
+      trimColorHex: 0xf2ede2,
+    });
+    lawrenceFig.position.set(-0.08, 0.36, -0.34);
     keysRiser.add(lawrenceFig);
 
-    // 5e. Stage Left-Center Rolling Drum Kit Riser: Full Multi-Piece Rock Drum Kit ("SCHOOL OF ROCK" / "Roland")
+    // 5c. Stage Left-Center Rolling Drum Kit Riser at z = -3.55m: Full Multi-Piece Rock Drum Kit
     const drumRiser = new THREE.Group();
-    drumRiser.position.set(0.95, 0, -2.75);
+    drumRiser.position.set(1.05, 0, -3.55);
     bandAndCastGroup.add(drumRiser);
 
     const drumDeck = new THREE.Mesh(
-      new THREE.BoxGeometry(1.95, 0.22, 1.42),
+      new THREE.BoxGeometry(1.95, 0.36, 1.45),
       cabBodyMat
     );
-    drumDeck.position.y = 0.11;
+    drumDeck.position.y = 0.18;
     drumDeck.castShadow = true;
+    drumDeck.receiveShadow = true;
     drumRiser.add(drumDeck);
 
     const drumShellMat = new THREE.MeshStandardMaterial({
@@ -1980,13 +2062,13 @@ export const schoolOfRockSet: ProductionSetModule = {
     });
     const drumLogoTex = createDrumheadLogoTexture();
 
-    // 22" Bass Drum with custom "SCHOOL OF ROCK" front resonant head
+    // 22" Bass Drum with custom "SCHOOL OF ROCK" front resonant head (on y = 0.36m deck)
     const kickDrum = new THREE.Mesh(
       new THREE.CylinderGeometry(0.30, 0.30, 0.44, 20),
       drumShellMat
     );
     kickDrum.rotation.x = Math.PI / 2;
-    kickDrum.position.set(0, 0.53, 0.16);
+    kickDrum.position.set(0, 0.36 + 0.31, 0.22);
     kickDrum.castShadow = true;
     drumRiser.add(kickDrum);
 
@@ -1994,7 +2076,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       new THREE.CircleGeometry(0.285, 20),
       new THREE.MeshStandardMaterial({ map: drumLogoTex, roughness: 0.35 })
     );
-    kickFrontHead.position.set(0, 0.53, 0.415); // Stepped +0.035m proud of kick shell front
+    kickFrontHead.position.set(0, 0.36 + 0.31, 0.475);
     drumRiser.add(kickFrontHead);
 
     // 2 Rack Toms (10" and 12") mounted above the bass drum
@@ -2006,34 +2088,34 @@ export const schoolOfRockSet: ProductionSetModule = {
         new THREE.CylinderGeometry(tr, tr, 0.22, 16),
         [drumShellMat, batterHeadMat, batterHeadMat]
       );
-      rackTom.position.set(tx, 0.94, 0.12);
+      rackTom.position.set(tx, 0.36 + 0.72, 0.18);
       rackTom.rotation.x = 0.38;
       rackTom.rotation.z = rotZ;
       drumRiser.add(rackTom);
     }
 
-    // 14" Snare Drum on chrome tripod stand (drummer's right / stage right of kit)
+    // 14" Snare Drum on chrome tripod stand
     const snareStand = new THREE.Mesh(
       new THREE.CylinderGeometry(0.014, 0.018, 0.52, 8),
       aluEdgeMat
     );
-    snareStand.position.set(-0.38, 0.48, -0.02);
+    snareStand.position.set(-0.38, 0.36 + 0.26, 0.02);
     drumRiser.add(snareStand);
 
     const snareDrum = new THREE.Mesh(
       new THREE.CylinderGeometry(0.18, 0.18, 0.14, 16),
       [aluEdgeMat, batterHeadMat, batterHeadMat]
     );
-    snareDrum.position.set(-0.38, 0.78, -0.02);
+    snareDrum.position.set(-0.38, 0.36 + 0.56, 0.02);
     snareDrum.rotation.x = 0.15;
     drumRiser.add(snareDrum);
 
-    // 16" Floor Tom on 3 legs (drummer's left / stage left of kit)
+    // 16" Floor Tom on 3 legs
     const floorTom = new THREE.Mesh(
       new THREE.CylinderGeometry(0.21, 0.21, 0.38, 16),
       [drumShellMat, batterHeadMat, batterHeadMat]
     );
-    floorTom.position.set(0.44, 0.62, -0.04);
+    floorTom.position.set(0.44, 0.36 + 0.40, 0.0);
     drumRiser.add(floorTom);
 
     // Hi-Hat Stand + 2 Crash Cymbals + 20" Ride Cymbal on Chrome Boom Stands
@@ -2046,17 +2128,17 @@ export const schoolOfRockSet: ProductionSetModule = {
       readonly tiltZ: number;
       readonly isHiHat?: boolean;
     }> = [
-      { x: -0.58, y: 0.96, z: 0.08, r: 0.17, tiltX: 0.06, tiltZ: 0.05, isHiHat: true },
-      { x: -0.52, y: 1.24, z: 0.22, r: 0.23, tiltX: 0.26, tiltZ: 0.15 },
-      { x: 0.52, y: 1.28, z: 0.20, r: 0.24, tiltX: 0.26, tiltZ: -0.15 },
-      { x: 0.58, y: 1.08, z: -0.02, r: 0.26, tiltX: 0.20, tiltZ: -0.22 },
+      { x: -0.58, y: 1.10, z: 0.12, r: 0.17, tiltX: 0.06, tiltZ: 0.05, isHiHat: true },
+      { x: -0.52, y: 1.38, z: 0.26, r: 0.23, tiltX: 0.26, tiltZ: 0.15 },
+      { x: 0.52, y: 1.42, z: 0.24, r: 0.24, tiltX: 0.26, tiltZ: -0.15 },
+      { x: 0.58, y: 1.22, z: 0.02, r: 0.26, tiltX: 0.20, tiltZ: -0.22 },
     ];
     for (const cSpec of cymbalSpecs) {
       const standPole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.012, 0.014, cSpec.y - 0.22, 8),
+        new THREE.CylinderGeometry(0.012, 0.014, cSpec.y - 0.36, 8),
         aluEdgeMat
       );
-      standPole.position.set(cSpec.x, 0.22 + (cSpec.y - 0.22) / 2, cSpec.z);
+      standPole.position.set(cSpec.x, 0.36 + (cSpec.y - 0.36) / 2, cSpec.z);
       drumRiser.add(standPole);
 
       const cym = new THREE.Mesh(
@@ -2078,11 +2160,17 @@ export const schoolOfRockSet: ProductionSetModule = {
       }
     }
 
-    const freddyFig = createHumanScaleFigure(1.42, 0x5c1a24);
-    freddyFig.position.set(0, 0.22, -0.32);
+    // Freddy standing cleanly on the drum riser deck at y = 0.36m, z = -0.38m behind the kit
+    const freddyFig = createHumanScaleFigure(1.44, 0x5c1a24, 0, 0, false, {
+      armPose: 'playing',
+      pantsColorHex: 0x262936,
+      hairColorHex: 0x241a14,
+      trimColorHex: 0xf2ede2,
+    });
+    freddyFig.position.set(0, 0.36, -0.38);
     drumRiser.add(freddyFig);
 
-    // 5f. Marshall 4x12 Guitar Half-Stacks & Ampeg 8x10 Bass Stack Backline
+    // 5d. Marshall 4x12 Guitar Half-Stacks & Ampeg 8x10 Bass Stack Backline at z = -3.65m
     const marshallLeft = buildMarshallStackUnit(
       cabBodyMat,
       grilleClothMat,
@@ -2091,7 +2179,7 @@ export const schoolOfRockSet: ProductionSetModule = {
       whiteLogoMat,
       true
     );
-    marshallLeft.position.set(2.25, 0, -2.65);
+    marshallLeft.position.set(2.48, 0, -3.65);
     marshallLeft.rotation.y = -0.24;
     bandAndCastGroup.add(marshallLeft);
 
@@ -2103,14 +2191,14 @@ export const schoolOfRockSet: ProductionSetModule = {
       whiteLogoMat,
       true
     );
-    marshallRight.position.set(-2.65, 0, -2.85);
+    marshallRight.position.set(-2.95, 0, -3.65);
     marshallRight.rotation.y = 0.28;
     bandAndCastGroup.add(marshallRight);
 
-    // Ampeg SVT 8x10 Bass Stack next to Katie (Stage Right-Center)
+    // Ampeg SVT 8x10 Bass Stack between the keyboard & drum risers
     const ampegGroup = new THREE.Group();
-    ampegGroup.position.set(-0.55, 0, -2.85);
-    ampegGroup.rotation.y = 0.12;
+    ampegGroup.position.set(-0.32, 0, -3.72);
+    ampegGroup.rotation.y = 0.08;
     const ampegCab = new THREE.Mesh(
       new RoundedBoxGeometry(0.68, 1.24, 0.44, 1, 0.025),
       cabBodyMat
@@ -2144,25 +2232,45 @@ export const schoolOfRockSet: ProductionSetModule = {
     ampegGroup.add(svtHead);
     bandAndCastGroup.add(ampegGroup);
 
-    // 5g. Center Stage: Dewey Finn, Zach (Lead Guitar), Katie (Bass) & Boom Vocal Mic Stands
-    const deweyFig = createHumanScaleFigure(1.76, 0x6e222e);
-    deweyFig.position.set(0.08, 0, -1.25);
+    // 5e. Downstage Rock Frontline: Dewey Finn, Zack (Lead Guitar), Katie (Bass) & Boom Mic Stands
+    //     Positioned cleanly downstage at z = -0.55m..-0.95m (zero overlap with classroom desks at z = -1.25m..-2.25m)
+    const deweyFig = createHumanScaleFigure(1.76, 0x6e222e, 0, 0, false, {
+      hasGuitarHex: 0xb81422,
+      armPose: 'playing',
+      pantsColorHex: 0x3b2c24,
+      hairColorHex: 0x241810,
+      trimColorHex: 0xf2ede2,
+    });
+    deweyFig.position.set(0.08, 0, -0.68);
     bandAndCastGroup.add(deweyFig);
 
-    // Dewey's white/sunburst electric guitar body
-    const guitar = new THREE.Mesh(
-      new RoundedBoxGeometry(0.58, 0.24, 0.06, 1, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 0.3 })
-    );
-    guitar.position.set(0.12, 1.02, -1.08);
-    guitar.rotation.z = 0.32;
-    bandAndCastGroup.add(guitar);
+    const zackFig = createHumanScaleFigure(1.48, 0x5c1a24, 0, 0, false, {
+      hasGuitarHex: 0x2979ff,
+      armPose: 'playing',
+      pantsColorHex: 0x262936,
+      hairColorHex: 0x3b2416,
+      trimColorHex: 0xf2ede2,
+    });
+    zackFig.position.set(1.92, 0, -0.78);
+    zackFig.rotation.y = -0.32;
+    bandAndCastGroup.add(zackFig);
 
-    // 3 Vocal Microphone Stands with Boom Arms (Center Dewey + Stage Left Zach + Stage Right Katie)
+    const katieFig = createHumanScaleFigure(1.45, 0x5c1a24, 0, 0, false, {
+      hasGuitarHex: 0xd48828,
+      armPose: 'playing',
+      pantsColorHex: 0x262936,
+      hairColorHex: 0x8c3b24,
+      trimColorHex: 0xf2ede2,
+    });
+    katieFig.position.set(-1.42, 0, -0.78);
+    katieFig.rotation.y = 0.28;
+    bandAndCastGroup.add(katieFig);
+
+    // 3 Vocal Microphone Stands with Boom Arms in front of Dewey, Zack & Katie
     for (const [mx, mz, baseCol] of [
-      [0.08, -0.92, 0xc82432],
-      [1.82, -1.28, 0x22262e],
-      [-1.05, -1.55, 0x22262e],
+      [0.08, -0.35, 0xc82432],
+      [1.78, -0.46, 0x22262e],
+      [-1.28, -0.46, 0x22262e],
     ] as const) {
       const micStand = new THREE.Group();
       micStand.position.set(mx, 0, mz);
@@ -2193,40 +2301,13 @@ export const schoolOfRockSet: ProductionSetModule = {
         new THREE.SphereGeometry(0.026, 10, 8),
         aluEdgeMat
       );
-      micCapsule.position.set(0, 1.48, 0.14);
+      micCapsule.position.set(0, 1.48, -0.26);
       micStand.add(micCapsule);
 
       bandAndCastGroup.add(micStand);
     }
 
-    // Lead guitarist (Zach) & Bassist (Katie) with instruments
-    const zachFig = createHumanScaleFigure(1.48, 0x5c1a24, 0.14, 0x1c1e24);
-    zachFig.position.set(1.95, 0, -1.55);
-    zachFig.rotation.y = -0.35;
-    bandAndCastGroup.add(zachFig);
-
-    const zachFlyingV = new THREE.Mesh(
-      new RoundedBoxGeometry(0.52, 0.22, 0.05, 1, 0.015),
-      new THREE.MeshStandardMaterial({ color: 0x2979ff, roughness: 0.28 })
-    );
-    zachFlyingV.position.set(1.92, 0.88, -1.40);
-    zachFlyingV.rotation.z = 0.28;
-    bandAndCastGroup.add(zachFlyingV);
-
-    const katieFig = createHumanScaleFigure(1.45, 0x5c1a24);
-    katieFig.position.set(-1.15, 0, -1.85);
-    katieFig.rotation.y = 0.25;
-    bandAndCastGroup.add(katieFig);
-
-    const katieBass = new THREE.Mesh(
-      new RoundedBoxGeometry(0.56, 0.22, 0.05, 1, 0.015),
-      new THREE.MeshStandardMaterial({ color: 0x9e1b28, roughness: 0.3 })
-    );
-    katieBass.position.set(-1.12, 0.86, -1.70);
-    katieBass.rotation.z = -0.25;
-    bandAndCastGroup.add(katieBass);
-
-    // 5h. 4 Downstage Apron Wedge Stage Monitors with Dual Cones & grilles (both photos)
+    // 5f. 4 Downstage Apron Wedge Stage Monitors with Dual Cones & grilles (both photos)
     for (const wx of [-3.85, -1.35, 1.35, 3.85]) {
       const wedgeGroup = new THREE.Group();
       wedgeGroup.position.set(wx, 0.18, 0.55);
