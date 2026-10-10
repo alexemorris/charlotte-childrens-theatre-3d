@@ -2708,3 +2708,199 @@ kbd {
     font-size: 10px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Theatrical Gel Filter Palette, 4-Zone Gel Pickers & Scene Gel Strip
+   --------------------------------------------------------------------------- */
+
+.scene-gel-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--shell-line);
+  flex-wrap: wrap;
+}
+
+.scene-gel-strip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--shell-fg-muted);
+}
+
+.scene-gel-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.scene-gel-mini-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px 3px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--shell-line);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--shell-fg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.scene-gel-mini-swatch:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--shell-line-strong);
+}
+
+.scene-gel-mini-swatch input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scene-gel-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.gel-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.gel-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 6px 7px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--shell-line);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+
+.gel-preset-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--shell-line-strong);
+}
+
+.gel-preset-btn.is-active {
+  background: var(--shell-accent-soft);
+  border-color: var(--shell-accent);
+  box-shadow: 0 0 0 1px rgba(245, 194, 91, 0.28);
+}
+
+.gel-preset-swatch {
+  width: 100%;
+  height: 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35);
+}
+
+.gel-preset-code {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--shell-accent);
+}
+
+.gel-preset-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--shell-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.gel-zone-pickers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.gel-zone-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--shell-line);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  min-width: 0;
+}
+
+.gel-zone-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--shell-line-strong);
+}
+
+.gel-zone-card input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.gel-zone-color-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.gel-zone-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.gel-zone-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--shell-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gel-zone-hex {
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--shell-fg-muted);
+}
+
+.shell-text-xs {
+  font-size: 11px;
+}
+

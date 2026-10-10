@@ -11,42 +11,135 @@ import {
 } from '../shared-scenic-helpers.ts';
 
 /**
- * Procedural hand-painted Seussian olive/moss timber & roof texture
- * matching Andrew Gibbon's model box paint treatment for Papa Who's House.
+ * Procedural hand-painted Seussian olive/moss timber & roof texture (1024×1024)
+ * matching Andrew Gibbon's model box paint treatment for Papa Who's House (Model 1H & 1E).
+ * Includes mossy-green/chartreuse dry-brushing, woodgrain striations, trompe-l'oeil shingle
+ * courses, scenic spatter, and bold Dr. Seuss charcoal pen-and-ink cross-hatching.
  */
 function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#5a782e');
-    grad.addColorStop(0.5, '#6b8b3b');
-    grad.addColorStop(1, '#4c6724');
+    const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+    grad.addColorStop(0, '#4e6c24');
+    grad.addColorStop(0.35, '#688836');
+    grad.addColorStop(0.7, '#78983e');
+    grad.addColorStop(1, '#425c1d');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Painterly mottled highlights and organic Seussian cross-hatching
-    for (let i = 0; i < 180; i++) {
-      const x = (i * 73) % 512;
-      const y = (i * 137) % 512;
-      const r = 18 + (i % 36);
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(138, 168, 78, 0.16)' : 'rgba(46, 66, 20, 0.16)';
+    // 1. Painterly mottled chartreuse & deep moss sponge-scumble glazes
+    for (let i = 0; i < 360; i++) {
+      const x = (i * 149 + 31) % 1024;
+      const y = (i * 277 + 19) % 1024;
+      const r = 24 + (i % 54);
+      ctx.fillStyle =
+        i % 3 === 0
+          ? 'rgba(154, 188, 68, 0.16)'
+          : i % 3 === 1
+            ? 'rgba(38, 56, 14, 0.18)'
+            : 'rgba(116, 148, 52, 0.14)';
       ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.4, r * 0.7, (i % 7) * 0.4, 0, Math.PI * 2);
+      ctx.ellipse(x, y, r * 1.5, r * 0.72, (i % 7) * 0.42, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    ctx.strokeStyle = 'rgba(34, 48, 14, 0.28)';
-    ctx.lineWidth = 2;
-    for (let s = 0; s < 70; s++) {
-      const sx = (s * 89) % 512;
-      const sy = (s * 53) % 512;
+    // 2. Hand-painted crooked timber grain & wavy shingle courses with trompe-l'oeil highlight lips
+    for (let row = 1; row <= 12; row++) {
+      const baseY = row * (1024 / 12);
+      // Dark shadow under course
+      ctx.strokeStyle = 'rgba(24, 36, 10, 0.34)';
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY);
+      for (let x = 0; x <= 1024; x += 64) {
+        const wy =
+          baseY +
+          Math.sin(x * 0.015 + row * 1.4) * 12 +
+          Math.cos(x * 0.032 - row) * 5;
+        ctx.lineTo(x, wy);
+      }
+      ctx.stroke();
+
+      // Warm chartreuse dry-brush highlight lip below course
+      ctx.strokeStyle = 'rgba(176, 208, 86, 0.24)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY + 4);
+      for (let x = 0; x <= 1024; x += 64) {
+        const wy =
+          baseY +
+          4 +
+          Math.sin(x * 0.015 + row * 1.4) * 12 +
+          Math.cos(x * 0.032 - row) * 5;
+        ctx.lineTo(x, wy);
+      }
+      ctx.stroke();
+    }
+
+    // 3. Organic woodgrain fibers & knots
+    ctx.lineCap = 'round';
+    for (let s = 0; s < 160; s++) {
+      const sx = (s * 179) % 1024;
+      const sy = (s * 107) % 1024;
+      ctx.strokeStyle =
+        s % 4 === 0 ? 'rgba(168, 198, 78, 0.22)' : 'rgba(26, 38, 10, 0.32)';
+      ctx.lineWidth = 1.6 + (s % 3) * 0.8;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
-      ctx.bezierCurveTo(sx + 25, sy - 12, sx + 55, sy + 14, sx + 80, sy - 4);
+      ctx.bezierCurveTo(
+        sx + 48,
+        sy - 18,
+        sx + 104,
+        sy + 22,
+        sx + 156,
+        sy - 6
+      );
       ctx.stroke();
+    }
+
+    // 4. Bold Dr. Seuss charcoal pen-and-ink cross-hatch clusters
+    ctx.strokeStyle = 'rgba(18, 26, 8, 0.44)';
+    ctx.lineWidth = 2.0;
+    for (let c = 0; c < 48; c++) {
+      const cx = (c * 211 + 45) % 940;
+      const cy = (c * 163 + 38) % 940;
+      const hatchCount = 5 + (c % 5);
+      for (let h = 0; h < hatchCount; h++) {
+        ctx.beginPath();
+        ctx.moveTo(cx + h * 7, cy);
+        ctx.quadraticCurveTo(cx + h * 7 + 12, cy + 16, cx + h * 7 + 22, cy + 34);
+        ctx.stroke();
+      }
+      for (let h = 0; h < hatchCount - 1; h++) {
+        ctx.beginPath();
+        ctx.moveTo(cx - 4, cy + h * 7 + 6);
+        ctx.quadraticCurveTo(
+          cx + 16,
+          cy + h * 7 + 14,
+          cx + 38,
+          cy + h * 7 + 20
+        );
+        ctx.stroke();
+      }
+    }
+
+    // 5. Scenic paint shop spatter dots (chartreuse, moss, dark umber)
+    for (let sp = 0; sp < 480; sp++) {
+      const px = (sp * 293 + 17) % 1024;
+      const py = (sp * 197 + 53) % 1024;
+      const pr = 1.0 + (sp % 3) * 0.85;
+      ctx.fillStyle =
+        sp % 3 === 0
+          ? 'rgba(182, 214, 92, 0.25)'
+          : sp % 3 === 1
+            ? 'rgba(22, 34, 8, 0.28)'
+            : 'rgba(88, 118, 36, 0.24)';
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
   const tex = new THREE.CanvasTexture(canvas);
@@ -58,46 +151,271 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Toned-down warm lavender-cream plaster & scrim weave texture so stage
- * spotlights never overexpose the house walls.
+ * Toned-down warm lavender-cream & dusty-rose plaster & scrim weave texture (1024×1024)
+ * with subtle painted Seussian wallpaper stripes, damask swirl motifs, and corner ink
+ * hatching so stage spotlights never overexpose the house walls (max channel <= 0xd8).
  */
 function createWhoWallPlasterTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#cfc8d8');
-    grad.addColorStop(0.55, '#dcd4df');
-    grad.addColorStop(1, '#c4bccf');
+    // Toned base gradient (strictly <= 0xd8 across all channels)
+    const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+    grad.addColorStop(0, '#c4bcd0');
+    grad.addColorStop(0.5, '#d4ccd8');
+    grad.addColorStop(1, '#bab2c6');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Subtle vertical scrim/plaster brush texture
-    ctx.strokeStyle = 'rgba(110, 98, 124, 0.12)';
-    ctx.lineWidth = 1.5;
-    for (let x = 0; x < 512; x += 6) {
+    // 1. Subtle hand-painted dusty-rose & lavender vertical wallpaper stripes
+    for (let sx = 0; sx < 1024; sx += 64) {
+      ctx.fillStyle =
+        (sx / 64) % 2 === 0
+          ? 'rgba(196, 172, 198, 0.16)'
+          : 'rgba(168, 156, 188, 0.14)';
+      ctx.fillRect(sx, 0, 32, 1024);
+
+      // Delicate pinstripe border with wavy Seussian hand-drawn wobble
+      ctx.strokeStyle = 'rgba(128, 108, 146, 0.18)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x + ((x % 12) - 6), 512);
+      for (let y = 0; y <= 1024; y += 64) {
+        const wx = sx + Math.sin(y * 0.02 + sx) * 2.5;
+        if (y === 0) ctx.moveTo(wx, y);
+        else ctx.lineTo(wx, y);
+      }
       ctx.stroke();
     }
 
-    // Soft warm aging vignettes
-    for (let i = 0; i < 90; i++) {
-      const px = (i * 97) % 512;
-      const py = (i * 61) % 512;
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(218, 206, 224, 0.14)' : 'rgba(156, 144, 168, 0.12)';
+    // 2. Stenciled Seussian swirl / fleur-de-who wallpaper motifs
+    ctx.strokeStyle = 'rgba(142, 118, 158, 0.18)';
+    ctx.lineWidth = 2.0;
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const cx = col * 128 + (row % 2 === 0 ? 48 : 112);
+        const cy = row * 128 + 64;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 14, 0, Math.PI * 1.65);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + 8, cy - 8, 7, Math.PI * 0.5, Math.PI * 2.1);
+        ctx.stroke();
+      }
+    }
+
+    // 3. Fine sharkstooth scrim gauze weave & vertical plaster brush streaks
+    ctx.strokeStyle = 'rgba(98, 86, 114, 0.11)';
+    ctx.lineWidth = 1.2;
+    for (let x = 0; x < 1024; x += 8) {
       ctx.beginPath();
-      ctx.arc(px, py, 24 + (i % 28), 0, Math.PI * 2);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + ((x % 16) - 8) * 0.5, 1024);
+      ctx.stroke();
+    }
+    for (let y = 0; y < 1024; y += 10) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1024, y);
+      ctx.stroke();
+    }
+
+    // 4. Soft warm aging glazes & Seussian ink cross-hatch plaster patches
+    for (let i = 0; i < 160; i++) {
+      const px = (i * 193 + 29) % 1024;
+      const py = (i * 127 + 41) % 1024;
+      ctx.fillStyle =
+        i % 2 === 0
+          ? 'rgba(208, 196, 214, 0.14)'
+          : 'rgba(144, 130, 158, 0.13)';
+      ctx.beginPath();
+      ctx.arc(px, py, 32 + (i % 44), 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    ctx.strokeStyle = 'rgba(54, 42, 68, 0.24)';
+    ctx.lineWidth = 1.5;
+    for (let h = 0; h < 36; h++) {
+      const hx = (h * 269 + 50) % 960;
+      const hy = (h * 181 + 40) % 960;
+      for (let k = 0; k < 5; k++) {
+        ctx.beginPath();
+        ctx.moveTo(hx + k * 6, hy);
+        ctx.lineTo(hx + k * 6 + 14, hy + 22);
+        ctx.stroke();
+      }
     }
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(0.28, 0.28);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted Seussian fieldstone & chimney masonry texture (512×512) with
+ * crooked mortar joints, trompe-l'oeil stone bevel highlights/shadows, warm soot
+ * glazing, and Dr. Seuss ink cross-hatching.
+ */
+function createFireplaceFieldstoneTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#787e7c';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const stonePalette = [
+      '#848c84',
+      '#787488',
+      '#6c786e',
+      '#8c8294',
+      '#748278',
+      '#8a8478',
+    ];
+    const rows = 8;
+    const rowH = 512 / rows;
+    for (let r = 0; r < rows; r++) {
+      const y0 = r * rowH;
+      const cols = 4 + (r % 2);
+      const colW = 512 / cols;
+      const offset = (r % 2) * (colW * 0.45);
+      for (let c = -1; c <= cols; c++) {
+        const x0 = c * colW + offset;
+        const w = colW - 8;
+        const h = rowH - 8;
+        const col =
+          stonePalette[(r * 5 + c + 10) % stonePalette.length] ?? '#7c8280';
+
+        // Stone fill
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.roundRect(x0 + 4, y0 + 4, w, h, 12);
+        ctx.fill();
+
+        // Trompe-l'oeil top highlight bevel
+        ctx.strokeStyle = 'rgba(208, 214, 218, 0.36)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(x0 + 10, y0 + 7);
+        ctx.lineTo(x0 + w - 6, y0 + 7);
+        ctx.stroke();
+
+        // Trompe-l'oeil bottom shadow bevel & dark ink outline
+        ctx.strokeStyle = 'rgba(24, 22, 30, 0.58)';
+        ctx.lineWidth = 3.0;
+        ctx.beginPath();
+        ctx.roundRect(x0 + 4, y0 + 4, w, h, 12);
+        ctx.stroke();
+
+        // Seussian corner cross-hatch ticks inside stone
+        ctx.strokeStyle = 'rgba(26, 24, 32, 0.38)';
+        ctx.lineWidth = 1.4;
+        for (let k = 0; k < 4; k++) {
+          ctx.beginPath();
+          ctx.moveTo(x0 + 10 + k * 5, y0 + h - 4);
+          ctx.lineTo(x0 + 16 + k * 5, y0 + h - 14);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Scenic spatter
+    for (let s = 0; s < 220; s++) {
+      const sx = (s * 137 + 19) % 512;
+      const sy = (s * 193 + 31) % 512;
+      ctx.fillStyle =
+        s % 2 === 0 ? 'rgba(204, 210, 216, 0.2)' : 'rgba(28, 24, 34, 0.25)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.2 + (s % 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.4, 1.8);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted Royal-Blue & Pastel-Pink Seussian Kitchen Appliance Enamel
+ * & Tufted Velvet Daybed Upholstery textures (512×512).
+ */
+function createWhoPaintedFurnitureTexture(
+  baseHex: string,
+  highlightHex: string,
+  shadowHex: string,
+  tufted = false
+): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, highlightHex);
+    grad.addColorStop(0.55, baseHex);
+    grad.addColorStop(1, shadowHex);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    if (tufted) {
+      // Diamond button-tufted velvet pattern with Seussian crease lines & gold buttons
+      const step = 96;
+      for (let y = 0; y <= 512; y += step) {
+        for (let x = 0; x <= 512; x += step) {
+          const cx = x + ((y / step) % 2 === 0 ? 0 : step * 0.5);
+          const cy = y;
+          ctx.strokeStyle = 'rgba(12, 24, 58, 0.45)';
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + step * 0.5, cy + step);
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx - step * 0.5, cy + step);
+          ctx.stroke();
+
+          // Tuft shadow & gold button highlight
+          ctx.fillStyle = '#0a1838';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#e8be38';
+          ctx.beginPath();
+          ctx.arc(cx - 1, cy - 1, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else {
+      // Hand-painted Seussian appliance enamel with recessed bevel border & ink hatching
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(24, 24, 464, 464);
+
+      ctx.strokeStyle = 'rgba(16, 18, 32, 0.48)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 30, 452, 452);
+
+      // Corner Seussian ink hatching
+      ctx.strokeStyle = 'rgba(16, 18, 32, 0.34)';
+      ctx.lineWidth = 1.8;
+      for (let k = 0; k < 8; k++) {
+        ctx.beginPath();
+        ctx.moveTo(36 + k * 8, 42);
+        ctx.lineTo(36, 42 + k * 8);
+        ctx.moveTo(476 - k * 8, 470);
+        ctx.lineTo(476, 470 - k * 8);
+        ctx.stroke();
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -397,6 +715,10 @@ export function buildPapaWhosHouseUnit(
   const oliveRoofTex = createSeussianOliveRoofTexture();
   const plasterTex = createWhoWallPlasterTexture();
   const bannerTex = createMantelSwagBannerTexture();
+  const fieldstoneTex = createFireplaceFieldstoneTexture();
+  const fridgeBlueTex = createWhoPaintedFurnitureTexture('#1868d8', '#3888f0', '#10489e', false);
+  const fridgePinkTex = createWhoPaintedFurnitureTexture('#dca0bc', '#f0bcd4', '#b47494', false);
+  const daybedTuftedTex = createWhoPaintedFurnitureTexture('#1868d8', '#3482ec', '#0e4296', true);
 
   // Core Scenic Materials (toned down so stage spotlights never overexpose them)
   const oliveTimberMat = new THREE.MeshStandardMaterial({
@@ -438,14 +760,14 @@ export function buildPapaWhosHouseUnit(
     depthWrite: !translucentScrimMode,
   });
   const chimneyBreastMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0x7b8878,
+    map: fieldstoneTex,
+    color: 0x9aa898,
     roughness: 0.74,
     metalness: 0.04,
   });
   const hearthStoneMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: 0x968ca8,
+    map: fieldstoneTex,
+    color: 0xb2a8c2,
     roughness: 0.68,
     metalness: 0.05,
   });
@@ -487,16 +809,21 @@ export function buildPapaWhosHouseUnit(
     roughness: 0.48,
   });
   const royalBlueMat = new THREE.MeshStandardMaterial({
-    color: 0x1868d8,
+    map: fridgeBlueTex,
     roughness: 0.46,
     metalness: 0.06,
+  });
+  const daybedTuftedMat = new THREE.MeshStandardMaterial({
+    map: daybedTuftedTex,
+    roughness: 0.54,
+    metalness: 0.04,
   });
   const deepBlueTrimMat = new THREE.MeshStandardMaterial({
     color: 0x124da8,
     roughness: 0.5,
   });
   const pastelPinkMat = new THREE.MeshStandardMaterial({
-    color: 0xdca0bc,
+    map: fridgePinkTex,
     roughness: 0.5,
   });
   const brassMat = new THREE.MeshStandardMaterial({
@@ -1595,7 +1922,7 @@ export function buildPapaWhosHouseUnit(
 
   const seatDeck = new THREE.Mesh(
     new RoundedBoxGeometry(1.42, 0.28, 0.66, 3, 0.08),
-    royalBlueMat
+    daybedTuftedMat
   );
   seatDeck.position.set(0, 0.36, 0);
   seatDeck.castShadow = true;
@@ -1617,7 +1944,7 @@ export function buildPapaWhosHouseUnit(
       bevelSize: 0.028,
       bevelSegments: 2,
     }),
-    royalBlueMat
+    daybedTuftedMat
   );
   backrestMesh.position.set(0, 0, -0.31);
   backrestMesh.castShadow = true;

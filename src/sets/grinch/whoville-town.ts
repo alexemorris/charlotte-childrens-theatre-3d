@@ -9,10 +9,11 @@ import {
 } from '../shared-scenic-helpers.ts';
 
 /**
- * Generates a richly hand-painted Scenic Artist Seussian pink stucco & kerf-bent
- * timber canvas texture with trompe-l'oeil vertical rib bevels, painted horizontal
- * clapboard/stucco courses, warm sponge-stipple highlights, and dense Tim Parati
- * Seussian charcoal ink cross-hatching.
+ * Generates a richly hand-painted 1024×1024 Scenic Artist Seussian pink stucco & kerf-bent
+ * timber canvas texture matching `model_1B_whoville.jpg`, `model_1D_shopping.jpg`, and
+ * `model_1G_finale.jpg`: warm raspberry-rose to blush-pink vertical ombré washes, whimsical
+ * painted curlicue eaves trim, trompe-l'oeil painted brick/stucco plaster cracks with Seussian
+ * ink hatching, vertical rib bevels, and multi-pass scenic spatter.
  */
 function createWhovilleStuccoTexture(
   baseHex: string,
@@ -21,92 +22,464 @@ function createWhovilleStuccoTexture(
   inkHex: string
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // Vertical & radial stucco gradient (richer magenta-rose at base/top, warm pink in belly)
-    const vGrad = ctx.createLinearGradient(0, 0, 0, 512);
-    vGrad.addColorStop(0, baseHex);
-    vGrad.addColorStop(0.45, bellyHex);
-    vGrad.addColorStop(0.82, baseHex);
+    // 1. Vertical & radial stucco ombré wash (deep raspberry-rose at eaves/base, luminous blush-pink in belly)
+    const vGrad = ctx.createLinearGradient(0, 0, 0, 1024);
+    vGrad.addColorStop(0, stripeHex);
+    vGrad.addColorStop(0.14, baseHex);
+    vGrad.addColorStop(0.48, bellyHex);
+    vGrad.addColorStop(0.84, baseHex);
     vGrad.addColorStop(1, stripeHex);
     ctx.fillStyle = vGrad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Scenic artist sponge-stipple plaster texture
-    for (let i = 0; i < 160; i++) {
-      const sx = (i * 79) % 512;
-      const sy = (i * 113) % 512;
-      const sr = 14 + (i % 26);
-      ctx.fillStyle =
-        i % 2 === 0 ? 'rgba(255, 220, 238, 0.12)' : 'rgba(92, 18, 54, 0.11)';
+    // Warm radial belly glow in the center of each facade bay
+    for (const bx of [256, 512, 768]) {
+      const bellyGlow = ctx.createRadialGradient(bx, 480, 24, bx, 480, 260);
+      bellyGlow.addColorStop(0, 'rgba(255, 210, 232, 0.34)');
+      bellyGlow.addColorStop(0.65, 'rgba(248, 148, 196, 0.14)');
+      bellyGlow.addColorStop(1, 'rgba(180, 36, 102, 0)');
+      ctx.fillStyle = bellyGlow;
       ctx.beginPath();
-      ctx.ellipse(sx, sy, sr * 1.4, sr * 0.8, (i % 5) * 0.4, 0, Math.PI * 2);
+      ctx.ellipse(bx, 480, 260, 310, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Trompe-l'oeil painted vertical Seussian rib bevels (replaces expensive 3D-bent rib pipes!)
-    for (const rx of [64, 168, 256, 344, 448]) {
-      const ribGrad = ctx.createLinearGradient(rx - 14, 0, rx + 14, 0);
-      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.28)');
-      ribGrad.addColorStop(0.45, 'rgba(255, 210, 232, 0.36)');
-      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.28)');
-      ctx.fillStyle = ribGrad;
-      ctx.fillRect(rx - 14, 0, 28, 512);
+    // 2. Scenic artist sponge-stipple & scumble plaster texture
+    for (let i = 0; i < 320; i++) {
+      const sx = (i * 157) % 1024;
+      const sy = (i * 227) % 1024;
+      const sr = 22 + (i % 44);
+      ctx.fillStyle =
+        i % 3 === 0
+          ? 'rgba(255, 224, 240, 0.13)'
+          : i % 3 === 1
+            ? 'rgba(104, 18, 60, 0.11)'
+            : 'rgba(236, 98, 162, 0.10)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, sr * 1.45, sr * 0.82, (i % 7) * 0.42, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Hand-painted horizontal Seussian clapboard & contour shadow bands
-    ctx.strokeStyle = stripeHex;
-    ctx.lineWidth = 6;
-    ctx.globalAlpha = 0.42;
-    for (let y = 38; y < 486; y += 44) {
+    // 3. Trompe-l'oeil painted vertical Seussian rib bevels & timber seam shading
+    for (const rx of [128, 336, 512, 688, 896]) {
+      const ribGrad = ctx.createLinearGradient(rx - 28, 0, rx + 28, 0);
+      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.32)');
+      ribGrad.addColorStop(0.45, 'rgba(255, 216, 236, 0.40)');
+      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.32)');
+      ctx.fillStyle = ribGrad;
+      ctx.fillRect(rx - 28, 0, 56, 1024);
+
+      // Subtle vertical Seussian ink seam line alongside each rib
+      ctx.strokeStyle = 'rgba(34, 16, 40, 0.36)';
+      ctx.lineWidth = 2.6;
       ctx.beginPath();
-      for (let x = 0; x <= 512; x += 24) {
-        const wave = Math.sin((x / 512) * Math.PI * 4 + y * 0.05) * 6;
+      ctx.moveTo(rx - 20, 0);
+      ctx.bezierCurveTo(rx - 12, 340, rx - 28, 680, rx - 18, 1024);
+      ctx.stroke();
+    }
+
+    // 4. Hand-painted horizontal Seussian clapboard & contour shadow bands
+    for (let y = 76; y < 968; y += 84) {
+      ctx.strokeStyle = stripeHex;
+      ctx.lineWidth = 10;
+      ctx.globalAlpha = 0.44;
+      ctx.beginPath();
+      for (let x = 0; x <= 1024; x += 32) {
+        const wave = Math.sin((x / 1024) * Math.PI * 4 + y * 0.04) * 11;
         if (x === 0) ctx.moveTo(x, y + wave);
         else ctx.lineTo(x, y + wave);
       }
       ctx.stroke();
 
       // Painted underside highlight line on each course for trompe-l'oeil relief
-      ctx.strokeStyle = 'rgba(255, 232, 244, 0.28)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.strokeStyle = stripeHex;
-      ctx.lineWidth = 6;
-    }
-
-    // Dense scenic artist cross-hatch ink marks along lower skirt, eaves, and seams
-    ctx.strokeStyle = inkHex;
-    ctx.lineWidth = 2.4;
-    ctx.globalAlpha = 0.36;
-    for (let i = 0; i < 96; i++) {
-      const hx = (i * 37) % 512;
-      const hy =
-        i % 3 === 0
-          ? 410 + (i % 9) * 10
-          : i % 3 === 1
-            ? 36 + (i % 7) * 12
-            : 180 + (i % 11) * 16;
-      ctx.beginPath();
-      ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 22, hy - 9);
-      ctx.moveTo(hx + 4, hy - 11);
-      ctx.lineTo(hx + 18, hy + 5);
+      ctx.strokeStyle = 'rgba(255, 232, 244, 0.34)';
+      ctx.lineWidth = 3.5;
+      ctx.globalAlpha = 0.65;
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
+
+    // 5. Trompe-l'oeil painted brick/stucco plaster patches & cracks with Seussian ink hatching
+    const brickClusters: ReadonlyArray<readonly [number, number]> = [
+      [190, 320],
+      [420, 620],
+      [610, 290],
+      [810, 560],
+      [280, 740],
+      [720, 780],
+    ];
+    for (let cIdx = 0; cIdx < brickClusters.length; cIdx++) {
+      const cluster = brickClusters[cIdx]!;
+      const cx = cluster[0];
+      const cy = cluster[1];
+
+      // Exposed warm coral-rose brick courses peeking through plaster
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 2; col++) {
+          const bx = cx + col * 38 + (row % 2) * 16;
+          const by = cy + row * 20;
+          ctx.fillStyle =
+            (row + col) % 2 === 0
+              ? 'rgba(176, 38, 88, 0.46)'
+              : 'rgba(214, 62, 118, 0.42)';
+          ctx.beginPath();
+          ctx.roundRect(bx, by, 32, 15, 4);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(42, 14, 34, 0.52)';
+          ctx.lineWidth = 2.0;
+          ctx.stroke();
+        }
+      }
+
+      // Cracked plaster contour line + short Seussian cross-hatch ticks
+      ctx.strokeStyle = 'rgba(34, 16, 40, 0.58)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(cx - 18, cy + 8);
+      ctx.lineTo(cx - 4, cy - 8);
+      ctx.lineTo(cx + 28, cy - 12);
+      ctx.stroke();
+    }
+
+    // 6. Upper Eaves Shadow Glaze & Whimsical Painted Seussian Curlicue Trim (under snow cap)
+    const eaveShadow = ctx.createLinearGradient(0, 0, 0, 210);
+    eaveShadow.addColorStop(0, 'rgba(48, 12, 36, 0.62)');
+    eaveShadow.addColorStop(0.55, 'rgba(128, 22, 74, 0.32)');
+    eaveShadow.addColorStop(1, 'rgba(180, 38, 102, 0)');
+    ctx.fillStyle = eaveShadow;
+    ctx.fillRect(0, 0, 1024, 210);
+
+    // Painted scalloped curlicue eaves frieze along y ≈ 150..195
+    ctx.strokeStyle = 'rgba(42, 14, 36, 0.58)';
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+    for (let ex = 32; ex < 992; ex += 64) {
+      ctx.beginPath();
+      ctx.moveTo(ex, 148);
+      ctx.bezierCurveTo(ex + 16, 184, ex + 48, 184, ex + 64, 148);
+      ctx.stroke();
+
+      // Little Seussian spiral curl at each scallop cusp
+      ctx.beginPath();
+      ctx.arc(ex + 32, 176, 6, 0, Math.PI * 1.65);
+      ctx.stroke();
+    }
+
+    // 7. Dense scenic artist cross-hatch ink marks along lower skirt, eaves, and seams
+    ctx.strokeStyle = inkHex;
+    ctx.lineWidth = 3.2;
+    ctx.globalAlpha = 0.48;
+    for (let i = 0; i < 160; i++) {
+      const hx = (i * 67) % 1000;
+      const hy =
+        i % 3 === 0
+          ? 820 + (i % 11) * 16
+          : i % 3 === 1
+            ? 68 + (i % 9) * 18
+            : 340 + (i % 13) * 28;
+      ctx.beginPath();
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(hx + 34, hy - 14);
+      ctx.moveTo(hx + 6, hy - 18);
+      ctx.lineTo(hx + 28, hy + 8);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // 8. Fine scenic shop spatter (blush highlights & plum shadow specks)
+    for (let sp = 0; sp < 480; sp++) {
+      const sx = (sp * 193) % 1020;
+      const sy = (sp * 271) % 1020;
+      ctx.fillStyle =
+        sp % 2 === 0 ? 'rgba(255, 224, 240, 0.32)' : 'rgba(64, 12, 42, 0.28)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.5 + (sp % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
 /**
- * Generates a diagonal candy-stripe texture for door frames, candy canes, and gift boxes.
+ * Generates a hand-painted 1024×1024 Seussian Snowy Roof Cap texture matching the
+ * 3 Pink Whoville Round Houses in `model_1B_whoville.jpg`:
+ * - Toned-down lavender-snow crown (`<= 0xd8`) grading to icy glacier-blue at the eaves
+ * - Painted scalloped roof shingle/drift contour lines in bold black Dr. Seuss ink
+ * - Short perpendicular Seussian tick-hatches & fine frost spatter
+ */
+function createWhovilleSnowRoofTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Vertical gradient from icy glacier-cyan at eaves (bottom of lathe UV) to toned lavender-snow at crown
+    const grad = ctx.createLinearGradient(0, 1024, 0, 0);
+    grad.addColorStop(0, '#88b4d8');
+    grad.addColorStop(0.28, '#a8c6d8');
+    grad.addColorStop(0.68, '#c0ced8');
+    grad.addColorStop(1, '#ccd4d8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Soft rosy-lavender stage light bounce washes across the snow dome
+    for (let i = 0; i < 24; i++) {
+      const px = (i * 173) % 1024;
+      const py = (i * 137) % 1024;
+      const wash = ctx.createRadialGradient(px, py, 10, px, py, 130);
+      wash.addColorStop(
+        0,
+        i % 2 === 0 ? 'rgba(206, 192, 216, 0.28)' : 'rgba(130, 174, 214, 0.26)'
+      );
+      wash.addColorStop(1, 'rgba(180, 200, 216, 0)');
+      ctx.fillStyle = wash;
+      ctx.beginPath();
+      ctx.ellipse(px, py, 130, 75, (i % 5) * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Painted scalloped snow-shingle & drift contour lines in bold Seussian ink (matching Model 1B!)
+    ctx.strokeStyle = 'rgba(22, 28, 48, 0.72)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let row = 0; row < 10; row++) {
+      const y = 110 + row * 88;
+      ctx.lineWidth = row > 6 ? 4.2 : 3.0;
+      ctx.beginPath();
+      for (let x = 0; x <= 1024; x += 64) {
+        const scallop = Math.abs(Math.sin((x / 1024) * Math.PI * 8 + row * 0.7)) * 18;
+        if (x === 0) ctx.moveTo(x, y + scallop);
+        else ctx.lineTo(x, y + scallop);
+      }
+      ctx.stroke();
+
+      // Short Seussian vertical/diagonal ink hatch ticks hanging under each snow-drift contour
+      ctx.lineWidth = 2.4;
+      for (let hx = 28 + (row % 2) * 32; hx < 996; hx += 64) {
+        const scallop = Math.abs(Math.sin((hx / 1024) * Math.PI * 8 + row * 0.7)) * 18;
+        ctx.beginPath();
+        ctx.moveTo(hx, y + scallop);
+        ctx.lineTo(hx - 6, y + scallop + 16);
+        ctx.moveTo(hx + 10, y + scallop + 2);
+        ctx.lineTo(hx + 4, y + scallop + 15);
+        ctx.stroke();
+      }
+    }
+
+    // Bold black Seussian eave-drip shadow band at bottom rim of snow cap
+    ctx.fillStyle = 'rgba(20, 24, 42, 0.78)';
+    ctx.fillRect(0, 996, 1024, 28);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a hand-painted Seussian Arched Door Leaf texture with warm coral-pink
+ * vertical timber planks, trompe-l'oeil recessed arch molding, and charcoal ink hatching
+ * matching the 3 Pink Whoville Houses in `model_1B_whoville.jpg`.
+ */
+function createWhovilleDoorTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#f47cb4');
+    grad.addColorStop(0.5, '#ea5c9c');
+    grad.addColorStop(1, '#c83878');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Vertical hand-painted Seussian plank seams & woodgrain curls
+    for (let x = 64; x < 512; x += 64) {
+      ctx.strokeStyle = 'rgba(48, 12, 34, 0.48)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.bezierCurveTo(x + 6, 170, x - 6, 340, x, 512);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 220, 238, 0.32)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 4, 0);
+      ctx.bezierCurveTo(x + 10, 170, x - 2, 340, x + 4, 512);
+      ctx.stroke();
+    }
+
+    // Trompe-l'oeil painted inner arch frame & cross-hatch shadow ticks
+    ctx.strokeStyle = '#221024';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(24, 24, 464, 464);
+
+    ctx.lineWidth = 2.6;
+    for (let y = 48; y < 464; y += 36) {
+      ctx.beginPath();
+      ctx.moveTo(24, y);
+      ctx.lineTo(42, y - 8);
+      ctx.moveTo(488, y);
+      ctx.lineTo(470, y - 8);
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a hand-painted Seussian Cream Arch Casing texture with painted stone/timber
+ * voussoir joints and black Seussian ink tick-marks (matching the door & window surrounds
+ * in `model_1B_whoville.jpg`).
+ */
+function createWhovilleArchCasingTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Toned-down warm cream-blush base (all channels <= 0xd8)
+    ctx.fillStyle = '#d6c8ce';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Subtle rosy-cream brushstroke mottling
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle =
+        i % 2 === 0 ? 'rgba(216, 196, 206, 0.35)' : 'rgba(168, 138, 154, 0.25)';
+      ctx.fillRect((i * 43) % 256, (i * 67) % 256, 36, 18);
+    }
+
+    // Crisp black Seussian ink horizontal tick marks along the casing (visible in Model 1B!)
+    ctx.strokeStyle = '#1e1424';
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+    for (let y = 16; y < 256; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(8, y);
+      ctx.lineTo(46, y + 4);
+      ctx.moveTo(208, y - 2);
+      ctx.lineTo(248, y + 3);
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a hand-painted louvered berry-magenta wood shutter texture with
+ * trompe-l'oeil slat shadows and Seussian ink outlines.
+ */
+function createPaintedShutterTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#922258';
+    ctx.fillRect(0, 0, 128, 256);
+
+    ctx.strokeStyle = '#1e0e1c';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 120, 248);
+
+    // Painted horizontal louver slats with highlight & shadow bevels
+    for (let y = 24; y < 232; y += 16) {
+      ctx.fillStyle = '#520e30';
+      ctx.fillRect(14, y, 100, 6);
+      ctx.fillStyle = '#c84884';
+      ctx.fillRect(14, y + 6, 100, 4);
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a hand-painted Seussian pine-bough foliage texture with sweeping
+ * emerald-to-chartreuse brushstrokes and dark charcoal ink needle cross-hatching
+ * for the Whoville Centerpiece Christmas Tree (`model_1B_whoville.jpg`).
+ */
+function createPaintedPineFoliageTexture(brightVariant: boolean): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, brightVariant ? '#38b24e' : '#24923e');
+    grad.addColorStop(0.55, brightVariant ? '#228e3c' : '#187430');
+    grad.addColorStop(1, '#0e4e20');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Sweeping Seussian pine-needle fan brushstrokes
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 140; i++) {
+      const bx = (i * 79) % 512;
+      const by = (i * 113) % 512;
+      ctx.strokeStyle =
+        i % 3 === 0
+          ? 'rgba(136, 224, 92, 0.34)'
+          : i % 3 === 1
+            ? 'rgba(12, 52, 22, 0.42)'
+            : 'rgba(64, 184, 78, 0.28)';
+      ctx.lineWidth = 3.5;
+      for (let f = -2; f <= 2; f++) {
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.quadraticCurveTo(bx + f * 10, by + 18, bx + f * 18, by + 34);
+        ctx.stroke();
+      }
+    }
+
+    // Crisp dark Seussian ink bough-scallop contour lines
+    ctx.strokeStyle = 'rgba(10, 28, 14, 0.55)';
+    ctx.lineWidth = 2.6;
+    for (let row = 42; row < 500; row += 64) {
+      ctx.beginPath();
+      for (let x = 0; x <= 512; x += 32) {
+        const wave = Math.abs(Math.sin((x / 512) * Math.PI * 6 + row)) * 14;
+        if (x === 0) ctx.moveTo(x, row + wave);
+        else ctx.lineTo(x, row + wave);
+      }
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a diagonal candy-stripe texture for door frames, candy canes, and gift boxes
+ * with subtle hand-painted bevel shading and Seussian ink pin-striping.
  */
 function createCandyStripeTexture(
   colorA: string,
@@ -130,6 +503,11 @@ function createCandyStripeTexture(
       ctx.lineTo(i * step - 256, 256);
       ctx.closePath();
       ctx.fill();
+
+      // Crisp Seussian ink edge along each candy stripe
+      ctx.strokeStyle = 'rgba(28, 14, 24, 0.38)';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
     }
   }
   const tex = new THREE.CanvasTexture(canvas);
@@ -140,47 +518,54 @@ function createCandyStripeTexture(
 }
 
 /**
- * Generates a warm amber-gold interior window texture with cozy radial candle glow,
- * painted diamond lead-came glazing lines, and painted Seussian drape silhouettes.
+ * Generates a warm 512×512 amber-gold interior window texture with cozy radial candle glow,
+ * painted diamond lead-came glazing lines, painted Seussian drape silhouettes, and lower
+ * sill-shadow hatching matching `model_1B_whoville.jpg`.
  */
 function createAmberWindowTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = 512;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const grad = ctx.createRadialGradient(128, 136, 14, 128, 128, 144);
-    grad.addColorStop(0, '#fff9c4');
-    grad.addColorStop(0.48, '#ffd858');
-    grad.addColorStop(0.85, '#f09422');
-    grad.addColorStop(1, '#c86412');
+    const grad = ctx.createRadialGradient(256, 268, 24, 256, 256, 288);
+    grad.addColorStop(0, '#fffac8');
+    grad.addColorStop(0.45, '#ffdc58');
+    grad.addColorStop(0.82, '#f29820');
+    grad.addColorStop(1, '#c45c10');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillRect(0, 0, 512, 512);
 
     // Painted diamond cottage lead-came mullions
-    ctx.strokeStyle = 'rgba(120, 58, 18, 0.28)';
-    ctx.lineWidth = 3;
-    for (let d = -256; d <= 256; d += 48) {
+    ctx.strokeStyle = 'rgba(112, 48, 14, 0.32)';
+    ctx.lineWidth = 5;
+    for (let d = -512; d <= 512; d += 88) {
       ctx.beginPath();
       ctx.moveTo(d, 0);
-      ctx.lineTo(d + 256, 256);
-      ctx.moveTo(d + 256, 0);
-      ctx.lineTo(d, 256);
+      ctx.lineTo(d + 512, 512);
+      ctx.moveTo(d + 512, 0);
+      ctx.lineTo(d, 512);
       ctx.stroke();
     }
 
-    // Subtle painted curtain swags in upper corners
-    ctx.fillStyle = 'rgba(180, 42, 34, 0.42)';
+    // Painted crimson velvet curtain swags & gold fringe in upper corners
+    ctx.fillStyle = 'rgba(184, 36, 42, 0.48)';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(96, 44, 0, 148);
+    ctx.quadraticCurveTo(192, 88, 0, 296);
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(256, 0);
-    ctx.quadraticCurveTo(160, 44, 256, 148);
+    ctx.moveTo(512, 0);
+    ctx.quadraticCurveTo(320, 88, 512, 296);
     ctx.fill();
+
+    // Bold black Seussian window-pane shadow frame & lower sill tick-marks
+    ctx.strokeStyle = 'rgba(28, 16, 24, 0.65)';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(6, 6, 500, 500);
   }
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -332,6 +717,7 @@ function buildSingleWhovilleHouse(
     goldBowMat: THREE.MeshStandardMaterial;
     windowGlowMat: THREE.MeshStandardMaterial;
     shutterMat: THREE.MeshStandardMaterial;
+    doorPanelMat: THREE.MeshStandardMaterial;
   }
 ): THREE.Group {
   const house = new THREE.Group();
@@ -785,17 +1171,13 @@ function buildSingleWhovilleHouse(
   doorSurroundMesh.position.z = 0.04;
   doorArchGroup.add(doorSurroundMesh);
 
-  // Layer 3: Recessed Pink/Coral Arched Door Leaf (z = 0.085 to 0.125, +4.5cm offset from surround)
-  const doorPanelMat = new THREE.MeshStandardMaterial({
-    color: 0xf46ca8,
-    roughness: 0.48,
-  });
+  // Layer 3: Recessed Pink/Coral Arched Door Leaf with Hand-Painted Planks & Swirl Trim (z = 0.085 to 0.125)
   const doorLeafMesh = new THREE.Mesh(
     new THREE.ExtrudeGeometry(
       makeArchShape(cfg.doorWidth - 0.04, cfg.doorHeight - 0.04),
       { depth: 0.04, bevelEnabled: false, curveSegments: 20 }
     ),
-    doorPanelMat
+    sharedMats.doorPanelMat
   );
   doorLeafMesh.position.z = 0.085;
   doorArchGroup.add(doorLeafMesh);
@@ -1041,8 +1423,9 @@ export function buildGrinchWhovilleHouses(
   housesGroup.name = 'Element_grinch-whoville-houses';
 
   // Toned-down snow materials (all channels <= 0xd8, roughness >= 0.55 to avoid spotlight overexposure)
+  const snowRoofTex = createWhovilleSnowRoofTexture();
   const snowCapMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
+    map: snowRoofTex,
     color: 0xbcd0d8,
     roughness: 0.62,
     metalness: 0.02,
@@ -1064,6 +1447,7 @@ export function buildGrinchWhovilleHouses(
     roughness: 0.68,
   });
   const stoneStepMat = new THREE.MeshStandardMaterial({
+    map: rockTex,
     color: 0x8a929e,
     roughness: 0.72,
   });
@@ -1072,6 +1456,7 @@ export function buildGrinchWhovilleHouses(
     roughness: 0.56,
   });
   const creamFrameMat = new THREE.MeshStandardMaterial({
+    map: createWhovilleArchCasingTexture(),
     color: 0xd8d0c4,
     roughness: 0.58,
   });
@@ -1085,7 +1470,7 @@ export function buildGrinchWhovilleHouses(
     metalness: 0.65,
   });
   const wreathGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x1b883e,
+    map: createPaintedPineFoliageTexture(false),
     roughness: 0.58,
   });
   const crimsonBowMat = new THREE.MeshStandardMaterial({
@@ -1104,8 +1489,12 @@ export function buildGrinchWhovilleHouses(
     roughness: 0.35,
   });
   const shutterMat = new THREE.MeshStandardMaterial({
-    color: 0x8e2458,
-    roughness: 0.58,
+    map: createPaintedShutterTexture(),
+    roughness: 0.56,
+  });
+  const doorPanelMat = new THREE.MeshStandardMaterial({
+    map: createWhovilleDoorTexture(),
+    roughness: 0.48,
   });
 
   const sharedMats = {
@@ -1124,6 +1513,7 @@ export function buildGrinchWhovilleHouses(
     goldBowMat,
     windowGlowMat,
     shutterMat,
+    doorPanelMat,
   };
 
   // DSR House (-3.35, 0, -3.05): Front steps end at z <= -2.46m (behind Papa Who's House at z = -1.98m)
@@ -1391,11 +1781,11 @@ export function buildGrinchWhovilleTree(
     roughness: 0.78,
   });
   const foliageDeepMat = new THREE.MeshStandardMaterial({
-    color: 0x167834,
+    map: createPaintedPineFoliageTexture(false),
     roughness: 0.56,
   });
   const foliageBrightMat = new THREE.MeshStandardMaterial({
-    color: 0x229844,
+    map: createPaintedPineFoliageTexture(true),
     roughness: 0.52,
   });
 
@@ -2064,18 +2454,54 @@ export function buildGrinchChristmasSign(): THREE.Group {
   if (sCtx) {
     // Rich crimson theatre-banner velvet gradient
     const bgGrad = sCtx.createLinearGradient(0, 0, 0, 320);
-    bgGrad.addColorStop(0, '#9e1226');
-    bgGrad.addColorStop(0.5, '#d62238');
-    bgGrad.addColorStop(1, '#941022');
+    bgGrad.addColorStop(0, '#8c0e20');
+    bgGrad.addColorStop(0.45, '#d82238');
+    bgGrad.addColorStop(1, '#7c0c1c');
     sCtx.fillStyle = bgGrad;
     sCtx.fillRect(0, 0, 1024, 320);
 
-    // Subtle theatre velvet diagonal sheen & gold border frame
+    // Trompe-l'oeil vertical catenary fabric fold shadows & highlights across the banner
+    for (let fx = 0; fx < 1024; fx += 64) {
+      const foldGrad = sCtx.createLinearGradient(fx, 0, fx + 64, 0);
+      foldGrad.addColorStop(0, 'rgba(30, 4, 10, 0.22)');
+      foldGrad.addColorStop(0.48, 'rgba(255, 110, 130, 0.14)');
+      foldGrad.addColorStop(1, 'rgba(30, 4, 10, 0.22)');
+      sCtx.fillStyle = foldGrad;
+      sCtx.fillRect(fx, 0, 64, 320);
+    }
+
+    // Scattered festive gold & cream polka-dots across the crimson velvet field (matching Model 1B)
+    for (let p = 0; p < 58; p++) {
+      const px = 42 + ((p * 173 + 29) % 940);
+      const py = 36 + ((p * 89 + 17) % 248);
+      const pr = 3.2 + (p % 3) * 1.4;
+      sCtx.fillStyle = p % 4 === 0 ? 'rgba(255, 244, 196, 0.55)' : 'rgba(255, 212, 56, 0.48)';
+      sCtx.beginPath();
+      sCtx.arc(px, py, pr, 0, Math.PI * 2);
+      sCtx.fill();
+    }
+
+    // Seussian pen-and-ink cross-hatch vignettes along the top/bottom edges & corners
+    sCtx.strokeStyle = 'rgba(22, 6, 12, 0.36)';
+    sCtx.lineWidth = 1.6;
+    for (let hx = 24; hx < 1000; hx += 16) {
+      sCtx.beginPath();
+      sCtx.moveTo(hx, 18);
+      sCtx.lineTo(hx - 10, 38);
+      sCtx.moveTo(hx, 300);
+      sCtx.lineTo(hx + 10, 276);
+      sCtx.stroke();
+    }
+
+    // Double gold border frame with dark ink bevel
+    sCtx.strokeStyle = '#1e060c';
+    sCtx.lineWidth = 11;
+    sCtx.strokeRect(18, 16, 988, 284);
     sCtx.strokeStyle = '#ffd238';
-    sCtx.lineWidth = 7;
+    sCtx.lineWidth = 6.5;
     sCtx.strokeRect(18, 16, 988, 284);
 
-    sCtx.strokeStyle = 'rgba(255, 236, 170, 0.5)';
+    sCtx.strokeStyle = 'rgba(255, 236, 170, 0.58)';
     sCtx.lineWidth = 3;
     sCtx.setLineDash([14, 10]);
     sCtx.strokeRect(30, 28, 964, 260);
@@ -2101,12 +2527,18 @@ export function buildGrinchChristmasSign(): THREE.Group {
       sCtx.bezierCurveTo(26, 18, 18, 26, 28, 34);
       sCtx.stroke();
 
-      // Holly leaves & crimson berries in corner motif
+      // Holly leaves & crimson berries in corner motif with dark Seussian ink outlines
       sCtx.fillStyle = '#24983e';
+      sCtx.strokeStyle = '#0c2814';
+      sCtx.lineWidth = 2;
       sCtx.beginPath();
       sCtx.ellipse(18, 10, 14, 6, 0.35, 0, Math.PI * 2);
+      sCtx.fill();
+      sCtx.stroke();
+      sCtx.beginPath();
       sCtx.ellipse(10, 18, 14, 6, 1.2, 0, Math.PI * 2);
       sCtx.fill();
+      sCtx.stroke();
 
       sCtx.fillStyle = '#ff283c';
       sCtx.beginPath();
@@ -2120,10 +2552,10 @@ export function buildGrinchChristmasSign(): THREE.Group {
 
     // Festive gold stars / dots along the upper and lower border
     sCtx.fillStyle = '#ffd83b';
-    for (let dx = 112; dx <= 912; dx += 80) {
+    for (let dx = 112; dx <= 912; dx += 64) {
       sCtx.beginPath();
-      sCtx.arc(dx, 42, 4.5, 0, Math.PI * 2);
-      sCtx.arc(dx, 274, 4.5, 0, Math.PI * 2);
+      sCtx.arc(dx, 42, 4.8, 0, Math.PI * 2);
+      sCtx.arc(dx, 274, 4.8, 0, Math.PI * 2);
       sCtx.fill();
     }
 

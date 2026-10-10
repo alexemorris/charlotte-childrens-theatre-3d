@@ -1256,22 +1256,77 @@ export interface WhoFairyLightOptions {
 }
 
 const DEFAULT_WHO_FAIRY_PALETTE: ReadonlyArray<number> = [
-  0xff0c2e, // Ruby Red
-  0x00e848, // Emerald Green
-  0x00a8ff, // Sapphire Cyan-Blue
-  0xffc400, // Golden Yellow
-  0xff14b8, // Whoville Hot Magenta
-  0xff6200, // Tangerine Orange
-  0x8c1eff, // Amethyst Purple
+  0xff1438, // Vivid Ruby Red
+  0x00f050, // Brilliant Emerald Green
+  0x00b8ff, // Electric Sapphire Blue
+  0xffcf00, // Warm Golden Amber-Yellow
+  0xff1cc4, // Whoville Festive Magenta
+  0xff6a00, // Bright Tangerine Orange
+  0x9a2eff, // Radiant Amethyst Purple
 ];
+
+let cachedFairyGlowSpriteTex: THREE.CanvasTexture | null = null;
+
+/**
+ * Generates a cached soft radial glow & subtle 4-point twinkle sprite texture
+ * used with `THREE.AdditiveBlending` so every fairy light bulb radiates an
+ * unmistakable, tasteful multi-colored halo from any camera distance.
+ */
+function getFairyLightGlowSpriteTexture(): THREE.CanvasTexture {
+  if (cachedFairyGlowSpriteTex) {
+    return cachedFairyGlowSpriteTex;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const cx = 64;
+    const cy = 64;
+    const rad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 62);
+    rad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+    rad.addColorStop(0.18, 'rgba(255, 255, 255, 0.86)');
+    rad.addColorStop(0.42, 'rgba(255, 255, 255, 0.38)');
+    rad.addColorStop(0.72, 'rgba(255, 255, 255, 0.10)');
+    rad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, 128, 128);
+
+    // Delicate 4-point theatrical lens star-glint
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (const rot of [0, Math.PI * 0.5]) {
+      ctx.save();
+      ctx.rotate(rot);
+      const spikeGrad = ctx.createLinearGradient(-56, 0, 56, 0);
+      spikeGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.0)');
+      spikeGrad.addColorStop(0.42, 'rgba(255, 255, 255, 0.32)');
+      spikeGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.75)');
+      spikeGrad.addColorStop(0.58, 'rgba(255, 255, 255, 0.32)');
+      spikeGrad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = spikeGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 56, 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  cachedFairyGlowSpriteTex = tex;
+  return tex;
+}
+
+const noopRaycast = (): void => {
+  // Glow sprites are purely visual; ignore during pointer raycasting
+};
 
 /**
  * Builds a Multi-Colored Emissive Who-Land Fairy Light Strand (`createWhoLandFairyLightStrand`)
  * draped along `waypoints` with optional catenary sag between points, a dark
- * forest-green festoon wire, brass bulb sockets, saturated multi-colored emissive
- * glass bulbs (`toneMapped: false` with clamped chroma so colors stay vivid red,
- * green, blue, yellow, magenta, orange, and purple without washing out to white),
- * colored bloom halos, and multi-colored practical `THREE.PointLight`s.
+ * forest-green festoon wire, brass bulb sockets, bright multi-colored emissive
+ * C9 glass bulbs, additive radial star-glow halos, and practical `THREE.PointLight`s.
  */
 export function createWhoLandFairyLightStrand(
   waypoints: ReadonlyArray<THREE.Vector3>,
@@ -1279,12 +1334,14 @@ export function createWhoLandFairyLightStrand(
 ): THREE.Group {
   const strandGroup = new THREE.Group();
   strandGroup.name = 'WhoLandFairyLightStrand';
+  strandGroup.userData.isFairyLightStrand = true;
   if (waypoints.length < 2) {
     return strandGroup;
   }
 
   const bulbCount = options.bulbCount ?? 14;
-  const bulbRadiusM = options.bulbRadiusM ?? 0.032;
+  // Slightly larger C9 theatrical festoon bulb radius so bulbs read clearly from the house
+  const bulbRadiusM = (options.bulbRadiusM ?? 0.034) * 1.18;
   const cordRadiusM = options.cordRadiusM ?? 0.009;
   const sagM = options.sagM ?? 0.0;
   const customColors = options.colors ?? options.palette;
@@ -1292,8 +1349,7 @@ export function createWhoLandFairyLightStrand(
     customColors && customColors.length > 0
       ? customColors
       : DEFAULT_WHO_FAIRY_PALETTE;
-  // Keep effective un-tonemapped emissive multiplier <= 1.05 so secondary RGB channels never clip to white
-  const clampedEmissive = Math.min(1.05, options.emissiveIntensity ?? 0.92);
+  const baseEmissive = Math.max(1.55, Math.min(2.4, options.emissiveIntensity ?? 1.85));
 
   // Subdivide between waypoints if sagM > 0 so each span forms a natural catenary swag
   const curvePts: THREE.Vector3[] = [];
@@ -1333,85 +1389,104 @@ export function createWhoLandFairyLightStrand(
   strandGroup.add(cordMesh);
 
   const bulbGeo = new THREE.SphereGeometry(bulbRadiusM, 10, 8);
-  const haloGeo = new THREE.SphereGeometry(bulbRadiusM * 1.95, 8, 6);
   const socketGeo = new THREE.CylinderGeometry(
     bulbRadiusM * 0.42,
     bulbRadiusM * 0.5,
-    bulbRadiusM * 0.75,
+    bulbRadiusM * 0.72,
     6
   );
 
+  const glowTex = getFairyLightGlowSpriteTexture();
   const bulbMatCache = new Map<number, THREE.MeshStandardMaterial>();
-  const haloMatCache = new Map<number, THREE.MeshBasicMaterial>();
+  const spriteMatCache = new Map<number, THREE.SpriteMaterial>();
 
   for (let i = 0; i < bulbCount; i++) {
     const t = bulbCount === 1 ? 0.5 : (i + 0.5) / bulbCount;
     const pt = curve.getPoint(t);
-    const col = palette[i % palette.length] ?? 0xff0c2e;
+    const col = palette[i % palette.length] ?? 0xff1438;
 
     let bulbMat = bulbMatCache.get(col);
     if (!bulbMat) {
+      // Blend 25% white into the base albedo so the bulb center looks hot and luminous,
+      // while keeping the emissive color 100% pure saturated hue
+      const coreTint = new THREE.Color(col).lerp(new THREE.Color(0xffffff), 0.28);
       bulbMat = new THREE.MeshStandardMaterial({
-        color: col,
-        emissive: col,
-        emissiveIntensity: clampedEmissive,
-        roughness: 0.14,
-        metalness: 0.04,
+        color: coreTint,
+        emissive: new THREE.Color(col),
+        emissiveIntensity: baseEmissive,
+        roughness: 0.1,
+        metalness: 0.02,
         toneMapped: false,
       });
+      bulbMat.userData.isFairyLightMaterial = true;
+      bulbMat.userData.baseEmissiveIntensity = baseEmissive;
       bulbMatCache.set(col, bulbMat);
     }
 
-    let haloMat = haloMatCache.get(col);
-    if (!haloMat) {
-      haloMat = new THREE.MeshBasicMaterial({
+    let spriteMat = spriteMatCache.get(col);
+    if (!spriteMat) {
+      spriteMat = new THREE.SpriteMaterial({
+        map: glowTex,
         color: col,
         transparent: true,
-        opacity: 0.42,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
         depthWrite: false,
         toneMapped: false,
       });
-      haloMatCache.set(col, haloMat);
+      spriteMat.userData.isFairyHaloMaterial = true;
+      spriteMat.userData.baseOpacity = 0.85;
+      spriteMatCache.set(col, spriteMat);
     }
 
     const socket = new THREE.Mesh(socketGeo, socketMat);
-    socket.position.set(pt.x, pt.y - bulbRadiusM * 0.32, pt.z);
+    socket.position.set(pt.x, pt.y - bulbRadiusM * 0.28, pt.z);
     strandGroup.add(socket);
 
     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-    bulb.scale.set(0.84, 1.32, 0.84);
+    bulb.scale.set(0.86, 1.34, 0.86);
     bulb.position.set(
       pt.x,
-      pt.y - bulbRadiusM * 1.15,
+      pt.y - bulbRadiusM * 1.1,
       pt.z + bulbRadiusM * 0.18
     );
     bulb.rotation.z = ((i % 3) - 1) * 0.16;
+    bulb.userData.isFairyLightBulb = true;
+    bulb.userData.baseEmissiveIntensity = baseEmissive;
     strandGroup.add(bulb);
 
-    const halo = new THREE.Mesh(haloGeo, haloMat);
-    halo.position.copy(bulb.position);
-    strandGroup.add(halo);
+    // Camera-facing additive radial glow & star-twinkle halo
+    const haloSprite = new THREE.Sprite(spriteMat);
+    haloSprite.position.copy(bulb.position);
+    const haloDiameter = bulbRadiusM * 5.8;
+    haloSprite.scale.set(haloDiameter, haloDiameter, 1);
+    haloSprite.raycast = noopRaycast;
+    haloSprite.userData.isFairyLightHalo = true;
+    haloSprite.userData.baseOpacity = 0.85;
+    strandGroup.add(haloSprite);
   }
 
   const lightCount =
     options.pointLightCount ?? (options.includePointLight ? 1 : 0);
   if (lightCount > 0) {
-    const lightIntensity = options.pointLightIntensity ?? 0.65;
-    const lightDist = options.pointLightDistance ?? 2.6;
+    const lightIntensity = (options.pointLightIntensity ?? 0.85) * 1.35;
+    const lightDist = options.pointLightDistance ?? 3.2;
     for (let l = 0; l < lightCount; l++) {
       const lt = (l + 0.5) / lightCount;
       const lPt = curve.getPoint(lt);
       const multiColor =
         options.pointLightColor ??
         palette[(l * 2) % palette.length] ??
-        0xff0c2e;
+        0xff1438;
       const ptLight = new THREE.PointLight(
         multiColor,
         lightIntensity,
         lightDist,
-        1.8
+        1.7
       );
-      ptLight.position.set(lPt.x, lPt.y - bulbRadiusM * 1.2, lPt.z + 0.12);
+      ptLight.position.set(lPt.x, lPt.y - bulbRadiusM * 1.2, lPt.z + 0.14);
+      ptLight.userData.isFairyPointLight = true;
+      ptLight.userData.baseIntensity = lightIntensity;
       strandGroup.add(ptLight);
     }
   }

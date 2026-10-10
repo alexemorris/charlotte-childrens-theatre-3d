@@ -67,13 +67,22 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
       vec3(-0.53108,  1.10813, -0.07276),
       vec3(-0.07367, -0.00605,  1.07602)
     );
-    color *= exposure;
-    color = ACESInputMat * color;
-    vec3 a = color * (color + 0.0245786) - 0.000090537;
-    vec3 b = color * (0.983729 * color + 0.4329510) + 0.238081;
-    color = a / b;
-    color = ACESOutputMat * color;
-    return clamp(color, 0.0, 1.0);
+    vec3 exposed = color * exposure;
+    float peak = max(exposed.r, max(exposed.g, exposed.b));
+    float minCh = min(exposed.r, min(exposed.g, exposed.b));
+    float chroma = (peak - minCh) / max(0.001, peak);
+    vec3 pureHue = exposed / max(0.001, peak);
+
+    vec3 aces = ACESInputMat * exposed;
+    vec3 a = aces * (aces + 0.0245786) - 0.000090537;
+    vec3 b = aces * (0.983729 * aces + 0.4329510) + 0.238081;
+    aces = clamp(ACESOutputMat * (a / b), 0.0, 1.0);
+
+    // Preserve rich multi-colored chroma on bright emissive fairy lights & practicals
+    // while giving the very center of intense bulbs a subtle warm-bright filament core
+    float emissiveChromaWeight = smoothstep(0.52, 0.88, chroma) * smoothstep(0.95, 1.85, peak);
+    vec3 vividEmissive = mix(pureHue * min(1.0, peak * 0.82), vec3(1.0, 0.97, 0.92), 0.22);
+    return clamp(mix(aces, vividEmissive, emissiveChromaWeight * 0.68), 0.0, 1.0);
   }
 
   vec3 linearToSrgb(vec3 value) {
@@ -120,7 +129,13 @@ const POST_FRAGMENT_SHADER = /* glsl */ `
   vec3 extractBrightHighlight(vec2 uv) {
     vec3 c = texture2D(tColor, clamp(uv, 0.0, 1.0)).rgb;
     float peak = max(c.r, max(c.g, c.b));
-    float knee = smoothstep(1.45, 2.85, peak);
+    float minCh = min(c.r, min(c.g, c.b));
+    float chroma = (peak - minCh) / max(0.001, peak);
+    // Saturated emissives (fairy lights, star topper, neon) bloom at a lower threshold
+    // while neutral snow & painted flats require high intensity so they never blow out
+    float lowKnee = mix(1.90, 1.05, smoothstep(0.42, 0.85, chroma));
+    float highKnee = mix(3.25, 2.15, smoothstep(0.42, 0.85, chroma));
+    float knee = smoothstep(lowKnee, highKnee, peak);
     return c * knee;
   }
 
@@ -344,8 +359,8 @@ export class PostProcessingPipeline {
     u.uBloomIntensity.value =
       this.bloomEnabled && this.quality !== 'performance'
         ? this.quality === 'ultra'
-          ? 0.15
-          : 0.09
+          ? 0.28
+          : 0.18
         : 0.0;
     u.uSharpenIntensity.value =
       this.quality === 'ultra' ? 0.36 : this.quality === 'balanced' ? 0.25 : 0.0;

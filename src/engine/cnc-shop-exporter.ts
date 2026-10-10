@@ -105,24 +105,24 @@ interface ElementFabricationProfile {
 const EXPLICIT_ELEMENT_PROFILES: Readonly<Record<string, ElementFabricationProfile>> = {
   'grinch-snow-portals': {
     method: 'cnc-primary',
-    badgeLabel: 'TIMBER CARPENTRY + 3-AXIS CNC PLYWOOD + SCENIC PAINT',
+    badgeLabel: 'TIMBER & CNC ARMATURE + PAPIER-MÂCHÉ / PLASTER-CLOTH + SCENIC PAINT',
     primaryConstructionNote:
-      'Budget-optimized 1"×4" & 2"×4" timber-framed Hollywood flats faced with 3-axis 4\'×8\' CNC-routed 1/2" & 3/4" Baltic Birch profile cutouts and kerf-bent 1/4" Luan skins. Rear-mounted 18mm plywood icicle cutouts poke through behind the rock edges; Scenic Artists paint trompe-l\'oeil snow bevels, ice facets, and Seussian cross-hatching.',
+      '1"×4" & 2"×4" timber-framed Hollywood flats and 3-axis 4\'×8\' CNC-routed 3/4" Baltic Birch contour formers skinned with sculpted chicken-wire mesh, heavy papier-mâché / cheesecloth strips, and stippled Rosco FoamCoat plaster-cloth for 3D overhanging snow cornices and rock crags. Rear-mounted 18mm plywood icicle cutouts poke through behind the overhangs; Scenic Artists apply cobalt-blue fissure glazes and Seussian cross-hatching.',
     departments: [
       {
         department: 'Carpentry & Structural Welding',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: '1"×4" and 2"×4" dimensional timber Hollywood flat framing, kerf-bent Luan skin assembly, wooden stage-jack braces, and lineset battens.',
+        scopeSummary: '1"×4" and 2"×4" dimensional timber Hollywood flat framing, stapled 1" poultry netting / chicken-wire armatures over CNC formers, wooden stage-jack braces, and lineset battens.',
       },
       {
         department: 'CNC Router & EPS Foam Mill',
         roleBadge: 'PRIMARY CNC',
-        scopeSummary: '3-axis 4\'×8\' flat-bed CNC routing of S-curved ice-wave wing profiles, stacked snow-cliff contour ribs, and 18mm plywood rear icicle valance cutouts.',
+        scopeSummary: '3-axis 4\'×8\' flat-bed CNC routing of S-curved ice-wave wing rib formers, stacked snow-cliff contour bulkheads, and 18mm plywood rear icicle valance cutouts.',
       },
       {
         department: 'Soft Goods & Scenic Paint Shop',
         roleBadge: 'TRADITIONAL SHOP',
-        scopeSummary: 'Scenic Artist hand-painted trompe-l\'oeil snow-drift highlights, faceted ice bevels, and airbrushed Seussian blue-violet cross-hatching on primed timber.',
+        scopeSummary: 'Layered heavy kraft papier-mâché & dipped muslin/plaster-cloth skinning over wire armatures, stippled Rosco FoamCoat snow-drift texture, cobalt/lavender scenic glazes, and Seussian charcoal cross-hatching.',
       },
     ],
   },

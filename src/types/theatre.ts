@@ -158,13 +158,32 @@ export interface CustomSetPiece {
 
 export type LightingPresetId = 'show-mode' | 'work-lights' | 'tech-rehearsal' | 'dramatic-cue';
 
+export type LightingGelPresetId =
+  | 'cue-default'
+  | 'r02-bastard-amber'
+  | 'r65-daylight-blue'
+  | 'r58-deep-lavender'
+  | 'r26-festive-rose'
+  | 'r90-grinch-green'
+  | 'r80-primary-blue'
+  | 'r21-golden-amber'
+  | 'custom';
+
 export interface LightingState {
   preset: LightingPresetId;
   houseLevel: number;
   fohRailLevel: number;
+  followSpotLevel: number;
   stageElectricsLevel: number;
   cycWashLevel: number;
   apronFootlightsLevel: number;
+  practicalsLevel: number;
+  spotBeamsVisible: boolean;
+  gelPresetId: LightingGelPresetId;
+  spotColorHex: string;
+  washColorHex: string;
+  cycColorHex: string;
+  apronColorHex: string;
 }
 
 export type CameraPresetId =

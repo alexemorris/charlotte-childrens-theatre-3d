@@ -193,11 +193,19 @@ export const grandDrapeOpenFraction: Signal<number> = signal<number>(1.0);
 
 export const lightingState: Signal<LightingState> = signal<LightingState>({
   preset: 'show-mode',
-  houseLevel: 0.42,
+  houseLevel: 0.25,
   fohRailLevel: 0.92,
+  followSpotLevel: 0.96,
   stageElectricsLevel: 0.95,
-  cycWashLevel: 0.88,
-  apronFootlightsLevel: 0.75,
+  cycWashLevel: 0.9,
+  apronFootlightsLevel: 0.72,
+  practicalsLevel: 1.12,
+  spotBeamsVisible: true,
+  gelPresetId: 'cue-default',
+  spotColorHex: '#f4dec0',
+  washColorHex: '#d8c6e8',
+  cycColorHex: '#6c88d4',
+  apronColorHex: '#9ab4e8',
 });
 
 export const graphicsQuality: Signal<GraphicsQualityMode> =

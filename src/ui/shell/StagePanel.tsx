@@ -25,7 +25,12 @@ import {
   stageTrapsOpen,
   syncStoreFromSceneController,
 } from '../../state/shell-store.ts';
+import {
+  LIGHTING_GEL_PRESETS,
+  type LightingNumericChannelKey,
+} from '../../theatre/theatre-scene.ts';
 import type {
+  LightingGelPresetId,
   LightingPresetId,
   ProductionElementSpec,
 } from '../../types/theatre.ts';
@@ -54,42 +59,72 @@ const LIGHTING_PRESETS: ReadonlyArray<{
   { id: 'dramatic-cue', label: 'Dramatic' },
 ];
 
-type LightingChannelKey =
-  | 'houseLevel'
-  | 'fohRailLevel'
-  | 'stageElectricsLevel'
-  | 'apronFootlightsLevel'
-  | 'cycWashLevel';
+const LIGHTING_ZONE_FILTERS: ReadonlyArray<{
+  readonly key: 'spotColorHex' | 'washColorHex' | 'cycColorHex' | 'apronColorHex';
+  readonly label: string;
+  readonly sub: string;
+}> = [
+  { key: 'spotColorHex', label: 'Spot / Specials', sub: 'Followspot & Key' },
+  { key: 'washColorHex', label: 'Stage Wash', sub: 'FOH & Electrics' },
+  { key: 'cycColorHex', label: 'Cyc Sky Gel', sub: 'Upstage Horizon' },
+  { key: 'apronColorHex', label: 'Apron & Booms', sub: 'Footlights & Wings' },
+];
 
 const LIGHTING_CHANNELS: ReadonlyArray<{
-  readonly key: LightingChannelKey;
+  readonly key: LightingNumericChannelKey;
   readonly label: string;
   readonly subtitle: string;
+  readonly maxPct: number;
+  readonly defaultOnPct: number;
 }> = [
   {
-    key: 'houseLevel',
-    label: 'House Chandeliers',
-    subtitle: 'Auditorium & proscenium frieze ambient',
+    key: 'followSpotLevel',
+    label: 'Followspots & Specials',
+    subtitle: 'Center showpiece followspot & downstage actor special',
+    maxPct: 100,
+    defaultOnPct: 96,
   },
   {
-    key: 'fohRailLevel',
-    label: 'FOH Balcony Rail',
-    subtitle: '14 front-of-house key ellipsoidal spots',
+    key: 'practicalsLevel',
+    label: 'Fairy Lights & Practicals',
+    subtitle: 'Multi-colored Who-Land fairy light strands, tree & glowing windows',
+    maxPct: 150,
+    defaultOnPct: 112,
   },
   {
     key: 'stageElectricsLevel',
     label: 'Stage Electrics Key',
     subtitle: 'Overhead #1–#3 electrics & warm stage fill',
+    maxPct: 100,
+    defaultOnPct: 95,
   },
   {
-    key: 'apronFootlightsLevel',
-    label: 'Apron Footlights',
-    subtitle: 'Downstage apron & proscenium footlight fill',
+    key: 'fohRailLevel',
+    label: 'FOH Balcony Rail',
+    subtitle: '14 front-of-house key ellipsoidal spots',
+    maxPct: 100,
+    defaultOnPct: 92,
   },
   {
     key: 'cycWashLevel',
     label: 'Upstage Cyclorama',
     subtitle: 'Sky cyc & groundrow LED color wash',
+    maxPct: 100,
+    defaultOnPct: 90,
+  },
+  {
+    key: 'apronFootlightsLevel',
+    label: 'Apron & Wing Booms',
+    subtitle: 'Downstage apron footlights & SL/SR side wing cross-lights',
+    maxPct: 100,
+    defaultOnPct: 75,
+  },
+  {
+    key: 'houseLevel',
+    label: 'House Chandeliers',
+    subtitle: 'Auditorium & proscenium frieze ambient',
+    maxPct: 100,
+    defaultOnPct: 35,
   },
 ];
 
@@ -214,6 +249,51 @@ function ScenesAndSetsTab(): JSX.Element {
             )}
           </div>
           <p class="scene-synopsis-text">{currentScene.synopsis}</p>
+
+          {/* Compact Per-Scene Stage Gel & Practicals Strip */}
+          <div class="scene-gel-strip" aria-label="Active Scene Gel Filters">
+            <span class="scene-gel-strip-label">
+              <Icon name="light" size={12} />
+              <span>Scene Gels:</span>
+            </span>
+            <div class="scene-gel-swatches">
+              {LIGHTING_ZONE_FILTERS.map((z) => (
+                <label
+                  key={z.key}
+                  class="scene-gel-mini-swatch"
+                  title={`${z.label} (${z.sub}): ${lightingState.value[z.key]} — Click to tweak gel color`}
+                >
+                  <input
+                    type="color"
+                    value={lightingState.value[z.key]}
+                    aria-label={`${z.label} color picker`}
+                    onInput={(e) => {
+                      sceneCtrl.setLightingZoneColor(z.key, e.currentTarget.value);
+                      syncStoreFromSceneController(sceneCtrl);
+                    }}
+                  />
+                  <span
+                    class="scene-gel-dot"
+                    style={{ background: lightingState.value[z.key] }}
+                  />
+                  <span class="scene-gel-name">{z.label.split(' ')[0]}</span>
+                </label>
+              ))}
+            </div>
+            {lightingState.value.gelPresetId !== 'cue-default' && (
+              <button
+                type="button"
+                class="shell-chip shell-chip-xs"
+                title="Reset gel filters to this scene's designed cue colors"
+                onClick={() => {
+                  sceneCtrl.setLightingGelPreset('cue-default');
+                  syncStoreFromSceneController(sceneCtrl);
+                }}
+              >
+                Cue Default
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Reference Thumbnails (Model Box & 1/4" CAD Plan) */}
@@ -578,10 +658,30 @@ function RiggingAndLightsTab(): JSX.Element {
   };
 
   const handleLightingChannel = (
-    channel: LightingChannelKey,
+    channel: LightingNumericChannelKey,
     pct: number
   ): void => {
     sceneCtrl.updateLightingChannel(channel, pct / 100);
+    syncStoreFromSceneController(sceneCtrl);
+  };
+
+  const handleSelectGelPreset = (
+    gelId: Exclude<LightingGelPresetId, 'custom'>
+  ): void => {
+    sceneCtrl.setLightingGelPreset(gelId);
+    syncStoreFromSceneController(sceneCtrl);
+  };
+
+  const handleZoneColorInput = (
+    zone: 'spotColorHex' | 'washColorHex' | 'cycColorHex' | 'apronColorHex',
+    hex: string
+  ): void => {
+    sceneCtrl.setLightingZoneColor(zone, hex);
+    syncStoreFromSceneController(sceneCtrl);
+  };
+
+  const handleToggleSpotBeams = (): void => {
+    sceneCtrl.setSpotBeamsVisible(!lights.spotBeamsVisible);
     syncStoreFromSceneController(sceneCtrl);
   };
 
@@ -597,7 +697,170 @@ function RiggingAndLightsTab(): JSX.Element {
 
   return (
     <>
-      {/* 1. 52-Lineset Counterweight Fly Trim Sliders & Stage Mechanics */}
+      {/* 1. Stage Spots, Gel Filters & Dimmer Faders */}
+      <section class="shell-card" aria-label="Stage Spots, Gel Filters and Dimmer Faders">
+        <div class="shell-card-head">
+          <span class="shell-card-title">
+            <Icon name="light" size={15} />
+            Stage Spots, Gels &amp; Dimmers
+          </span>
+          <div class="shell-card-actions">
+            <button
+              type="button"
+              class={`shell-chip shell-chip-xs${lights.spotBeamsVisible ? ' is-active' : ''}`}
+              aria-pressed={lights.spotBeamsVisible}
+              title="Toggle 3D Volumetric Spotlight Cones from Overhead Electrics"
+              onClick={handleToggleSpotBeams}
+            >
+              <span>Spot Beams: {lights.spotBeamsVisible ? 'ON' : 'OFF'}</span>
+            </button>
+            <span class="shell-badge">
+              {lights.preset.replace('-', ' ').toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <div
+          class="shell-seg shell-seg-sm shell-seg-grid-4"
+          role="group"
+          aria-label="Lighting Cue Presets"
+        >
+          {LIGHTING_PRESETS.map((p) => {
+            const active = lights.preset === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                class={`shell-seg-btn${active ? ' is-active' : ''}`}
+                aria-pressed={active}
+                onClick={() => handleLightingPreset(p.id)}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Theatrical Rosco / Lee Gel Filter Palette */}
+        <div class="shell-card-head shell-card-subhead">
+          <span class="shell-panel-eyebrow">Theatrical Color Gel Filters (Rosco / Lee)</span>
+          <span class="shell-muted shell-text-xs">
+            {lights.gelPresetId === 'cue-default'
+              ? `Scene ${currentScene.sceneNumber ?? currentScene.sceneLabel ?? '1'} Cue`
+              : lights.gelPresetId === 'custom'
+                ? 'Custom Gel Mix'
+                : lights.gelPresetId.toUpperCase()}
+          </span>
+        </div>
+
+        <div class="gel-preset-grid" role="group" aria-label="Theatrical Gel Filter Presets">
+          {LIGHTING_GEL_PRESETS.map((gel) => {
+            const isSelected = lights.gelPresetId === gel.id;
+            const swatch =
+              gel.id === 'cue-default'
+                ? `#${(
+                    currentScene.stageSpotColor ?? spec.stageSpotColor
+                  )
+                    .toString(16)
+                    .padStart(6, '0')}`
+                : gel.swatchHex;
+            return (
+              <button
+                key={gel.id}
+                type="button"
+                class={`gel-preset-btn${isSelected ? ' is-active' : ''}`}
+                aria-pressed={isSelected}
+                title={`${gel.code} · ${gel.label}`}
+                onClick={() => handleSelectGelPreset(gel.id)}
+              >
+                <span
+                  class="gel-preset-swatch"
+                  style={{ background: swatch }}
+                />
+                <span class="gel-preset-code">{gel.code}</span>
+                <span class="gel-preset-label">{gel.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 4 Interactive Zone Gel Color Swatch Pickers */}
+        <div class="gel-zone-pickers" role="group" aria-label="Per-Zone Gel Filter Color Pickers">
+          {LIGHTING_ZONE_FILTERS.map((zone) => {
+            const hexVal = lights[zone.key];
+            return (
+              <label
+                key={zone.key}
+                class="gel-zone-card"
+                title={`Click to customize ${zone.label} (${zone.sub}) gel filter color`}
+              >
+                <input
+                  type="color"
+                  value={hexVal}
+                  aria-label={`${zone.label} Gel Color`}
+                  onInput={(e) =>
+                    handleZoneColorInput(zone.key, e.currentTarget.value)
+                  }
+                />
+                <span
+                  class="gel-zone-color-chip"
+                  style={{ background: hexVal }}
+                />
+                <span class="gel-zone-meta">
+                  <strong class="gel-zone-title">{zone.label}</strong>
+                  <span class="gel-zone-hex">{hexVal.toUpperCase()}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        {/* 7 Dimmer Faders (including Followspots & Fairy Lights/Practicals) */}
+        <ul class="shell-lights" role="list">
+          {LIGHTING_CHANNELS.map((ch) => {
+            const pct = Math.round(lights[ch.key] * 100);
+            const isOn = pct > 0;
+            const fillPct = Math.min(100, Math.round((pct / ch.maxPct) * 100));
+            return (
+              <li key={ch.key} class={`shell-light${isOn ? ' is-on' : ''}`}>
+                <button
+                  type="button"
+                  class={`shell-switch${isOn ? ' is-on' : ''}`}
+                  role="switch"
+                  aria-checked={isOn}
+                  aria-label={`Toggle ${ch.label}`}
+                  onClick={() =>
+                    handleLightingChannel(ch.key, isOn ? 0 : ch.defaultOnPct)
+                  }
+                >
+                  <span class="shell-switch-knob" />
+                </button>
+                <div class="shell-light-body">
+                  <div class="shell-light-label">
+                    <span title={ch.subtitle}>{ch.label}</span>
+                    <span class="shell-light-pct">{pct}%</span>
+                  </div>
+                  <input
+                    class="shell-range"
+                    type="range"
+                    min={0}
+                    max={ch.maxPct}
+                    step={1}
+                    value={pct}
+                    aria-label={`${ch.label} dimmer level`}
+                    style={{ '--fill': `${fillPct}%` }}
+                    onInput={(e) =>
+                      handleLightingChannel(ch.key, Number(e.currentTarget.value))
+                    }
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* 2. 52-Lineset Counterweight Fly Trim Sliders & Stage Mechanics */}
       <section class="shell-card" aria-label="52-Lineset Counterweight Fly Trim Sliders">
         <div class="shell-card-head">
           <span class="shell-card-title">
@@ -607,7 +870,7 @@ function RiggingAndLightsTab(): JSX.Element {
           <button
             type="button"
             class="shell-chip shell-chip-xs"
-            title="Restore batten trims and onstage elements to the active scene cue"
+            title="Restore batten trims, onstage elements, and lighting gels to the active scene cue"
             onClick={handleResetToSceneCue}
           >
             Reset to Cue
@@ -766,82 +1029,6 @@ function RiggingAndLightsTab(): JSX.Element {
             </span>
           </button>
         </div>
-      </section>
-
-      {/* 2. Stage & House Lighting Faders */}
-      <section class="shell-card" aria-label="Stage and House Lighting Faders">
-        <div class="shell-card-head">
-          <span class="shell-card-title">
-            <Icon name="light" size={15} />
-            Stage &amp; House Lighting Faders
-          </span>
-          <span class="shell-badge">
-            {lights.preset.replace('-', ' ').toUpperCase()}
-          </span>
-        </div>
-
-        <div
-          class="shell-seg shell-seg-sm shell-seg-grid-4"
-          role="group"
-          aria-label="Lighting Cue Presets"
-        >
-          {LIGHTING_PRESETS.map((p) => {
-            const active = lights.preset === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                class={`shell-seg-btn${active ? ' is-active' : ''}`}
-                aria-pressed={active}
-                onClick={() => handleLightingPreset(p.id)}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <ul class="shell-lights" role="list">
-          {LIGHTING_CHANNELS.map((ch) => {
-            const pct = Math.round(lights[ch.key] * 100);
-            const isOn = pct > 0;
-            return (
-              <li key={ch.key} class={`shell-light${isOn ? ' is-on' : ''}`}>
-                <button
-                  type="button"
-                  class={`shell-switch${isOn ? ' is-on' : ''}`}
-                  role="switch"
-                  aria-checked={isOn}
-                  aria-label={`Toggle ${ch.label}`}
-                  onClick={() =>
-                    handleLightingChannel(ch.key, isOn ? 0 : 90)
-                  }
-                >
-                  <span class="shell-switch-knob" />
-                </button>
-                <div class="shell-light-body">
-                  <div class="shell-light-label">
-                    <span title={ch.subtitle}>{ch.label}</span>
-                    <span class="shell-light-pct">{pct}%</span>
-                  </div>
-                  <input
-                    class="shell-range"
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={pct}
-                    aria-label={`${ch.label} dimmer level`}
-                    style={{ '--fill': `${pct}%` }}
-                    onInput={(e) =>
-                      handleLightingChannel(ch.key, Number(e.currentTarget.value))
-                    }
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
       </section>
     </>
   );

@@ -12,8 +12,9 @@ import {
 
 /**
  * Generates a Scenic Artist Hand-Painted Timber Wainscot & Trompe-l'oeil Beveled Panel
- * texture for the Whoville Department Store Counter wagons: painted vertical woodgrain,
- * faux recessed panel shadow lines, warm gold pin-striping, and Seussian ink cross-hatching.
+ * texture (1024×1024) for the Whoville Department Store Counter wagons & Finale Banquet apron:
+ * painted vertical woodgrain, faux recessed panel shadow lines, warm gold filigree corners,
+ * scenic spatter, and Seussian ink cross-hatching (`model_1D_shopping.jpg` & `model_1G_finale.jpg`).
  */
 function createPaintedShopCounterTimberTexture(
   baseHex: string,
@@ -21,52 +22,156 @@ function createPaintedShopCounterTimberTexture(
   shadowHex: string
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    const grad = ctx.createLinearGradient(0, 0, 0, 1024);
     grad.addColorStop(0, highlightHex);
     grad.addColorStop(0.5, baseHex);
     grad.addColorStop(1, shadowHex);
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Painted vertical timber beadboard planks & woodgrain streaks
-    for (let x = 0; x < 512; x += 32) {
-      ctx.strokeStyle = 'rgba(12, 26, 52, 0.28)';
-      ctx.lineWidth = 2.5;
+    // 1. Mottled sponge-scumble glaze
+    for (let i = 0; i < 220; i++) {
+      const sx = (i * 179 + 31) % 1024;
+      const sy = (i * 251 + 19) % 1024;
+      const sr = 28 + (i % 48);
+      ctx.fillStyle =
+        i % 2 === 0
+          ? 'rgba(180, 232, 255, 0.10)'
+          : 'rgba(10, 24, 52, 0.14)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, sr * 1.3, sr * 0.75, (i % 6) * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Painted vertical timber beadboard planks & wavy Seussian woodgrain streaks
+    for (let x = 0; x < 1024; x += 64) {
+      ctx.strokeStyle = 'rgba(10, 22, 48, 0.34)';
+      ctx.lineWidth = 4.0;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x + Math.sin(x * 0.05) * 4, 512);
+      for (let y = 0; y <= 1024; y += 128) {
+        ctx.lineTo(x + Math.sin(y * 0.01 + x * 0.05) * 6, y);
+      }
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(210, 240, 255, 0.18)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(204, 234, 248, 0.22)';
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(x + 3, 0);
-      ctx.lineTo(x + 3 + Math.sin(x * 0.05) * 4, 512);
+      ctx.moveTo(x + 5, 0);
+      for (let y = 0; y <= 1024; y += 128) {
+        ctx.lineTo(x + 5 + Math.sin(y * 0.01 + x * 0.05) * 6, y);
+      }
       ctx.stroke();
     }
 
-    // Trompe-l'oeil painted recessed wainscot frame & gold pin-stripe
-    ctx.strokeStyle = 'rgba(10, 22, 46, 0.45)';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(28, 32, 456, 448);
+    // 3. Trompe-l'oeil painted recessed wainscot frame & gold pin-stripe with scroll corners
+    ctx.strokeStyle = 'rgba(8, 18, 42, 0.52)';
+    ctx.lineWidth = 18;
+    ctx.strokeRect(56, 64, 912, 896);
 
-    ctx.strokeStyle = 'rgba(242, 204, 68, 0.55)';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(42, 46, 428, 420);
+    ctx.strokeStyle = 'rgba(202, 234, 248, 0.28)';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(68, 76, 888, 872);
 
-    // Seussian charcoal cross-hatching along lower kickplate and corners
-    ctx.strokeStyle = 'rgba(14, 20, 36, 0.34)';
-    ctx.lineWidth = 2.2;
-    for (let i = 0; i < 64; i++) {
-      const hx = (i * 47) % 490;
-      const hy = i % 2 === 0 ? 430 + (i % 7) * 9 : 24 + (i % 6) * 9;
+    ctx.strokeStyle = 'rgba(242, 204, 68, 0.65)';
+    ctx.lineWidth = 7;
+    ctx.strokeRect(86, 94, 852, 836);
+
+    // Ornate gold corner curls
+    ctx.strokeStyle = 'rgba(246, 214, 88, 0.72)';
+    ctx.lineWidth = 4.5;
+    for (const [cx, cy, sx, sy] of [
+      [112, 120, 1, 1],
+      [912, 120, -1, 1],
+      [112, 904, 1, -1],
+      [912, 904, -1, -1],
+    ] as const) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(sx, sy);
+      ctx.beginPath();
+      ctx.arc(18, 18, 18, Math.PI, Math.PI * 2.2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 4. Seussian charcoal cross-hatching along lower kickplate and corners
+    ctx.strokeStyle = 'rgba(12, 18, 34, 0.42)';
+    ctx.lineWidth = 2.6;
+    for (let i = 0; i < 140; i++) {
+      const hx = (i * 89 + 24) % 970;
+      const hy = i % 2 === 0 ? 860 + (i % 9) * 14 : 36 + (i % 7) * 14;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 18, hy - 8);
+      ctx.lineTo(hx + 28, hy - 14);
+      ctx.stroke();
+      if (i % 3 === 0) {
+        ctx.beginPath();
+        ctx.moveTo(hx + 6, hy - 16);
+        ctx.lineTo(hx + 22, hy + 8);
+        ctx.stroke();
+      }
+    }
+
+    // 5. Scenic paint spatter
+    for (let sp = 0; sp < 360; sp++) {
+      const px = (sp * 263 + 17) % 1024;
+      const py = (sp * 197 + 43) % 1024;
+      ctx.fillStyle =
+        sp % 2 === 0
+          ? 'rgba(198, 228, 242, 0.22)'
+          : 'rgba(10, 22, 46, 0.26)';
+      ctx.beginPath();
+      ctx.arc(px, py, 1.2 + (sp % 3) * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted lime-green & chartreuse Seussian branch bark & sign-frame texture (512×512)
+ * with organic woodgrain rings, chartreuse highlight glazes, and charcoal ink hatching.
+ */
+function createLimeBranchBarkTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#58c842');
+    grad.addColorStop(0.5, '#3ea832');
+    grad.addColorStop(1, '#26781e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Chartreuse dry-brush bark rings & Seussian ink contour ticks
+    for (let y = 16; y < 512; y += 28) {
+      ctx.strokeStyle = 'rgba(192, 244, 112, 0.28)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= 512; x += 64) {
+        ctx.lineTo(x, y + Math.sin(x * 0.03 + y) * 6);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(16, 42, 12, 0.42)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, y + 4);
+      for (let x = 0; x <= 512; x += 64) {
+        ctx.lineTo(x, y + 4 + Math.sin(x * 0.03 + y) * 6);
+      }
       ctx.stroke();
     }
   }
@@ -78,9 +183,221 @@ function createPaintedShopCounterTimberTexture(
 }
 
 /**
- * Helper to generate a procedural Seussian shop sign texture on a high-res 512×192 canvas
- * with scalloped Seussian gold/green borders and authentic bouncy Seussian wedge lettering
- * via `drawSeussianDisplayText` (zero standard Times New Roman / Georgia `ctx.fillText`).
+ * Hand-painted pink stucco & clapboard texture (512×512) for the DSR Whoville House in Scene 1F.
+ */
+function createDsrHousePinkStuccoTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#b82868');
+    grad.addColorStop(0.48, '#e8589a');
+    grad.addColorStop(1, '#9e1e58');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Warm blush belly glow
+    const belly = ctx.createRadialGradient(256, 256, 24, 256, 256, 240);
+    belly.addColorStop(0, 'rgba(255, 184, 218, 0.36)');
+    belly.addColorStop(1, 'rgba(140, 24, 76, 0)');
+    ctx.fillStyle = belly;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Wavy Seussian clapboards & ink cross-hatching
+    for (let y = 36; y < 512; y += 44) {
+      ctx.strokeStyle = 'rgba(38, 10, 26, 0.46)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= 512; x += 48) {
+        ctx.lineTo(x, y + Math.sin(x * 0.025 + y) * 6);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 206, 228, 0.26)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(0, y + 3);
+      for (let x = 0; x <= 512; x += 48) {
+        ctx.lineTo(x, y + 3 + Math.sin(x * 0.025 + y) * 6);
+      }
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted crimson lacquer sleigh wood texture (512×512) with ornate gold Seussian
+ * scrollwork filigree, plank grain, and charcoal ink cross-hatching (`model_1F_mt_crumpit_sleigh.jpg`).
+ */
+function createSleighPaintedWoodTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#d42438');
+    grad.addColorStop(0.55, '#b4182a');
+    grad.addColorStop(1, '#7c0e1c');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Horizontal sleigh plank seams & woodgrain
+    for (let y = 64; y < 512; y += 64) {
+      ctx.strokeStyle = 'rgba(28, 6, 12, 0.48)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(512, y);
+      ctx.stroke();
+    }
+
+    // Gold Seussian scroll border & curlicues
+    ctx.strokeStyle = '#eac038';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(20, 20, 472, 472);
+    ctx.beginPath();
+    ctx.arc(84, 84, 34, 0, Math.PI * 1.65);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(428, 84, 34, Math.PI * 1.35, Math.PI * 3);
+    ctx.stroke();
+
+    // Charcoal ink cross-hatch shading along lower hull
+    ctx.strokeStyle = 'rgba(22, 6, 10, 0.42)';
+    ctx.lineWidth = 2;
+    for (let x = 24; x < 488; x += 18) {
+      ctx.beginPath();
+      ctx.moveTo(x, 488);
+      ctx.lineTo(x + 14, 456);
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted overstuffed crimson toy-sack canvas/velvet texture (512×512) with
+ * bulging tension creases, patchwork stitches, and Seussian ink cross-hatching.
+ */
+function createStolenSackFabricTexture(highlightVariant = false): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createRadialGradient(220, 200, 30, 256, 256, 280);
+    grad.addColorStop(0, highlightVariant ? '#ea384c' : '#dc283c');
+    grad.addColorStop(0.6, highlightVariant ? '#c81e32' : '#b41628');
+    grad.addColorStop(1, '#780c18');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Coarse burlap/canvas weave
+    ctx.strokeStyle = 'rgba(36, 6, 12, 0.16)';
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 512; i += 10) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, 512);
+      ctx.moveTo(0, i);
+      ctx.lineTo(512, i);
+      ctx.stroke();
+    }
+
+    // Bulging Seussian tension crease lines & cross-stitched seams
+    ctx.strokeStyle = 'rgba(28, 4, 10, 0.52)';
+    ctx.lineWidth = 3;
+    for (let c = 0; c < 8; c++) {
+      const y = 56 + c * 56;
+      ctx.beginPath();
+      ctx.moveTo(32, y);
+      ctx.quadraticCurveTo(256, y - 28, 480, y + 12);
+      ctx.stroke();
+
+      // Cross-stitch ticks along every other seam
+      if (c % 2 === 1) {
+        for (let sx = 64; sx <= 448; sx += 28) {
+          ctx.beginPath();
+          ctx.moveTo(sx - 5, y - 16);
+          ctx.lineTo(sx + 5, y + 4);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted Toned-Snow Damask Banquet Tablecloth texture (512×512, strictly <= 0xd8)
+ * with pleated vertical folds, woven holly-swag damask pattern, royal-blue & gold trim band,
+ * and Seussian pen-and-ink cross-hatching (`model_1G_finale.jpg`).
+ */
+function createBanquetTableclothTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Strictly toned-down snow-linen base (max channel <= 0xd8)
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#cfd4d8');
+    grad.addColorStop(0.65, '#c2cad2');
+    grad.addColorStop(1, '#aeb8c6');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Vertical pleated fabric fold shadows
+    for (let fx = 0; fx < 512; fx += 48) {
+      const fGrad = ctx.createLinearGradient(fx, 0, fx + 48, 0);
+      fGrad.addColorStop(0, 'rgba(96, 112, 138, 0.22)');
+      fGrad.addColorStop(0.5, 'rgba(208, 214, 216, 0.18)');
+      fGrad.addColorStop(1, 'rgba(96, 112, 138, 0.22)');
+      ctx.fillStyle = fGrad;
+      ctx.fillRect(fx, 0, 48, 512);
+    }
+
+    // Royal-blue & gold woven border stripes along lower tablecloth hem
+    ctx.fillStyle = '#1c6ed0';
+    ctx.fillRect(0, 428, 512, 26);
+    ctx.fillStyle = '#d4a828';
+    ctx.fillRect(0, 418, 512, 8);
+    ctx.fillRect(0, 456, 512, 8);
+
+    // Delicate Seussian ink cross-hatching in pleat troughs
+    ctx.strokeStyle = 'rgba(34, 44, 68, 0.28)';
+    ctx.lineWidth = 1.5;
+    for (let x = 16; x < 512; x += 48) {
+      for (let y = 360; y < 496; y += 16) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 12, y - 8);
+        ctx.stroke();
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Helper to generate a procedural Seussian shop sign texture on a high-res 1024×384 canvas
+ * with scalloped Seussian gold/green borders, catenary velvet fold shading, gold polka-dots,
+ * and authentic bouncy Seussian wedge lettering via `drawSeussianDisplayText`.
  */
 function createSeussianShopSignTexture(
   mainTitle: string,
@@ -89,89 +406,105 @@ function createSeussianShopSignTexture(
   borderColorHex: string
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 192;
+  canvas.width = 1024;
+  canvas.height = 384;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
     // Rich painted crimson/berry gradient background
     const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
     bgGrad.addColorStop(0, bgColorHex);
-    bgGrad.addColorStop(1, '#7c1222');
+    bgGrad.addColorStop(0.5, '#d2243c');
+    bgGrad.addColorStop(1, '#781020');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Subtle Seussian cross-hatch ink texture strokes
-    ctx.strokeStyle = 'rgba(20, 12, 28, 0.16)';
-    ctx.lineWidth = 2;
-    for (let x = 12; x < canvas.width; x += 22) {
+    // Festive gold polka-dots & Seussian cross-hatch ink strokes across background
+    for (let p = 0; p < 36; p++) {
+      const px = 48 + ((p * 179 + 23) % 928);
+      const py = 42 + ((p * 97 + 19) % 300);
+      ctx.fillStyle = 'rgba(255, 216, 72, 0.34)';
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5 + (p % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = 'rgba(20, 12, 28, 0.22)';
+    ctx.lineWidth = 2.5;
+    for (let x = 24; x < canvas.width; x += 36) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x - 10, canvas.height);
+      ctx.lineTo(x - 18, canvas.height);
       ctx.stroke();
     }
 
     // Scalloped lime-green & gold Seussian outer border
     ctx.strokeStyle = borderColorHex;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+    ctx.lineWidth = 16;
+    ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
 
     // Scalloped gold inner festoon loops around the perimeter
-    ctx.strokeStyle = '#d8b428';
-    ctx.lineWidth = 3.5;
-    for (let sx = 24; sx <= canvas.width - 24; sx += 32) {
+    ctx.strokeStyle = '#e6c032';
+    ctx.lineWidth = 6;
+    for (let sx = 48; sx <= canvas.width - 48; sx += 64) {
       ctx.beginPath();
-      ctx.arc(sx, 14, 10, 0, Math.PI);
+      ctx.arc(sx, 28, 20, 0, Math.PI);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(sx, canvas.height - 14, 10, Math.PI, Math.PI * 2);
+      ctx.arc(sx, canvas.height - 28, 20, Math.PI, Math.PI * 2);
       ctx.stroke();
     }
 
     ctx.strokeStyle = '#1b1424';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+    ctx.lineWidth = 5;
+    ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
 
-    // Corner holly/star medallions
-    ctx.fillStyle = '#d8b428';
+    // Corner holly/star medallions with emerald holly leaves & crimson berries
     for (const [cx, cy] of [
-      [28, 28],
-      [canvas.width - 28, 28],
-      [28, canvas.height - 28],
-      [canvas.width - 28, canvas.height - 28],
+      [56, 56],
+      [canvas.width - 56, 56],
+      [56, canvas.height - 56],
+      [canvas.width - 56, canvas.height - 56],
     ] as const) {
+      ctx.fillStyle = '#24983e';
       ctx.beginPath();
-      ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+      ctx.ellipse(cx - 10, cy, 14, 7, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 10, cy, 14, 7, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#e8c234';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 11, 0, Math.PI * 2);
       ctx.fill();
     }
 
     // Authentic bouncy Seussian wedge lettering for Main Shop Title
-    const mainFontSize = mainTitle.length > 17 ? 26 : 30;
-    drawSeussianDisplayText(ctx, mainTitle, canvas.width / 2, 68, {
+    const mainFontSize = mainTitle.length > 17 ? 52 : 60;
+    drawSeussianDisplayText(ctx, mainTitle, canvas.width / 2, 136, {
       fontSize: mainFontSize,
       fillTopColor: '#d8d4c8',
       fillBottomColor: '#c8b898',
       bevelHighlightColor: 'rgba(255, 250, 230, 0.65)',
       outlineColor: '#181020',
       shadowColor: '#100816',
-      bounceAmp: 2.8,
+      bounceAmp: 5.5,
       tiltAmp: 0.08,
       archCurvature: -0.05,
       letterSpacing: mainFontSize * 0.62,
     });
 
     // Authentic bouncy Seussian wedge lettering for Whoville Sub-Title
-    drawSeussianDisplayText(ctx, subTitle, canvas.width / 2, 134, {
-      fontSize: 21,
-      fillTopColor: '#d8c448',
+    drawSeussianDisplayText(ctx, subTitle, canvas.width / 2, 268, {
+      fontSize: 42,
+      fillTopColor: '#e4cc52',
       fillBottomColor: '#c48c20',
       bevelHighlightColor: 'rgba(255, 245, 200, 0.6)',
       outlineColor: '#181020',
       shadowColor: '#100816',
-      bounceAmp: 2.2,
+      bounceAmp: 4.4,
       tiltAmp: 0.09,
       archCurvature: 0.04,
-      letterSpacing: 13.5,
+      letterSpacing: 27,
     });
   }
 
@@ -205,7 +538,7 @@ function createCandyCaneStripeTexture(): THREE.CanvasTexture {
       ctx.fill();
     }
 
-    // Thin lime-green pinstripe accent
+    // Thin lime-green pinstripe accent & Seussian edge hatch
     ctx.strokeStyle = '#2e9c48';
     ctx.lineWidth = 4;
     for (let i = -256; i < 512; i += 64) {
@@ -435,7 +768,7 @@ export function buildGrinchShoppingCounters(
     roughness: 0.56,
   });
   const limeFrameMat = new THREE.MeshStandardMaterial({
-    color: 0x42b438,
+    map: createLimeBranchBarkTexture(),
     roughness: 0.55,
   });
   const candyCanePostMat = new THREE.MeshStandardMaterial({
@@ -853,7 +1186,7 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
   g.add(wagonBase);
 
   const pinkMat = new THREE.MeshStandardMaterial({
-    color: 0xd44688,
+    map: createDsrHousePinkStuccoTexture(),
     roughness: 0.56,
     metalness: 0.04,
   });
@@ -1204,7 +1537,7 @@ export function buildGrinchMtCrumpitSleigh(
     metalness: 0.65,
   });
   const sleighCrimsonMat = new THREE.MeshStandardMaterial({
-    color: 0xb81e32,
+    map: createSleighPaintedWoodTexture(),
     roughness: 0.52,
     metalness: 0.12,
   });
@@ -1315,12 +1648,12 @@ export function buildGrinchMtCrumpitSleigh(
 
   // 4. COLOSSAL OVERSTUFFED CRIMSON SACK OF STOLEN WHOVILLE PRESENTS!
   const sackCrimsonMat = new THREE.MeshStandardMaterial({
-    color: 0xc8182e,
+    map: createStolenSackFabricTexture(false),
     roughness: 0.55,
     metalness: 0.05,
   });
   const sackHighlightMat = new THREE.MeshStandardMaterial({
-    color: 0xd42438,
+    map: createStolenSackFabricTexture(true),
     roughness: 0.56,
   });
 
@@ -1492,7 +1825,7 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
   finaleBanquetGroup.name = 'Element_grinch-finale-banquet';
 
   const royalBlueArchMat = new THREE.MeshStandardMaterial({
-    color: 0x1a72d4,
+    map: createPaintedShopCounterTimberTexture('#1a72d4', '#3892f0', '#0e4488'),
     roughness: 0.55,
     metalness: 0.08,
   });
@@ -1501,6 +1834,7 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
     roughness: 0.75,
   });
   const whiteTableclothMat = new THREE.MeshStandardMaterial({
+    map: createBanquetTableclothTexture(),
     color: 0xcfd4d8,
     roughness: 0.58,
   });

@@ -9,8 +9,11 @@ import {
 
 /**
  * Creates a custom high-contrast Seussian pen-and-ink striated ice/rock canvas
- * texture for the Grinch's Cave portal wings and boulders, matching the painted
+ * texture (1024×1024) for the Grinch's Cave portal wings and boulders, matching the painted
  * model box plates (`model_1C_cave_vista.jpg` & `model_1C_cave_closeup.jpg`).
+ * Features cobalt/Prussian-blue shadow glazes, icy turquoise highlights, rosy-lavender
+ * bounce washes, trompe-l'oeil rock fissure bevels, comb-like perpendicular fringe
+ * hatches under rock seams, Dr. Seuss cross-hatching, and scenic spatter.
  */
 function createCaveStriatedRockTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -19,44 +22,74 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // Base glacial slate-blue gradient with subtle vertical ice streaks
+    // 1. Base glacial slate-blue gradient with subtle vertical ice streaks (toned <= 0xd8)
     const bgGrad = ctx.createLinearGradient(0, 0, 1024, 1024);
-    bgGrad.addColorStop(0.0, '#96bce0');
-    bgGrad.addColorStop(0.35, '#adcbe6');
-    bgGrad.addColorStop(0.7, '#82add8');
-    bgGrad.addColorStop(1.0, '#6a96c8');
+    bgGrad.addColorStop(0.0, '#7ea8d2');
+    bgGrad.addColorStop(0.32, '#9ec0dc');
+    bgGrad.addColorStop(0.68, '#6e9ac8');
+    bgGrad.addColorStop(1.0, '#527eb4');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Soft lavender-ice and cerulean painterly wash patches
-    for (let i = 0; i < 42; i++) {
+    // 2. Soft lavender-ice, icy-turquoise, and Prussian-blue painterly wash patches
+    for (let i = 0; i < 64; i++) {
       const px = ((i * 173) % 980) + 20;
       const py = ((i * 251) % 980) + 20;
-      const rx = 90 + (i % 5) * 35;
-      const ry = 45 + (i % 4) * 28;
+      const rx = 85 + (i % 6) * 34;
+      const ry = 42 + (i % 4) * 26;
       const wash = ctx.createRadialGradient(px, py, 8, px, py, rx);
-      if (i % 3 === 0) {
-        wash.addColorStop(0, 'rgba(196, 214, 236, 0.34)');
-      } else if (i % 3 === 1) {
-        wash.addColorStop(0, 'rgba(82, 134, 198, 0.28)');
+      if (i % 4 === 0) {
+        wash.addColorStop(0, 'rgba(196, 212, 216, 0.36)');
+      } else if (i % 4 === 1) {
+        wash.addColorStop(0, 'rgba(42, 84, 148, 0.32)');
+      } else if (i % 4 === 2) {
+        wash.addColorStop(0, 'rgba(182, 168, 212, 0.28)');
       } else {
-        wash.addColorStop(0, 'rgba(170, 188, 228, 0.26)');
+        wash.addColorStop(0, 'rgba(112, 184, 214, 0.26)');
       }
-      wash.addColorStop(1, 'rgba(130, 170, 216, 0)');
+      wash.addColorStop(1, 'rgba(110, 152, 202, 0)');
       ctx.fillStyle = wash;
       ctx.beginPath();
       ctx.ellipse(px, py, rx, ry, ((i % 7) - 3) * 0.22, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Bold Seussian charcoal-black ink contour strata & craggy cross-hatching
-    ctx.strokeStyle = 'rgba(18, 26, 42, 0.78)';
+    // 3. Bold Seussian charcoal-black ink contour strata & trompe-l'oeil frost highlight lips
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let row = 0; row < 18; row++) {
-      const baseY = 48 + row * 54;
-      ctx.lineWidth = row % 3 === 0 ? 4.2 : 2.6;
+    for (let row = 0; row < 20; row++) {
+      const baseY = 38 + row * 50;
+
+      // Upper frost highlight lip above each rock seam (toned <= 0xd8)
+      ctx.strokeStyle = 'rgba(202, 214, 216, 0.44)';
+      ctx.lineWidth = row % 3 === 0 ? 3.4 : 2.2;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY - 3);
+      for (let x = 32; x <= 1024; x += 32) {
+        const wave =
+          Math.sin(x * 0.012 + row * 0.85) * 14 +
+          Math.cos(x * 0.028 - row * 1.1) * 7;
+        ctx.lineTo(x, baseY - 3 + wave);
+      }
+      ctx.stroke();
+
+      // Deep cobalt shadow band immediately below the ink fissure
+      ctx.strokeStyle = 'rgba(32, 58, 108, 0.36)';
+      ctx.lineWidth = 7.0;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY + 4);
+      for (let x = 32; x <= 1024; x += 32) {
+        const wave =
+          Math.sin(x * 0.012 + row * 0.85) * 14 +
+          Math.cos(x * 0.028 - row * 1.1) * 7;
+        ctx.lineTo(x, baseY + 4 + wave);
+      }
+      ctx.stroke();
+
+      // Charcoal-black Seussian contour line
+      ctx.strokeStyle = 'rgba(14, 20, 36, 0.82)';
+      ctx.lineWidth = row % 3 === 0 ? 4.4 : 2.8;
       ctx.beginPath();
       ctx.moveTo(0, baseY);
       for (let x = 32; x <= 1024; x += 32) {
@@ -67,25 +100,45 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
       }
       ctx.stroke();
 
-      // Short perpendicular Seussian shadow tick-hatches along major strata ledges
-      if (row % 2 === 0) {
-        ctx.lineWidth = 2.1;
-        for (let x = 24; x < 1000; x += 22 + ((row + x) % 14)) {
-          const wave =
-            Math.sin(x * 0.012 + row * 0.85) * 14 +
-            Math.cos(x * 0.028 - row * 1.1) * 7;
-          const tickLen = 10 + ((x * 3 + row * 7) % 16);
-          const tilt = ((x % 5) - 2) * 0.14;
-          ctx.beginPath();
-          ctx.moveTo(x, baseY + wave);
-          ctx.lineTo(x + Math.sin(tilt) * tickLen, baseY + wave + tickLen);
-          ctx.stroke();
-        }
+      // Short perpendicular Seussian comb/fringe shadow tick-hatches along strata ledges
+      ctx.lineWidth = 2.0;
+      const stepX = row % 2 === 0 ? 16 : 24;
+      for (let x = 18; x < 1006; x += stepX + ((row + x) % 10)) {
+        const wave =
+          Math.sin(x * 0.012 + row * 0.85) * 14 +
+          Math.cos(x * 0.028 - row * 1.1) * 7;
+        const tickLen = 11 + ((x * 3 + row * 7) % 18);
+        const tilt = ((x % 5) - 2) * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(x, baseY + wave);
+        ctx.lineTo(x + Math.sin(tilt) * tickLen, baseY + wave + tickLen);
+        ctx.stroke();
       }
     }
 
-    // Zig-zag Seussian crag lightning-hatch scribbles
-    ctx.lineWidth = 3.0;
+    // 4. Curved Dr. Seuss cross-hatch clusters in rock hollows
+    ctx.strokeStyle = 'rgba(16, 24, 42, 0.56)';
+    ctx.lineWidth = 1.8;
+    for (let c = 0; c < 42; c++) {
+      const cx = ((c * 229) % 920) + 40;
+      const cy = ((c * 167) % 920) + 40;
+      const count = 5 + (c % 4);
+      for (let h = 0; h < count; h++) {
+        ctx.beginPath();
+        ctx.moveTo(cx + h * 7, cy);
+        ctx.quadraticCurveTo(cx + h * 7 + 10, cy + 16, cx + h * 7 + 20, cy + 32);
+        ctx.stroke();
+      }
+      for (let h = 0; h < count - 1; h++) {
+        ctx.beginPath();
+        ctx.moveTo(cx - 4, cy + h * 7 + 5);
+        ctx.quadraticCurveTo(cx + 14, cy + h * 7 + 12, cx + 34, cy + h * 7 + 18);
+        ctx.stroke();
+      }
+    }
+
+    // 5. Zig-zag Seussian crag lightning-hatch scribbles & scenic spatter
+    ctx.lineWidth = 2.8;
     for (let z = 0; z < 28; z++) {
       const sx = ((z * 137) % 900) + 60;
       const sy = ((z * 193) % 900) + 60;
@@ -97,12 +150,79 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
       ctx.lineTo(sx + 24, sy + 18);
       ctx.stroke();
     }
+
+    for (let sp = 0; sp < 480; sp++) {
+      const px = (sp * 283 + 19) % 1024;
+      const py = (sp * 199 + 47) % 1024;
+      const pr = 1.0 + (sp % 3) * 0.85;
+      ctx.fillStyle =
+        sp % 3 === 0
+          ? 'rgba(202, 212, 216, 0.28)'
+          : sp % 3 === 1
+            ? 'rgba(22, 34, 58, 0.30)'
+            : 'rgba(92, 144, 198, 0.25)';
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(0.28, 0.28);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Hand-painted miniature Whoville cottage pink stucco texture (256×256) with
+ * wavy clapboard courses, vertical rib shading, and Seussian ink cross-hatching
+ * for the forced-perspective village in `model_1C_cave_closeup.jpg`.
+ */
+function createMiniCottageWallTexture(baseHex: number): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const col = new THREE.Color(baseHex);
+    const r = Math.round(col.r * 255);
+    const g = Math.round(col.g * 255);
+    const b = Math.round(col.b * 255);
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Warm belly highlight
+    const belly = ctx.createRadialGradient(128, 128, 12, 128, 128, 120);
+    belly.addColorStop(0, 'rgba(255, 196, 224, 0.35)');
+    belly.addColorStop(1, 'rgba(120, 24, 68, 0.22)');
+    ctx.fillStyle = belly;
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Wavy horizontal clapboards & dark Seussian ink lines
+    ctx.strokeStyle = 'rgba(36, 12, 28, 0.55)';
+    ctx.lineWidth = 2.0;
+    for (let y = 32; y < 256; y += 36) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= 256; x += 32) {
+        ctx.lineTo(x, y + Math.sin(x * 0.05 + y) * 4);
+      }
+      ctx.stroke();
+    }
+
+    // Eaves shadow & perpendicular feather ticks at top
+    ctx.fillStyle = 'rgba(32, 10, 26, 0.35)';
+    ctx.fillRect(0, 0, 256, 28);
+    for (let x = 8; x < 256; x += 14) {
+      ctx.beginPath();
+      ctx.moveTo(x, 4);
+      ctx.lineTo(x - 3, 24);
+      ctx.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -200,9 +320,8 @@ function createMiniatureWhoCottage(
   cottage.rotation.z = tiltZ;
 
   const wallMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    color: wallColorHex,
-    roughness: 0.58,
+    map: createMiniCottageWallTexture(wallColorHex),
+    roughness: 0.56,
     metalness: 0.04,
   });
 

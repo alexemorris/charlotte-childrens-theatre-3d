@@ -16,6 +16,7 @@ import type {
   ChartColorMode,
   CustomSetPiece,
   CustomSetPieceKind,
+  LightingGelPresetId,
   LightingPresetId,
   LightingState,
   ProductionElementSpec,
@@ -37,6 +38,130 @@ import {
 } from './theatre-architecture.ts';
 
 export type GraphicsQualityMode = 'ultra' | 'balanced' | 'performance';
+
+export interface LightingGelPresetSpec {
+  readonly id: Exclude<LightingGelPresetId, 'custom'>;
+  readonly code: string;
+  readonly label: string;
+  readonly swatchHex: string;
+  readonly spotColorHex?: string;
+  readonly washColorHex?: string;
+  readonly cycColorHex?: string;
+  readonly apronColorHex?: string;
+}
+
+export const LIGHTING_GEL_PRESETS: ReadonlyArray<LightingGelPresetSpec> = [
+  {
+    id: 'cue-default',
+    code: 'CUE',
+    label: 'Scene Cue Gel',
+    swatchHex: '#f4dec0',
+  },
+  {
+    id: 'r02-bastard-amber',
+    code: 'R02',
+    label: 'Bastard Amber',
+    swatchHex: '#ffcf92',
+    spotColorHex: '#ffe2b0',
+    washColorHex: '#f4c98e',
+    cycColorHex: '#5b4898',
+    apronColorHex: '#ffd296',
+  },
+  {
+    id: 'r65-daylight-blue',
+    code: 'R65',
+    label: 'Daylight Blue',
+    swatchHex: '#88b8f0',
+    spotColorHex: '#c8e2ff',
+    washColorHex: '#88b8f0',
+    cycColorHex: '#2852a4',
+    apronColorHex: '#9ac4f8',
+  },
+  {
+    id: 'r58-deep-lavender',
+    code: 'R58',
+    label: 'Seuss Lavender',
+    swatchHex: '#b894ec',
+    spotColorHex: '#e4ccf8',
+    washColorHex: '#b894ec',
+    cycColorHex: '#4a2e96',
+    apronColorHex: '#c6a8f0',
+  },
+  {
+    id: 'r26-festive-rose',
+    code: 'R26',
+    label: 'Whoville Rose',
+    swatchHex: '#f09cb8',
+    spotColorHex: '#ffd6c8',
+    washColorHex: '#f09cb8',
+    cycColorHex: '#4c5ca8',
+    apronColorHex: '#f4b4c6',
+  },
+  {
+    id: 'r90-grinch-green',
+    code: 'R90',
+    label: 'Grinch Emerald',
+    swatchHex: '#62d48e',
+    spotColorHex: '#b8f284',
+    washColorHex: '#62d48e',
+    cycColorHex: '#2e2468',
+    apronColorHex: '#84e298',
+  },
+  {
+    id: 'r80-primary-blue',
+    code: 'R80',
+    label: 'Crumpit Ice',
+    swatchHex: '#5c92e4',
+    spotColorHex: '#a8d0fc',
+    washColorHex: '#5c92e4',
+    cycColorHex: '#162858',
+    apronColorHex: '#74a8ec',
+  },
+  {
+    id: 'r21-golden-amber',
+    code: 'R21',
+    label: 'Finale Gold',
+    swatchHex: '#f6cb7e',
+    spotColorHex: '#ffeaad',
+    washColorHex: '#f6cb7e',
+    cycColorHex: '#7c5ea8',
+    apronColorHex: '#ffe09e',
+  },
+];
+
+function numToHexStr(colorNum: number): string {
+  return `#${(colorNum & 0xffffff).toString(16).padStart(6, '0')}`;
+}
+
+const noopBeamRaycast = (): void => {};
+
+function createVolumetricBeamTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.85)');
+    grad.addColorStop(0.22, 'rgba(255, 255, 255, 0.42)');
+    grad.addColorStop(0.65, 'rgba(255, 255, 255, 0.14)');
+    grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 256);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+export type LightingNumericChannelKey =
+  | 'houseLevel'
+  | 'fohRailLevel'
+  | 'followSpotLevel'
+  | 'stageElectricsLevel'
+  | 'cycWashLevel'
+  | 'apronFootlightsLevel'
+  | 'practicalsLevel';
 
 export interface TheatreSceneCallbacks {
   onSeatSelected?: (metrics: SeatSightlineMetrics | null, inSeatView: boolean) => void;
@@ -111,14 +236,22 @@ export class TheatreSceneController {
   private selectedCustomPieceId: string | null = null;
   private customPieceSeq = 1;
 
-  // Lighting circuits
+  // Lighting circuits & gel state
   private lightingState: LightingState = {
     preset: 'show-mode',
-    houseLevel: 0.42,
+    houseLevel: 0.25,
     fohRailLevel: 0.92,
+    followSpotLevel: 0.96,
     stageElectricsLevel: 0.95,
-    cycWashLevel: 0.88,
+    cycWashLevel: 0.9,
     apronFootlightsLevel: 0.72,
+    practicalsLevel: 1.1,
+    spotBeamsVisible: true,
+    gelPresetId: 'cue-default',
+    spotColorHex: '#f4dec0',
+    washColorHex: '#d8c6e8',
+    cycColorHex: '#6c88d4',
+    apronColorHex: '#9ab4e8',
   };
 
   private ambientLight!: THREE.HemisphereLight;
@@ -126,9 +259,19 @@ export class TheatreSceneController {
   private fohStageKeyLeft!: THREE.SpotLight;
   private fohStageKeyRight!: THREE.SpotLight;
   private stageOverheadKey!: THREE.SpotLight;
+  private centerFollowSpot!: THREE.SpotLight;
+  private downstageSpecialSpot!: THREE.SpotLight;
+  private wingBoomLeft!: THREE.PointLight;
+  private wingBoomRight!: THREE.PointLight;
   private stageWarmFill!: THREE.PointLight;
   private cycWashLight!: THREE.PointLight;
   private apronFootlights: THREE.PointLight[] = [];
+  private spotBeamConesGroup!: THREE.Group;
+  private spotBeamMaterials: Array<{
+    readonly mat: THREE.MeshBasicMaterial;
+    readonly role: 'spot' | 'wash';
+    readonly baseOpacity: number;
+  }> = [];
 
   private graphicsQuality: GraphicsQualityMode = 'ultra';
   private raycaster = new THREE.Raycaster();
@@ -215,6 +358,7 @@ export class TheatreSceneController {
 
     // 5. Theatrical Lighting System
     this.buildLightingRig();
+    this.syncLightingFromActiveSceneCue();
     this.applyLightingState();
 
     // 6. Bind viewport pointer & keyboard interactions
@@ -222,11 +366,11 @@ export class TheatreSceneController {
   }
 
   private buildLightingRig(): void {
-    this.ambientLight = new THREE.HemisphereLight(0xffe6c8, 0x1b1624, 0.45);
+    this.ambientLight = new THREE.HemisphereLight(0xffe6c8, 0x1b1624, 0.42);
     this.scene.add(this.ambientLight);
 
     // Warm architectural house lights over the auditorium & proscenium frieze
-    const houseCoords: ReadonlyArray< readonly [number, number, number] > = [
+    const houseCoords: ReadonlyArray<readonly [number, number, number]> = [
       [-4.8, 7.6, 4.2],
       [4.8, 7.6, 4.2],
       [-5.2, 8.2, 9.8],
@@ -241,17 +385,17 @@ export class TheatreSceneController {
       this.houseSpotLights.push(pt);
     }
 
-    // FOH Balcony Rail Spotlights (Key lights onto proscenium frieze & stage)
+    // FOH Balcony Rail Spotlights (Key wash lights onto proscenium frieze & stage)
     this.fohStageKeyLeft = new THREE.SpotLight(
       0xffe4bc,
-      46,
+      44,
       32,
-      Math.PI * 0.26,
-      0.48,
+      Math.PI * 0.27,
+      0.52,
       1.4
     );
     this.fohStageKeyLeft.position.set(-4.6, 4.6, 10.5);
-    this.fohStageKeyLeft.target.position.set(-1.2, 1.8, -2.4);
+    this.fohStageKeyLeft.target.position.set(-1.3, 1.8, -2.5);
     this.fohStageKeyLeft.castShadow = true;
     this.fohStageKeyLeft.shadow.mapSize.set(1024, 1024);
     this.fohStageKeyLeft.shadow.bias = -0.0004;
@@ -260,14 +404,14 @@ export class TheatreSceneController {
 
     this.fohStageKeyRight = new THREE.SpotLight(
       0xffd8a8,
-      46,
+      44,
       32,
-      Math.PI * 0.26,
-      0.48,
+      Math.PI * 0.27,
+      0.52,
       1.4
     );
     this.fohStageKeyRight.position.set(4.6, 4.6, 10.5);
-    this.fohStageKeyRight.target.position.set(1.2, 1.8, -2.4);
+    this.fohStageKeyRight.target.position.set(1.3, 1.8, -2.5);
     this.fohStageKeyRight.castShadow = true;
     this.fohStageKeyRight.shadow.mapSize.set(1024, 1024);
     this.fohStageKeyRight.shadow.bias = -0.0004;
@@ -277,7 +421,7 @@ export class TheatreSceneController {
     // Overhead Stage 1st Electric Key Spotlight (casts crisp scenic shadows on stage floor)
     this.stageOverheadKey = new THREE.SpotLight(
       0xffdf9e,
-      58,
+      54,
       24,
       Math.PI * 0.34,
       0.52,
@@ -291,13 +435,50 @@ export class TheatreSceneController {
     this.scene.add(this.stageOverheadKey);
     this.scene.add(this.stageOverheadKey.target);
 
+    // Dedicated Center Stage Followspot / Showpiece Special (tight beam onto Tree / Hearth / Feast)
+    this.centerFollowSpot = new THREE.SpotLight(
+      0xfff0d4,
+      46,
+      28,
+      Math.PI * 0.16,
+      0.62,
+      1.35
+    );
+    this.centerFollowSpot.position.set(0.0, 6.8, 7.8);
+    this.centerFollowSpot.target.position.set(0.0, 1.85, -3.15);
+    this.scene.add(this.centerFollowSpot);
+    this.scene.add(this.centerFollowSpot.target);
+
+    // Dedicated Downstage Actor Special Spot (1st Electric tight special)
+    this.downstageSpecialSpot = new THREE.SpotLight(
+      0xffe8c2,
+      34,
+      18,
+      Math.PI * 0.19,
+      0.58,
+      1.4
+    );
+    this.downstageSpecialSpot.position.set(-0.3, 7.3, 0.4);
+    this.downstageSpecialSpot.target.position.set(0.0, 1.35, -1.65);
+    this.scene.add(this.downstageSpecialSpot);
+    this.scene.add(this.downstageSpecialSpot.target);
+
+    // High-Side SL & SR Wing Boom Cross-Lights (sculpts side portals & wagon relief)
+    this.wingBoomRight = new THREE.PointLight(0x9ab4e8, 16, 12, 1.45);
+    this.wingBoomRight.position.set(-5.2, 3.6, -2.1);
+    this.scene.add(this.wingBoomRight);
+
+    this.wingBoomLeft = new THREE.PointLight(0x9ab4e8, 16, 12, 1.45);
+    this.wingBoomLeft.position.set(5.2, 3.6, -2.1);
+    this.scene.add(this.wingBoomLeft);
+
     // Mid-stage warm fill
     this.stageWarmFill = new THREE.PointLight(0xffcf94, 15, 18, 1.45);
     this.stageWarmFill.position.set(0, 5.2, -3.5);
     this.scene.add(this.stageWarmFill);
 
     // Upstage Cyclorama Wash Light
-    this.cycWashLight = new THREE.PointLight(0x7c3e9c, 22, 18, 1.35);
+    this.cycWashLight = new THREE.PointLight(0x7c3e9c, 24, 19, 1.35);
     this.cycWashLight.position.set(0, 4.5, -7.6);
     this.scene.add(this.cycWashLight);
 
@@ -308,86 +489,325 @@ export class TheatreSceneController {
       this.scene.add(foot);
       this.apronFootlights.push(foot);
     }
+
+    // 3D Translucent Volumetric Spotlight Beam Cones (Overhead Electrics & FOH Spots)
+    this.spotBeamConesGroup = new THREE.Group();
+    this.spotBeamConesGroup.name = 'VolumetricSpotBeams';
+    const beamTex = createVolumetricBeamTexture();
+
+    const addBeamCone = (
+      from: THREE.Vector3,
+      to: THREE.Vector3,
+      topRadius: number,
+      bottomRadius: number,
+      role: 'spot' | 'wash',
+      baseOpacity: number
+    ): void => {
+      const dir = new THREE.Vector3().subVectors(to, from);
+      const len = dir.length();
+      const geom = new THREE.CylinderGeometry(topRadius, bottomRadius, len, 20, 1, true);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xffe8c4,
+        alphaMap: beamTex,
+        transparent: true,
+        opacity: baseOpacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.raycast = noopBeamRaycast;
+      const mid = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+      mesh.position.copy(mid);
+      mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, -1, 0),
+        dir.clone().normalize()
+      );
+      this.spotBeamConesGroup.add(mesh);
+      this.spotBeamMaterials.push({ mat, role, baseOpacity });
+    };
+
+    // 1st Electric Center Showpiece Spot Beam
+    addBeamCone(
+      new THREE.Vector3(0.0, 6.75, -1.35),
+      new THREE.Vector3(-0.05, 0.25, -3.25),
+      0.14,
+      1.95,
+      'spot',
+      0.068
+    );
+    // 1st Electric DSR & DSL Cross-Wash Spot Beams
+    addBeamCone(
+      new THREE.Vector3(-2.65, 6.75, -1.35),
+      new THREE.Vector3(-2.2, 0.25, -2.55),
+      0.13,
+      1.75,
+      'wash',
+      0.052
+    );
+    addBeamCone(
+      new THREE.Vector3(2.65, 6.75, -1.35),
+      new THREE.Vector3(2.2, 0.25, -2.55),
+      0.13,
+      1.75,
+      'wash',
+      0.052
+    );
+    // 2nd Electric Upstage Spot Beams
+    addBeamCone(
+      new THREE.Vector3(-1.55, 6.75, -3.45),
+      new THREE.Vector3(-1.25, 0.35, -4.45),
+      0.12,
+      1.65,
+      'spot',
+      0.048
+    );
+    addBeamCone(
+      new THREE.Vector3(1.55, 6.75, -3.45),
+      new THREE.Vector3(1.25, 0.35, -4.45),
+      0.12,
+      1.65,
+      'spot',
+      0.048
+    );
+
+    this.scene.add(this.spotBeamConesGroup);
+  }
+
+  private syncLightingFromActiveSceneCue(): void {
+    const prod = this.productionSets.getActiveProduction();
+    const scene = this.productionSets.getActiveScene();
+
+    const spotNum = scene?.stageSpotColor ?? prod.stageSpotColor;
+    const washNum = scene?.stageWashColor ?? prod.stageWashColor;
+    const cycNum = scene?.cycBottomColor ?? prod.cycBottomColor;
+    const apronNum = prod.apronWashColor;
+
+    this.lightingState.gelPresetId = 'cue-default';
+    this.lightingState.spotColorHex = numToHexStr(spotNum);
+    this.lightingState.washColorHex = numToHexStr(washNum);
+    this.lightingState.cycColorHex = numToHexStr(cycNum);
+    this.lightingState.apronColorHex = numToHexStr(apronNum);
+
+    if (scene?.houseLevel !== undefined) {
+      this.lightingState.houseLevel = scene.houseLevel;
+    }
+
+    // Tailor spot & practical intensities slightly per scene mood
+    const sceneId = scene?.id ?? '';
+    if (
+      sceneId.includes('cave') ||
+      sceneId.includes('mean-one') ||
+      sceneId.includes('crumpit')
+    ) {
+      this.lightingState.followSpotLevel = 1.0;
+      this.lightingState.practicalsLevel = 1.18;
+    } else if (sceneId.includes('preshow')) {
+      this.lightingState.followSpotLevel = 0.85;
+      this.lightingState.practicalsLevel = 1.05;
+    } else {
+      this.lightingState.followSpotLevel = 0.95;
+      this.lightingState.practicalsLevel = 1.12;
+    }
   }
 
   public applyLightingState(): void {
-    const prod = this.productionSets.getActiveProduction();
-    const scene = this.productionSets.getActiveScene();
     const s = this.lightingState;
 
-    const stageWashColor = scene?.stageWashColor ?? prod.stageWashColor;
-    const stageSpotColor = scene?.stageSpotColor ?? prod.stageSpotColor;
-    const cycBottomColor = scene?.cycBottomColor ?? prod.cycBottomColor;
+    const spotColor = new THREE.Color(s.spotColorHex);
+    const washColor = new THREE.Color(s.washColorHex);
+    const cycColor = new THREE.Color(s.cycColorHex);
+    const apronColor = new THREE.Color(s.apronColorHex);
 
-    this.ambientLight.intensity = 0.22 + s.houseLevel * 0.65;
+    // Ambient hemisphere light subtly blends house level + stage wash tint
+    this.ambientLight.color.setHex(0xffe6c8).lerp(washColor, 0.35);
+    this.ambientLight.groundColor.setHex(0x1b1624).lerp(cycColor, 0.25);
+    this.ambientLight.intensity = 0.2 + s.houseLevel * 0.62;
+
     for (const pt of this.houseSpotLights) {
       pt.intensity = s.houseLevel * 22;
     }
 
-    this.fohStageKeyLeft.intensity = s.fohRailLevel * 48;
-    this.fohStageKeyRight.intensity = s.fohRailLevel * 48;
-    this.fohStageKeyLeft.color.setHex(stageWashColor);
-    this.fohStageKeyRight.color.setHex(stageWashColor);
+    // FOH Balcony Rail Key Wash
+    this.fohStageKeyLeft.intensity = s.fohRailLevel * 44;
+    this.fohStageKeyRight.intensity = s.fohRailLevel * 44;
+    this.fohStageKeyLeft.color.copy(washColor);
+    this.fohStageKeyRight.color.copy(washColor);
 
     // Emissive FOH lenses on the Lower Balcony Rail
     for (const lens of this.architecture.fohLensMeshes) {
       const mat = lens.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.25 + s.fohRailLevel * 1.4;
+      mat.emissive.copy(washColor);
+      mat.emissiveIntensity = 0.25 + s.fohRailLevel * 1.45;
     }
 
-    this.stageOverheadKey.intensity = s.stageElectricsLevel * 60;
-    this.stageOverheadKey.color.setHex(stageSpotColor);
-    this.stageWarmFill.intensity = s.stageElectricsLevel * 16;
-    this.stageWarmFill.color.setHex(stageWashColor);
+    // Overhead Stage Electrics Key & Fill
+    this.stageOverheadKey.intensity = s.stageElectricsLevel * 54;
+    this.stageOverheadKey.color.copy(spotColor);
+    this.stageWarmFill.intensity = s.stageElectricsLevel * 15;
+    this.stageWarmFill.color.copy(washColor);
 
-    this.cycWashLight.intensity = s.cycWashLevel * 24;
-    this.cycWashLight.color.setHex(cycBottomColor);
+    // Center & Downstage Followspots / Specials
+    this.centerFollowSpot.intensity = s.followSpotLevel * 48;
+    this.centerFollowSpot.color.copy(spotColor);
+    this.downstageSpecialSpot.intensity = s.followSpotLevel * 34;
+    this.downstageSpecialSpot.color.copy(spotColor);
+
+    // High-Side SL/SR Wing Booms
+    const boomLevel = 0.55 * s.stageElectricsLevel + 0.45 * s.apronFootlightsLevel;
+    this.wingBoomLeft.intensity = boomLevel * 18;
+    this.wingBoomRight.intensity = boomLevel * 18;
+    this.wingBoomLeft.color.copy(apronColor).lerp(washColor, 0.35);
+    this.wingBoomRight.color.copy(apronColor).lerp(washColor, 0.35);
+
+    // Upstage Cyclorama Sky Wash
+    this.cycWashLight.intensity = s.cycWashLevel * 26;
+    this.cycWashLight.color.copy(cycColor);
 
     const cycMat = this.productionSets.cycMesh.material as THREE.MeshStandardMaterial;
-    cycMat.emissiveIntensity = 0.12 + s.cycWashLevel * 0.36;
+    cycMat.color.copy(cycColor).multiplyScalar(0.88);
+    cycMat.emissive.copy(cycColor);
+    cycMat.emissiveIntensity = 0.14 + s.cycWashLevel * 0.4;
 
+    // Downstage Apron Footlights
     for (const foot of this.apronFootlights) {
-      foot.intensity = s.apronFootlightsLevel * 8;
-      foot.color.setHex(prod.apronWashColor);
+      foot.intensity = s.apronFootlightsLevel * 8.5;
+      foot.color.copy(apronColor);
     }
+
+    // 3D Volumetric Spotlight Cones
+    this.spotBeamConesGroup.visible = s.spotBeamsVisible;
+    if (s.spotBeamsVisible) {
+      const spotFactor = 0.5 * s.followSpotLevel + 0.5 * s.stageElectricsLevel;
+      const washFactor = 0.5 * s.fohRailLevel + 0.5 * s.stageElectricsLevel;
+      for (const b of this.spotBeamMaterials) {
+        b.mat.color.copy(b.role === 'spot' ? spotColor : washColor);
+        b.mat.opacity =
+          b.baseOpacity * (b.role === 'spot' ? spotFactor : washFactor);
+      }
+    }
+
+    // Live Who-Land Fairy Lights & Practicals Dimmer
+    const pLevel = s.practicalsLevel;
+    this.productionSets.root.traverse((obj) => {
+      if ((obj as THREE.PointLight).isPointLight && obj.userData.isFairyPointLight) {
+        const pt = obj as THREE.PointLight;
+        const baseInt =
+          typeof obj.userData.baseIntensity === 'number'
+            ? obj.userData.baseIntensity
+            : 1.5;
+        pt.intensity = baseInt * pLevel;
+      } else if ((obj as THREE.Mesh).isMesh || (obj as THREE.Sprite).isSprite) {
+        const mat = (obj as THREE.Mesh).material as
+          | (THREE.Material & {
+              emissiveIntensity?: number;
+              opacity?: number;
+              userData: Record<string, unknown>;
+            })
+          | undefined;
+        if (!mat || !mat.userData) return;
+        if (mat.userData.isFairyLightMaterial) {
+          const baseEmissive =
+            typeof mat.userData.baseEmissiveIntensity === 'number'
+              ? mat.userData.baseEmissiveIntensity
+              : 1.85;
+          mat.emissiveIntensity = baseEmissive * pLevel;
+        } else if (mat.userData.isFairyHaloMaterial) {
+          const baseOp =
+            typeof mat.userData.baseOpacity === 'number'
+              ? mat.userData.baseOpacity
+              : 0.92;
+          mat.opacity = Math.min(1.0, baseOp * pLevel);
+        }
+      }
+    });
   }
 
   public setLightingPreset(preset: LightingPresetId): LightingState {
     this.lightingState.preset = preset;
     if (preset === 'show-mode') {
-      this.lightingState.houseLevel = 0.38;
-      this.lightingState.fohRailLevel = 0.94;
-      this.lightingState.stageElectricsLevel = 0.96;
+      this.lightingState.houseLevel = 0.25;
+      this.lightingState.fohRailLevel = 0.92;
+      this.lightingState.followSpotLevel = 0.96;
+      this.lightingState.stageElectricsLevel = 0.95;
       this.lightingState.cycWashLevel = 0.9;
       this.lightingState.apronFootlightsLevel = 0.72;
+      this.lightingState.practicalsLevel = 1.12;
+      this.lightingState.spotBeamsVisible = true;
     } else if (preset === 'work-lights') {
       this.lightingState.houseLevel = 1.0;
       this.lightingState.fohRailLevel = 0.65;
+      this.lightingState.followSpotLevel = 0.45;
       this.lightingState.stageElectricsLevel = 0.85;
       this.lightingState.cycWashLevel = 0.35;
       this.lightingState.apronFootlightsLevel = 0.5;
+      this.lightingState.practicalsLevel = 0.75;
+      this.lightingState.spotBeamsVisible = false;
     } else if (preset === 'tech-rehearsal') {
-      this.lightingState.houseLevel = 0.62;
+      this.lightingState.houseLevel = 0.58;
       this.lightingState.fohRailLevel = 0.88;
+      this.lightingState.followSpotLevel = 0.92;
       this.lightingState.stageElectricsLevel = 0.92;
-      this.lightingState.cycWashLevel = 0.75;
+      this.lightingState.cycWashLevel = 0.78;
       this.lightingState.apronFootlightsLevel = 0.65;
+      this.lightingState.practicalsLevel = 1.05;
+      this.lightingState.spotBeamsVisible = true;
     } else if (preset === 'dramatic-cue') {
-      this.lightingState.houseLevel = 0.14;
-      this.lightingState.fohRailLevel = 0.78;
-      this.lightingState.stageElectricsLevel = 1.0;
+      this.lightingState.houseLevel = 0.1;
+      this.lightingState.fohRailLevel = 0.74;
+      this.lightingState.followSpotLevel = 1.0;
+      this.lightingState.stageElectricsLevel = 0.96;
       this.lightingState.cycWashLevel = 1.0;
       this.lightingState.apronFootlightsLevel = 0.45;
+      this.lightingState.practicalsLevel = 1.3;
+      this.lightingState.spotBeamsVisible = true;
     }
     this.applyLightingState();
     return { ...this.lightingState };
   }
 
+  public setLightingGelPreset(
+    gelId: Exclude<LightingGelPresetId, 'custom'>
+  ): LightingState {
+    if (gelId === 'cue-default') {
+      this.syncLightingFromActiveSceneCue();
+      this.applyLightingState();
+      return { ...this.lightingState };
+    }
+    const found = LIGHTING_GEL_PRESETS.find((g) => g.id === gelId);
+    if (found) {
+      this.lightingState.gelPresetId = found.id;
+      if (found.spotColorHex) this.lightingState.spotColorHex = found.spotColorHex;
+      if (found.washColorHex) this.lightingState.washColorHex = found.washColorHex;
+      if (found.cycColorHex) this.lightingState.cycColorHex = found.cycColorHex;
+      if (found.apronColorHex) this.lightingState.apronColorHex = found.apronColorHex;
+      this.applyLightingState();
+    }
+    return { ...this.lightingState };
+  }
+
+  public setLightingZoneColor(
+    zone: 'spotColorHex' | 'washColorHex' | 'cycColorHex' | 'apronColorHex',
+    hex: string
+  ): LightingState {
+    this.lightingState[zone] = hex;
+    this.lightingState.gelPresetId = 'custom';
+    this.applyLightingState();
+    return { ...this.lightingState };
+  }
+
+  public setSpotBeamsVisible(visible: boolean): LightingState {
+    this.lightingState.spotBeamsVisible = visible;
+    this.applyLightingState();
+    return { ...this.lightingState };
+  }
+
   public updateLightingChannel(
-    channel: keyof Omit<LightingState, 'preset'>,
+    channel: LightingNumericChannelKey,
     value: number
   ): LightingState {
-    this.lightingState[channel] = Math.max(0, Math.min(1, value));
+    const maxVal = channel === 'practicalsLevel' ? 1.5 : 1.0;
+    this.lightingState[channel] = Math.max(0, Math.min(maxVal, value));
     this.applyLightingState();
     return { ...this.lightingState };
   }
@@ -405,9 +825,7 @@ export class TheatreSceneController {
     if (activeScene?.grandDrapeOpenFraction !== undefined) {
       this.setGrandDrapeOpenFraction(activeScene.grandDrapeOpenFraction);
     }
-    if (activeScene?.houseLevel !== undefined) {
-      this.lightingState.houseLevel = activeScene.houseLevel;
-    }
+    this.syncLightingFromActiveSceneCue();
     this.syncStageFloorTexture();
     this.applyLightingState();
     this.refreshSeatColorsAndMetrics();
@@ -428,9 +846,7 @@ export class TheatreSceneController {
     if (scene.grandDrapeOpenFraction !== undefined) {
       this.setGrandDrapeOpenFraction(scene.grandDrapeOpenFraction);
     }
-    if (scene.houseLevel !== undefined) {
-      this.lightingState.houseLevel = scene.houseLevel;
-    }
+    this.syncLightingFromActiveSceneCue();
     this.syncStageFloorTexture();
     this.applyLightingState();
     this.callbacks.onSceneChanged?.(scene, spec);
@@ -443,9 +859,7 @@ export class TheatreSceneController {
     if (scene.grandDrapeOpenFraction !== undefined) {
       this.setGrandDrapeOpenFraction(scene.grandDrapeOpenFraction);
     }
-    if (scene.houseLevel !== undefined) {
-      this.lightingState.houseLevel = scene.houseLevel;
-    }
+    this.syncLightingFromActiveSceneCue();
     this.syncStageFloorTexture();
     this.applyLightingState();
     this.callbacks.onSceneChanged?.(scene, spec);

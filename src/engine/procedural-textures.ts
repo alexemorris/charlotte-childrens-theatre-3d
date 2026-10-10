@@ -206,7 +206,9 @@ export function createQuiltedDiamondTexture(): THREE.CanvasTexture {
 
 /**
  * Generates the painted radiating perspective ray stage floor from the
- * Alice in Wonderland production photo (`da3a8cf7.jpg`).
+ * Alice in Wonderland production photo (`stage_proscenium_alice.jpg`), complete
+ * with hand-painted scenic woodgrain dry-brushing, marley roll sheen variation,
+ * chessboard perspective fracture lines, and subtle Wonderland suit motifs.
  */
 export function createAliceRayStageFloorTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -219,55 +221,115 @@ export function createAliceRayStageFloorTexture(): THREE.CanvasTexture {
     ctx.fillStyle = '#101115';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Radiating whimsical rays converging toward upstage-center-left
-    const originX = 480;
-    const originY = 260;
-    const rays: ReadonlyArray<{ readonly a0: number; readonly a1: number; readonly color: string }> = [
-      { a0: -2.8, a1: -2.3, color: '#6b141a' },
-      { a0: -2.3, a1: -1.9, color: '#161820' },
-      { a0: -1.9, a1: -1.45, color: '#9c1c26' },
-      { a0: -1.45, a1: -1.1, color: '#1c2438' },
-      { a0: -1.1, a1: -0.72, color: '#7a1720' },
-      { a0: -0.72, a1: -0.35, color: '#14161d' },
-      { a0: -0.35, a1: 0.08, color: '#b51f29' },
-      { a0: 0.08, a1: 0.42, color: '#d49b1a' },
-      { a0: 0.42, a1: 0.78, color: '#8f1b24' },
-      { a0: 0.78, a1: 1.15, color: '#1a2744' },
-      { a0: 1.15, a1: 1.52, color: '#c4242b' },
-      { a0: 1.52, a1: 1.85, color: '#e0a820' },
-      { a0: 1.85, a1: 2.25, color: '#6e161d' },
-      { a0: 2.25, a1: 2.75, color: '#151821' },
-      { a0: 2.75, a1: 3.48, color: '#821922' },
+    // Radiating whimsical rays converging toward upstage-center-left (under the crooked window)
+    const originX = 472;
+    const originY = 248;
+    const rays: ReadonlyArray<{
+      readonly a0: number;
+      readonly a1: number;
+      readonly colorInner: string;
+      readonly colorOuter: string;
+    }> = [
+      { a0: -2.85, a1: -2.32, colorInner: '#8a1820', colorOuter: '#4c0c12' },
+      { a0: -2.32, a1: -1.92, colorInner: '#1c202c', colorOuter: '#101218' },
+      { a0: -1.92, a1: -1.46, colorInner: '#b81e28', colorOuter: '#6e1018' },
+      { a0: -1.46, a1: -1.10, colorInner: '#222c46', colorOuter: '#121828' },
+      { a0: -1.10, a1: -0.72, colorInner: '#921a22', colorOuter: '#540e14' },
+      { a0: -0.72, a1: -0.35, colorInner: '#1a1c26', colorOuter: '#0e1016' },
+      { a0: -0.35, a1: 0.08, colorInner: '#cc222c', colorOuter: '#7c121a' },
+      { a0: 0.08, a1: 0.42, colorInner: '#e6ac22', colorOuter: '#9e6c10' },
+      { a0: 0.42, a1: 0.78, colorInner: '#a81c26', colorOuter: '#621016' },
+      { a0: 0.78, a1: 1.15, colorInner: '#223258', colorOuter: '#121c34' },
+      { a0: 1.15, a1: 1.52, colorInner: '#d4262e', colorOuter: '#84141c' },
+      { a0: 1.52, a1: 1.86, colorInner: '#edb424', colorOuter: '#a67612' },
+      { a0: 1.86, a1: 2.26, colorInner: '#861820', colorOuter: '#4a0c12' },
+      { a0: 2.26, a1: 2.75, colorInner: '#1c202c', colorOuter: '#101218' },
+      { a0: 2.75, a1: 3.44, colorInner: '#9a1b24', colorOuter: '#580e14' },
     ];
 
     for (const ray of rays) {
-      ctx.fillStyle = ray.color;
+      const rGrad = ctx.createRadialGradient(originX, originY, 30, originX, originY, 880);
+      rGrad.addColorStop(0, ray.colorInner);
+      rGrad.addColorStop(0.7, ray.colorInner);
+      rGrad.addColorStop(1, ray.colorOuter);
+      ctx.fillStyle = rGrad;
       ctx.beginPath();
       ctx.moveTo(originX, originY);
-      ctx.arc(originX, originY, 950, ray.a0, ray.a1);
+      ctx.arc(originX, originY, 960, ray.a0, ray.a1);
       ctx.closePath();
       ctx.fill();
-    }
 
-    // Concentric geometric fracture lines across the rays
-    ctx.strokeStyle = 'rgba(15, 15, 20, 0.65)';
-    ctx.lineWidth = 6;
-    for (const r of [160, 290, 440, 610]) {
+      // Scenic artist radial dry-brush woodgrain & bristle streaks along each wedge
+      const midA = (ray.a0 + ray.a1) * 0.5;
+      const spanA = ray.a1 - ray.a0;
+      for (let s = 0; s < 14; s++) {
+        const frac = (s + 0.5) / 14 - 0.5;
+        const a = midA + frac * spanA * 0.9;
+        const r0 = 50 + ((s * 37) % 140);
+        const r1 = r0 + 180 + ((s * 53) % 280);
+        ctx.strokeStyle =
+          s % 2 === 0 ? 'rgba(255, 232, 185, 0.08)' : 'rgba(10, 10, 14, 0.22)';
+        ctx.lineWidth = 1.5 + (s % 3);
+        ctx.beginPath();
+        ctx.moveTo(originX + Math.cos(a) * r0, originY + Math.sin(a) * r0);
+        ctx.lineTo(originX + Math.cos(a) * r1, originY + Math.sin(a) * r1);
+        ctx.stroke();
+      }
+
+      // Crisp dark bevel line separating each painted wedge
+      ctx.strokeStyle = 'rgba(12, 12, 18, 0.72)';
+      ctx.lineWidth = 3.5;
       ctx.beginPath();
-      ctx.arc(originX, originY, r, 0, Math.PI * 2);
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + Math.cos(ray.a0) * 960, originY + Math.sin(ray.a0) * 960);
       ctx.stroke();
     }
 
-    // Vignette fade into dark stage wings
-    const grad = ctx.createRadialGradient(512, 540, 180, 512, 540, 520);
+    // Concentric warped chessboard fracture rings across the perspective rays
+    for (const r of [145, 265, 405, 565, 735]) {
+      ctx.strokeStyle = 'rgba(12, 13, 18, 0.76)';
+      ctx.lineWidth = 6.5;
+      ctx.beginPath();
+      ctx.arc(originX, originY, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Subtle painted highlight lip on outer edge of each concentric fracture
+      ctx.strokeStyle = 'rgba(255, 220, 160, 0.14)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(originX, originY, r + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Horizontal marley roll seams & subtle stage scuff spatter
+    for (let y = 128; y < 1024; y += 128) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1024, y);
+      ctx.stroke();
+    }
+
+    for (let sp = 0; sp < 260; sp++) {
+      const sx = (sp * 197) % 1024;
+      const sy = (sp * 311) % 1024;
+      ctx.fillStyle =
+        sp % 3 === 0 ? 'rgba(255, 215, 140, 0.06)' : 'rgba(10, 12, 18, 0.14)';
+      ctx.fillRect(sx, sy, 2 + (sp % 3), 2 + (sp % 2));
+    }
+
+    // Vignette fade into dark stage wings matching the proscenium photo
+    const grad = ctx.createRadialGradient(512, 548, 175, 512, 548, 528);
     grad.addColorStop(0, 'rgba(16, 17, 21, 0)');
-    grad.addColorStop(0.78, 'rgba(16, 17, 21, 0.35)');
+    grad.addColorStop(0.76, 'rgba(16, 17, 21, 0.34)');
     grad.addColorStop(1, 'rgba(16, 17, 21, 0.96)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -491,8 +553,8 @@ export function createYellowBrickTexture(): THREE.CanvasTexture {
 
 /**
  * Generates the painted Horace Green Prep School tartan plaid stage floor cloth
- * with white dotted grid lines and the angled "H G" crimson-bordered crest downstage right
- * (matching reference photos media_1791644748140_320001e2.jpg & media_1791644779061_b9a0e65e.jpg).
+ * with white dotted grid lines, scenic dry-brushed twill weave, and the angled
+ * "H G" crimson-bordered heraldic crest downstage right (matching `school_of_rock_classroom.jpg`).
  */
 export function createSchoolOfRockFloorTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -505,34 +567,74 @@ export function createSchoolOfRockFloorTexture(): THREE.CanvasTexture {
     ctx.fillStyle = '#0e2836';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Angled tartan plaid blocks in emerald, sea-green, and slate-blue
+    // Angled tartan plaid blocks in emerald, apple-mint green, sea-green, and slate-blue
     ctx.save();
     ctx.translate(512, 512);
     ctx.rotate(-0.14);
     ctx.translate(-640, -640);
 
     const cell = 84;
+    // Woven horizontal & vertical tartan broad bands
+    for (let i = 0; i < 18; i++) {
+      const p = i * cell;
+      if (i % 3 === 0) {
+        ctx.fillStyle = 'rgba(38, 122, 92, 0.36)';
+        ctx.fillRect(0, p + 6, 18 * cell, cell - 12);
+        ctx.fillRect(p + 6, 0, cell - 12, 18 * cell);
+      } else if (i % 3 === 1) {
+        ctx.fillStyle = 'rgba(22, 74, 96, 0.42)';
+        ctx.fillRect(0, p + 4, 18 * cell, cell - 8);
+        ctx.fillRect(p + 4, 0, cell - 8, 18 * cell);
+      }
+    }
+
     for (let r = 0; r < 18; r++) {
       for (let c = 0; c < 18; c++) {
         const x = c * cell;
         const y = r * cell;
         const pat = (r * 3 + c * 5) % 7;
         if (pat === 0 || pat === 3) {
-          ctx.fillStyle = 'rgba(54, 146, 104, 0.55)';
+          ctx.fillStyle = 'rgba(62, 158, 108, 0.62)';
           ctx.fillRect(x + 4, y + 4, cell - 8, cell - 8);
         } else if (pat === 1 || pat === 5) {
-          ctx.fillStyle = 'rgba(26, 86, 98, 0.65)';
+          ctx.fillStyle = 'rgba(26, 88, 104, 0.68)';
           ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
-        } else if (pat === 2) {
-          ctx.fillStyle = 'rgba(92, 178, 118, 0.48)';
+        } else if (pat === 2 || pat === 6) {
+          ctx.fillStyle = 'rgba(116, 194, 126, 0.56)';
           ctx.fillRect(x + 8, y + 8, cell - 16, cell - 16);
+        }
+
+        // Scenic dry-brushed twill weave lines inside each plaid block
+        ctx.strokeStyle =
+          (r + c) % 2 === 0
+            ? 'rgba(175, 235, 185, 0.14)'
+            : 'rgba(12, 34, 48, 0.22)';
+        ctx.lineWidth = 1.5;
+        for (let t = 10; t < cell - 8; t += 10) {
+          ctx.beginPath();
+          ctx.moveTo(x + t, y + 4);
+          ctx.lineTo(x + t, y + cell - 4);
+          ctx.stroke();
         }
       }
     }
 
-    // Crisp white dotted grid lines across the plaid floor
-    ctx.strokeStyle = 'rgba(235, 245, 255, 0.68)';
-    ctx.lineWidth = 2.2;
+    // Subtle crimson & gold tartan sett accent threads
+    ctx.strokeStyle = 'rgba(198, 42, 56, 0.28)';
+    ctx.lineWidth = 2;
+    for (let i = 1; i < 18; i += 3) {
+      const p = i * cell + cell * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(p, 0);
+      ctx.lineTo(p, 18 * cell);
+      ctx.moveTo(0, p);
+      ctx.lineTo(18 * cell, p);
+      ctx.stroke();
+    }
+
+    // Crisp white dotted grid lines across the plaid floor (matching photo)
+    ctx.strokeStyle = 'rgba(225, 240, 250, 0.74)';
+    ctx.lineWidth = 2.4;
     ctx.setLineDash([4, 7]);
     for (let i = 0; i <= 18; i++) {
       const p = i * cell;
@@ -556,33 +658,46 @@ export function createSchoolOfRockFloorTexture(): THREE.CanvasTexture {
 
     const drawShieldPath = (scale: number): void => {
       ctx.beginPath();
-      ctx.moveTo(-115 * scale, -95 * scale);
-      ctx.lineTo(115 * scale, -95 * scale);
-      ctx.lineTo(110 * scale, 15 * scale);
-      ctx.quadraticCurveTo(95 * scale, 88 * scale, 0, 120 * scale);
-      ctx.quadraticCurveTo(-95 * scale, 88 * scale, -110 * scale, 15 * scale);
+      ctx.moveTo(-118 * scale, -96 * scale);
+      ctx.lineTo(118 * scale, -96 * scale);
+      ctx.lineTo(112 * scale, 16 * scale);
+      ctx.quadraticCurveTo(96 * scale, 90 * scale, 0, 124 * scale);
+      ctx.quadraticCurveTo(-96 * scale, 90 * scale, -112 * scale, 16 * scale);
       ctx.closePath();
     };
 
-    // Outer crimson red shield border
-    drawShieldPath(1.0);
+    // Subtle drop shadow under painted crest
+    ctx.save();
+    ctx.translate(4, 6);
+    drawShieldPath(1.03);
+    ctx.fillStyle = 'rgba(8, 18, 28, 0.45)';
+    ctx.fill();
+    ctx.restore();
+
+    // Outer cream/white heraldic outline lip
+    drawShieldPath(1.02);
+    ctx.fillStyle = '#dfe5ec';
+    ctx.fill();
+
+    // Crimson red shield border
+    drawShieldPath(0.97);
     ctx.fillStyle = '#c82432';
     ctx.fill();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#e8e4dc';
-    ctx.stroke();
 
-    // Inner off-white shield face
-    drawShieldPath(0.84);
-    ctx.fillStyle = '#e6ecf2';
+    // Inner off-white/parchment shield face with subtle navy outline
+    drawShieldPath(0.81);
+    ctx.fillStyle = '#dce4ec';
     ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#182b49';
+    ctx.stroke();
 
     // Navy quadrant divider cross
     ctx.fillStyle = '#182b49';
-    ctx.fillRect(-90, -8, 180, 14);
-    ctx.fillRect(-7, -80, 14, 175);
+    ctx.fillRect(-92, -7, 184, 14);
+    ctx.fillRect(-7, -78, 14, 174);
 
-    // Bold "H" and "G" letters in the crest quadrants
+    // Bold serif "H" (upper-left) and "G" (lower-right) letters in the crest quadrants
     ctx.fillStyle = '#182b49';
     ctx.font = 'bold 54px Georgia, serif';
     ctx.textAlign = 'center';
@@ -590,28 +705,62 @@ export function createSchoolOfRockFloorTexture(): THREE.CanvasTexture {
     ctx.fillText('H', -46, -42);
     ctx.fillText('G', 46, 38);
 
-    // Open book icon (upper right quadrant) & torch icon (lower left quadrant)
-    ctx.fillStyle = '#243c64';
-    ctx.fillRect(24, -56, 44, 28);
-    ctx.fillStyle = '#e6ecf2';
-    ctx.fillRect(44, -56, 4, 28);
+    // Detailed Open Book of Knowledge icon (upper right quadrant)
+    ctx.fillStyle = '#182b49';
+    ctx.fillRect(21, -60, 50, 32);
+    ctx.fillStyle = '#dce4ec';
+    ctx.fillRect(25, -56, 19, 24);
+    ctx.fillRect(48, -56, 19, 24);
+    // Page text lines
+    ctx.strokeStyle = '#243c64';
+    ctx.lineWidth = 1.5;
+    for (let py = -50; py <= -38; py += 6) {
+      ctx.beginPath();
+      ctx.moveTo(28, py);
+      ctx.lineTo(41, py);
+      ctx.moveTo(51, py);
+      ctx.lineTo(64, py);
+      ctx.stroke();
+    }
 
+    // Detailed Heraldic Torch of Learning icon (lower left quadrant)
+    // Torch handle & cup
+    ctx.fillStyle = '#182b49';
+    ctx.beginPath();
+    ctx.moveTo(-52, 28);
+    ctx.lineTo(-40, 28);
+    ctx.lineTo(-43, 62);
+    ctx.lineTo(-49, 62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(-56, 23, 20, 5);
+    // Sculpted crimson & gold torch flame
     ctx.fillStyle = '#c82432';
     ctx.beginPath();
-    ctx.arc(-46, 38, 16, 0, Math.PI * 2);
+    ctx.moveTo(-46, 4);
+    ctx.quadraticCurveTo(-32, 12, -38, 23);
+    ctx.lineTo(-54, 23);
+    ctx.quadraticCurveTo(-60, 12, -46, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#e0a828';
+    ctx.beginPath();
+    ctx.arc(-46, 16, 5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
 /**
  * Generates the Horace Green slate-green classroom chalkboard texture
- * with dusty chalk handwriting, music notation, and cursive script header.
+ * with dusty chalk handwriting, music notation, geometric diagrams, and cursive script header
+ * matching `school_of_rock_classroom.jpg`.
  */
 export function createChalkboardTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -621,49 +770,86 @@ export function createChalkboardTexture(): THREE.CanvasTexture {
 
   if (ctx) {
     const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#1d3c36');
-    grad.addColorStop(0.5, '#264c44');
-    grad.addColorStop(1, '#1b3631');
+    grad.addColorStop(0, '#1c3e36');
+    grad.addColorStop(0.5, '#285248');
+    grad.addColorStop(1, '#193630');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Dusty chalk eraser clouds
-    for (let i = 0; i < 28; i++) {
+    // Sweeping dusty chalk eraser clouds & vertical slate grain
+    for (let i = 0; i < 38; i++) {
       const cx = (i * 73) % 480;
       const cy = (i * 59) % 480;
-      ctx.fillStyle = 'rgba(210, 230, 225, 0.045)';
+      ctx.fillStyle =
+        i % 2 === 0 ? 'rgba(210, 232, 224, 0.055)' : 'rgba(18, 38, 32, 0.08)';
       ctx.beginPath();
-      ctx.arc(cx, cy, 28 + (i % 24), 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, 38 + (i % 26), 18 + (i % 16), (i % 5) * 0.3, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Cursive alphabet / music theory lines near top of chalkboard
-    ctx.strokeStyle = 'rgba(230, 242, 238, 0.25)';
+    // Cursive alphabet / music theory staff lines near top of chalkboard
+    ctx.strokeStyle = 'rgba(230, 242, 238, 0.28)';
     ctx.lineWidth = 1.2;
     for (let row = 0; row < 5; row++) {
-      const y = 42 + row * 22;
+      const y = 38 + row * 20;
       ctx.beginPath();
-      ctx.moveTo(24, y);
-      ctx.lineTo(488, y);
+      ctx.moveTo(20, y);
+      ctx.lineTo(492, y);
       ctx.stroke();
     }
 
-    ctx.fillStyle = 'rgba(235, 245, 240, 0.34)';
-    ctx.font = 'italic 18px Georgia, serif';
-    ctx.fillText('Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn', 32, 60);
+    ctx.fillStyle = 'rgba(235, 245, 240, 0.38)';
+    ctx.font = 'italic 19px Georgia, serif';
+    ctx.fillText('Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn', 28, 55);
+    ctx.fillText('Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz', 28, 95);
+
+    // Chalk music staff & eighth notes in middle
+    for (let s = 0; s < 5; s++) {
+      const sy = 142 + s * 6;
+      ctx.beginPath();
+      ctx.moveTo(28, sy);
+      ctx.lineTo(484, sy);
+      ctx.stroke();
+    }
+    for (let nx = 54; nx < 460; nx += 42) {
+      const ny = 148 + ((nx * 7) % 18);
+      ctx.beginPath();
+      ctx.ellipse(nx, ny, 5, 3.5, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(nx + 4, ny);
+      ctx.lineTo(nx + 4, ny - 18);
+      ctx.stroke();
+    }
+
     ctx.font = '14px monospace';
-    ctx.fillText('HISTORY OF ROCK: LED ZEPPELIN -> AC/DC -> THE WHO', 32, 180);
-    ctx.fillText('BAND ROLES: GUITAR · BASS · KEYS · DRUMS · VOCALS', 32, 220);
+    ctx.fillText('HISTORY OF ROCK: LED ZEPPELIN -> AC/DC -> THE WHO', 28, 210);
+    ctx.fillText('BAND ROLES: GUITAR · BASS · KEYS · DRUMS · VOCALS', 28, 244);
+
+    // Faint chalk geometric prism/triangle diagrams (seen on SL/SR boards in reference photo)
+    ctx.strokeStyle = 'rgba(225, 240, 235, 0.22)';
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(36, 280, 96, 68);
+    ctx.beginPath();
+    ctx.moveTo(180, 348);
+    ctx.lineTo(230, 276);
+    ctx.lineTo(280, 348);
+    ctx.closePath();
+    ctx.stroke();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
 /**
- * Generates the sparkling lavender-blue Seussian snow stage floor cloth
+ * Generates the hand-painted lavender-periwinkle Seussian snow stage floor cloth
  * for Dr. Seuss's How The Grinch Stole Christmas! (Scenic Design by Andrew Gibbon).
+ * Features sweeping Seussian snow-path brushstrokes, cobalt/periwinkle shadow troughs,
+ * warm rosy-lavender bounce highlights, multi-pass scenic spatter, and curving Dr. Seuss
+ * pen-and-ink contour feathering (strictly toned <= 0xd8 so spotlights never overexpose).
  */
 export function createGrinchSnowFloorTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -672,41 +858,101 @@ export function createGrinchSnowFloorTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    const grad = ctx.createRadialGradient(512, 560, 40, 512, 512, 720);
-    grad.addColorStop(0, '#dce4f7');
-    grad.addColorStop(0.55, '#b6c4e8');
-    grad.addColorStop(1, '#8292bf');
+    // 1. Toned-down lavender-blue & glacier-periwinkle radial stage wash (all channels <= 0xd8)
+    const grad = ctx.createRadialGradient(512, 540, 48, 512, 512, 720);
+    grad.addColorStop(0, '#c6d0d8');
+    grad.addColorStop(0.45, '#aebed8');
+    grad.addColorStop(0.78, '#92a6cc');
+    grad.addColorStop(1, '#7286b4');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Whimsical Seussian curved snow drift contour lines & ink cross-hatching
-    ctx.strokeStyle = 'rgba(34, 42, 78, 0.28)';
-    ctx.lineWidth = 2.4;
-    for (let i = 0; i < 16; i++) {
-      const y = 64 + i * 60;
+    // 2. Warm rosy-lavender bounce-light glazes (where the pink Whoville houses & cyc bounce onto snow)
+    for (const [bx, by, rx, ry, col] of [
+      [250, 420, 240, 160, 'rgba(208, 178, 212, 0.26)'],
+      [780, 430, 240, 160, 'rgba(208, 178, 212, 0.26)'],
+      [512, 340, 310, 180, 'rgba(198, 208, 216, 0.24)'],
+      [512, 740, 380, 190, 'rgba(176, 194, 216, 0.22)'],
+    ] as const) {
+      const bGrad = ctx.createRadialGradient(bx, by, 16, bx, by, rx);
+      bGrad.addColorStop(0, col);
+      bGrad.addColorStop(1, 'rgba(160, 180, 212, 0)');
+      ctx.fillStyle = bGrad;
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(
-        260,
-        y + ((i % 2 === 0 ? 1 : -1) * 34),
-        760,
-        y - ((i % 2 === 0 ? 1 : -1) * 34),
-        1024,
-        y
-      );
-      ctx.stroke();
+      ctx.ellipse(bx, by, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Glittering snow crystal flecks across the stage deck
-    for (let s = 0; s < 420; s++) {
-      const sx = (s * 173) % 1020;
-      const sy = (s * 257) % 1020;
-      ctx.fillStyle = s % 3 === 0 ? 'rgba(255, 255, 255, 0.75)' : 'rgba(215, 232, 255, 0.45)';
-      ctx.fillRect(sx, sy, 3, 3);
+    // 3. Sweeping, swirling Seussian snow-path brushstrokes & cobalt shadow troughs
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 22; i++) {
+      const y = 44 + i * 44;
+      const sway = (i % 2 === 0 ? 1 : -1) * (32 + (i % 3) * 12);
+
+      // Broad soft cobalt-periwinkle drift shadow trough
+      ctx.strokeStyle = 'rgba(78, 98, 148, 0.22)';
+      ctx.lineWidth = 22 + (i % 4) * 6;
+      ctx.beginPath();
+      ctx.moveTo(-20, y + 8);
+      ctx.bezierCurveTo(260, y + sway + 8, 764, y - sway + 8, 1044, y + 8);
+      ctx.stroke();
+
+      // Broad toned-snow crest dry-brush highlight (<= 0xd8)
+      ctx.strokeStyle = 'rgba(204, 212, 216, 0.28)';
+      ctx.lineWidth = 14 + (i % 3) * 4;
+      ctx.beginPath();
+      ctx.moveTo(-20, y - 5);
+      ctx.bezierCurveTo(260, y + sway - 5, 764, y - sway - 5, 1044, y - 5);
+      ctx.stroke();
+
+      // Curving Dr. Seuss pen-and-ink contour line
+      ctx.strokeStyle = 'rgba(26, 34, 68, 0.34)';
+      ctx.lineWidth = i % 3 === 0 ? 3.0 : 2.0;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(260, y + sway, 764, y - sway, 1024, y);
+      ctx.stroke();
+
+      // Short rhythmic Seussian cross-hatch feather ticks along the snow drift ridge
+      if (i % 2 === 0) {
+        ctx.strokeStyle = 'rgba(24, 32, 64, 0.26)';
+        ctx.lineWidth = 1.8;
+        for (let tx = 48 + (i % 3) * 24; tx < 980; tx += 56) {
+          const u = tx / 1024;
+          const ty =
+            y +
+            Math.sin(u * Math.PI * 2) * (sway * 0.42) +
+            ((tx % 7) - 3) * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx - 8, ty + 14);
+          ctx.moveTo(tx + 9, ty + 1);
+          ctx.lineTo(tx + 2, ty + 13);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 4. Multi-pass scenic shop paint spatter (cobalt shadow flecks, lavender mid-tones, frost highlights)
+    for (let s = 0; s < 950; s++) {
+      const sx = (s * 173 + (s % 7) * 29) % 1020;
+      const sy = (s * 257 + (s % 11) * 19) % 1020;
+      const r = 1.2 + (s % 3) * 1.1;
+      if (s % 3 === 0) {
+        ctx.fillStyle = 'rgba(208, 214, 216, 0.52)';
+      } else if (s % 3 === 1) {
+        ctx.fillStyle = 'rgba(64, 82, 134, 0.34)';
+      } else {
+        ctx.fillStyle = 'rgba(186, 172, 208, 0.38)';
+      }
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -831,14 +1077,39 @@ export function drawGrinchLogoGraphic(
   ctx.scale(scale, scale);
 
   // Subtle radial glow behind the logo on the scrim
-  const glow = ctx.createRadialGradient(0, 0, 12, 0, 0, 210);
-  glow.addColorStop(0, 'rgba(255, 248, 225, 0.34)');
-  glow.addColorStop(0.65, 'rgba(210, 195, 255, 0.12)');
+  const glow = ctx.createRadialGradient(0, 0, 12, 0, 0, 220);
+  glow.addColorStop(0, 'rgba(235, 228, 255, 0.36)');
+  glow.addColorStop(0.65, 'rgba(185, 168, 245, 0.14)');
   glow.addColorStop(1, 'rgba(110, 88, 180, 0.0)');
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 220, 145, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 225, 150, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Subtle painted 6-branch Seussian snowflake watermark behind the title (visible in model_1A_preshow.jpg)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(165, 205, 255, 0.18)';
+  ctx.lineWidth = 4.5;
+  ctx.lineCap = 'round';
+  for (let arm = 0; arm < 6; arm++) {
+    const a = (arm * Math.PI) / 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(a) * 128, Math.sin(a) * 128);
+    ctx.stroke();
+    for (const r of [48, 86]) {
+      const bx = Math.cos(a) * r;
+      const by = Math.sin(a) * r;
+      for (const side of [-1, 1]) {
+        const ba = a + side * 0.58;
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx + Math.cos(ba) * 26, by + Math.sin(ba) * 26);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
 
   // "Dr. Seuss'" whimsical script eyebrow
   drawSeussianDisplayText(ctx, "DR. SEUSS'", -82, -104, {
@@ -932,12 +1203,12 @@ export function drawGrinchLogoGraphic(
 }
 
 /**
- * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") from Slide 3 of
- * the Grinch Scenic Design deck:
- * - Lavender/violet translucent scrim wash
- * - Left projection: "Charlotte's Web — Adapted by Joseph Robinette" (Wilbur pig & fence)
- * - Center projection: Authentic Seussian "HOW THE GRINCH STOLE CHRISTMAS!" graphic logo
- * - Right projection: "BENEATH THE BAOBAB TREE" poster art
+ * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") matching
+ * `model_1A_preshow.jpg`:
+ * - Lavender/violet translucent sharkstooth scrim wash with upper shadowy holiday stocking valance
+ * - Left projection: "Charlotte's Web — Adapted by Joseph Robinette" (Wilbur pig, sunrise hills, web & picket fence)
+ * - Center projection: Authentic Seussian "HOW THE GRINCH STOLE CHRISTMAS!" graphic logo & snowflake watermark
+ * - Right projection: "BENEATH THE BAOBAB TREE" poster art (banded sunset sky, purple Baobab tree, dancer raising sun disc, campfire)
  */
 export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -946,192 +1217,341 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
+    // 1. Rich violet-periwinkle sharkstooth scrim wash matching model_1A_preshow.jpg
     const bg = ctx.createLinearGradient(0, 0, 0, 512);
-    bg.addColorStop(0, '#362664');
-    bg.addColorStop(0.5, '#5e48a2');
-    bg.addColorStop(1, '#725cb8');
+    bg.addColorStop(0, '#3e2d74');
+    bg.addColorStop(0.28, '#58449c');
+    bg.addColorStop(0.68, '#725ec0');
+    bg.addColorStop(1, '#8472d0');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, 1024, 512);
 
-    // Subtle scrim gauze weave
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    // Shadowy backlit holiday stocking & ragged border valance silhouettes along top of scrim (seen in model_1A_preshow.jpg)
+    ctx.save();
+    for (let sx = 40; sx < 980; sx += 76) {
+      const tilt = ((sx % 3) - 1) * 0.12;
+      const sh = 64 + (sx % 24);
+      ctx.save();
+      ctx.translate(sx, 36);
+      ctx.rotate(tilt);
+      ctx.fillStyle =
+        sx % 152 === 40
+          ? 'rgba(84, 24, 58, 0.42)'
+          : 'rgba(42, 28, 72, 0.38)';
+      ctx.beginPath();
+      ctx.roundRect(-18, 0, 36, sh, 8);
+      ctx.ellipse(8, sh - 6, 22, 12, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Horizontal batten shadow line near top of scrim
+    ctx.strokeStyle = 'rgba(22, 14, 44, 0.55)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(0, 42);
+    ctx.lineTo(1024, 42);
+    ctx.stroke();
+    ctx.restore();
+
+    // Authentic sharkstooth scrim gauze warp & weft weave
+    ctx.strokeStyle = 'rgba(230, 224, 255, 0.045)';
     ctx.lineWidth = 1;
-    for (let y = 0; y < 512; y += 6) {
+    for (let y = 0; y < 512; y += 5) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(1024, y);
       ctx.stroke();
     }
+    ctx.strokeStyle = 'rgba(30, 18, 64, 0.05)';
+    for (let x = 0; x < 1024; x += 8) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
 
-    // 1. Left Poster Card: "Charlotte's Web" (x = 95..285, y = 105..368)
+    // 2. Left Poster Card: "Charlotte's Web" (x = 95..285, y = 105..368)
     ctx.save();
-    ctx.translate(190, 236);
-    ctx.rotate(-0.04);
-    ctx.fillStyle = '#cfa97e';
+    ctx.translate(190, 232);
+    ctx.rotate(-0.02);
+
+    // Poster backing & border
+    ctx.fillStyle = '#c89e72';
     ctx.fillRect(-95, -130, 190, 260);
     ctx.strokeStyle = '#382418';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3.5;
     ctx.strokeRect(-95, -130, 190, 260);
 
-    // Sky gradient inside Charlotte's Web poster
-    const cwSky = ctx.createLinearGradient(0, -126, 0, 40);
-    cwSky.addColorStop(0, '#e8d5b5');
-    cwSky.addColorStop(1, '#c8a276');
+    // Warm golden-ochre sunrise sky gradient inside Charlotte's Web poster
+    const cwSky = ctx.createLinearGradient(0, -126, 0, 50);
+    cwSky.addColorStop(0, '#c8b89e');
+    cwSky.addColorStop(0.55, '#d8b482');
+    cwSky.addColorStop(1, '#c48658');
     ctx.fillStyle = cwSky;
     ctx.fillRect(-91, -126, 182, 252);
 
-    // White picket fence in Charlotte's Web poster
-    ctx.fillStyle = '#f2ede4';
-    ctx.fillRect(-88, 66, 176, 6);
-    ctx.fillRect(-88, 92, 176, 6);
-    for (let px = -84; px <= 78; px += 15) {
+    // Warm rising sun disc behind Wilbur
+    const sunGrad = ctx.createRadialGradient(0, 8, 6, 0, 8, 52);
+    sunGrad.addColorStop(0, 'rgba(232, 152, 74, 0.85)');
+    sunGrad.addColorStop(1, 'rgba(196, 114, 58, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(0, 8, 52, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rolling countryside hills in background
+    ctx.fillStyle = '#7e6852';
+    ctx.beginPath();
+    ctx.moveTo(-91, 46);
+    ctx.quadraticCurveTo(-40, 14, 18, 38);
+    ctx.quadraticCurveTo(60, 22, 91, 42);
+    ctx.lineTo(91, 126);
+    ctx.lineTo(-91, 126);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#8c6e4e';
+    ctx.beginPath();
+    ctx.moveTo(-91, 68);
+    ctx.quadraticCurveTo(10, 42, 91, 64);
+    ctx.lineTo(91, 126);
+    ctx.lineTo(-91, 126);
+    ctx.closePath();
+    ctx.fill();
+
+    // Crisp white picket fence across lower poster (matching model_1A_preshow.jpg)
+    ctx.fillStyle = '#dcd6ce';
+    ctx.fillRect(-88, 68, 176, 5);
+    ctx.fillRect(-88, 92, 176, 5);
+    for (let px = -86; px <= 80; px += 12) {
       ctx.beginPath();
-      ctx.moveTo(px, 54);
-      ctx.lineTo(px + 5, 44);
-      ctx.lineTo(px + 10, 54);
-      ctx.lineTo(px + 10, 114);
-      ctx.lineTo(px, 114);
+      ctx.moveTo(px, 56);
+      ctx.lineTo(px + 4, 46);
+      ctx.lineTo(px + 8, 56);
+      ctx.lineTo(px + 8, 108);
+      ctx.lineTo(px, 108);
       ctx.closePath();
       ctx.fill();
     }
 
-    // Wilbur the pink pig
-    ctx.fillStyle = '#eb9da2';
+    // Warm earth foreground below picket fence
+    ctx.fillStyle = '#b48256';
+    ctx.fillRect(-91, 106, 182, 20);
+
+    // Wilbur the pink pig standing proudly in front of the fence
+    ctx.fillStyle = '#dc9298';
+    ctx.strokeStyle = '#381e24';
+    ctx.lineWidth = 2.0;
+    // Pig legs & cloven hooves
+    for (const lx of [-18, -6, 8, 20]) {
+      ctx.fillRect(lx - 4, 82, 8, 34);
+      ctx.strokeRect(lx - 4, 82, 8, 34);
+      ctx.fillStyle = '#2c181c';
+      ctx.fillRect(lx - 4, 111, 8, 6);
+      ctx.fillStyle = '#dc9298';
+    }
+    // Plump body & head
     ctx.beginPath();
-    ctx.ellipse(0, 62, 36, 42, 0, 0, Math.PI * 2);
+    ctx.ellipse(2, 66, 32, 34, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#4a2830';
-    ctx.lineWidth = 2.2;
     ctx.stroke();
-    // Pig ears
+
+    // Floppy expressive pig ears
     for (const side of [-1, 1]) {
       ctx.beginPath();
-      ctx.ellipse(side * 24, 26, 10, 16, side * 0.45, 0, Math.PI * 2);
+      ctx.ellipse(side * 26, 30, 14, 9, side * -0.35, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }
-    // Pig snout & eyes
-    ctx.fillStyle = '#f6b8bc';
+    // Smiling pig face, snout & nostrils
+    ctx.fillStyle = '#e8a8ae';
     ctx.beginPath();
-    ctx.ellipse(0, 54, 14, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 52, 13, 10, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = '#26161a';
+    ctx.fillStyle = '#2c181c';
     ctx.beginPath();
-    ctx.arc(-12, 40, 3, 0, Math.PI * 2);
-    ctx.arc(12, 40, 3, 0, Math.PI * 2);
+    ctx.arc(-4, 52, 2, 0, Math.PI * 2);
+    ctx.arc(4, 52, 2, 0, Math.PI * 2);
+    ctx.arc(-10, 40, 2.5, 0, Math.PI * 2);
+    ctx.arc(10, 40, 2.5, 0, Math.PI * 2);
     ctx.fill();
+    // Smile arc
+    ctx.beginPath();
+    ctx.arc(0, 58, 8, 0.2, Math.PI - 0.2);
+    ctx.stroke();
 
-    // Spiderweb in top-left corner of poster
-    ctx.strokeStyle = 'rgba(42, 30, 24, 0.65)';
-    ctx.lineWidth = 1.4;
-    for (let r = 18; r <= 76; r += 18) {
+    // Spiderweb hanging under the left arch of "Charlotte's Web"
+    ctx.strokeStyle = 'rgba(28, 20, 18, 0.78)';
+    ctx.lineWidth = 1.3;
+    for (let r = 12; r <= 48; r += 12) {
       ctx.beginPath();
-      ctx.arc(-95, -130, r, 0, Math.PI / 2);
+      ctx.arc(-58, -58, r, 0.1, Math.PI * 0.85);
       ctx.stroke();
     }
-    for (let a = 0.15; a < 1.45; a += 0.32) {
+    for (let a = 0.15; a <= 2.6; a += 0.48) {
       ctx.beginPath();
-      ctx.moveTo(-95, -130);
-      ctx.lineTo(-95 + Math.cos(a) * 82, -130 + Math.sin(a) * 82);
+      ctx.moveTo(-58, -58);
+      ctx.lineTo(-58 + Math.cos(a) * 52, -58 + Math.sin(a) * 52);
       ctx.stroke();
     }
 
-    drawSeussianDisplayText(ctx, "CHARLOTTE'S", 4, -78, {
-      fontSize: 21,
-      fillTopColor: '#fff6e8',
-      fillBottomColor: '#f0d4a8',
-      outlineColor: '#2c1a12',
-      shadowColor: '#1a0e08',
-      bounceAmp: 1.5,
+    // Header & adaptation credits matching model_1A_preshow.jpg
+    ctx.fillStyle = '#241812';
+    ctx.font = 'bold 8px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Based on the book by E.B. White', 0, -112);
+    ctx.font = 'italic 9px Georgia, serif';
+    ctx.fillText('Adapted by', 26, -42);
+    ctx.font = 'bold 9px Georgia, serif';
+    ctx.fillText('Joseph Robinette', 26, -31);
+
+    drawSeussianDisplayText(ctx, "CHARLOTTE'S WEB", 0, -82, {
+      fontSize: 18,
+      fillTopColor: '#2c1e18',
+      fillBottomColor: '#160e0a',
+      outlineColor: '#e8d5b5',
+      shadowColor: 'rgba(0,0,0,0.2)',
+      bounceAmp: 1.2,
       tiltAmp: 0.05,
-      letterSpacing: 13,
-    });
-    drawSeussianDisplayText(ctx, 'WEB', 4, -50, {
-      fontSize: 26,
-      fillTopColor: '#ffdf68',
-      fillBottomColor: '#e09a28',
-      outlineColor: '#2c1a12',
-      shadowColor: '#1a0e08',
-      bounceAmp: 1.5,
-      tiltAmp: 0.06,
-      letterSpacing: 18,
+      archCurvature: -0.08,
+      letterSpacing: 10.5,
     });
     ctx.restore();
 
-    // 2. Center Title Projection: Authentic "HOW THE GRINCH STOLE CHRISTMAS!" Logo
+    // 3. Center Title Projection: Authentic "HOW THE GRINCH STOLE CHRISTMAS!" Logo
     drawGrinchLogoGraphic(ctx, 502, 255, 0.94);
 
-    // 3. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 720..910, y = 140..395)
+    // 4. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 720..910, y = 140..395)
     ctx.save();
     ctx.translate(815, 268);
-    ctx.rotate(0.035);
-    const baoGrad = ctx.createLinearGradient(0, -128, 0, 128);
-    baoGrad.addColorStop(0, '#e8dff8');
-    baoGrad.addColorStop(0.6, '#d4c4ee');
-    baoGrad.addColorStop(1, '#b8a0dc');
+    ctx.rotate(0.015);
+
+    // Banded pastel sky & ground matching model_1A_preshow.jpg (powder blue -> pink -> peach -> cream)
+    const baoGrad = ctx.createLinearGradient(0, -126, 0, 126);
+    baoGrad.addColorStop(0, '#c0d6ec');
+    baoGrad.addColorStop(0.42, '#c8d8ec');
+    baoGrad.addColorStop(0.55, '#eab8cc');
+    baoGrad.addColorStop(0.74, '#f0ccb8');
+    baoGrad.addColorStop(1, '#e8e2ec');
     ctx.fillStyle = baoGrad;
     ctx.fillRect(-92, -126, 184, 252);
-    ctx.strokeStyle = '#3e2d68';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#483872';
+    ctx.lineWidth = 3.5;
     ctx.strokeRect(-92, -126, 184, 252);
 
-    drawSeussianDisplayText(ctx, 'BENEATH THE', 0, -92, {
-      fontSize: 18,
-      fillTopColor: '#d4487e',
-      fillBottomColor: '#982654',
-      outlineColor: '#261020',
-      shadowColor: '#180814',
+    // Title typography matching model_1A_preshow.jpg ("BENEATH THE" teal, "BAOBAB" coral, "TREE" olive-green)
+    drawSeussianDisplayText(ctx, 'BENEATH THE', -8, -94, {
+      fontSize: 17,
+      fillTopColor: '#68b4be',
+      fillBottomColor: '#3e8896',
+      outlineColor: '#e8eff4',
+      shadowColor: 'rgba(40,60,80,0.25)',
+      bounceAmp: 1.0,
+      tiltAmp: 0.03,
+      letterSpacing: 10.5,
+    });
+    drawSeussianDisplayText(ctx, 'BAOBAB', 16, -64, {
+      fontSize: 23,
+      fillTopColor: '#e06458',
+      fillBottomColor: '#b83e34',
+      outlineColor: '#f4e8e4',
+      shadowColor: 'rgba(60,20,20,0.25)',
+      bounceAmp: 1.4,
+      tiltAmp: 0.05,
+      letterSpacing: 15,
+    });
+    drawSeussianDisplayText(ctx, 'TREE', 28, -36, {
+      fontSize: 22,
+      fillTopColor: '#7ca856',
+      fillBottomColor: '#4e7c32',
+      outlineColor: '#eef4e8',
+      shadowColor: 'rgba(20,50,20,0.25)',
       bounceAmp: 1.2,
       tiltAmp: 0.04,
-      letterSpacing: 11,
-    });
-    drawSeussianDisplayText(ctx, 'BAOBAB', 0, -64, {
-      fontSize: 26,
-      fillTopColor: '#f6a838',
-      fillBottomColor: '#c86418',
-      outlineColor: '#281408',
-      shadowColor: '#180a04',
-      bounceAmp: 1.8,
-      tiltAmp: 0.06,
-      letterSpacing: 17,
-    });
-    drawSeussianDisplayText(ctx, 'TREE', 0, -34, {
-      fontSize: 25,
-      fillTopColor: '#56b886',
-      fillBottomColor: '#287852',
-      outlineColor: '#0e261a',
-      shadowColor: '#081810',
-      bounceAmp: 1.5,
-      tiltAmp: 0.05,
-      letterSpacing: 17,
+      letterSpacing: 14.5,
     });
 
-    // Sculpted Baobab tree trunk, roots, canopy & golden sun disc
-    ctx.fillStyle = '#f8c848';
+    // Purple-lavender patterned Baobab tree on the left side of the poster (matching model_1A_preshow.jpg)
+    ctx.fillStyle = '#9c7eb8';
+    ctx.strokeStyle = '#644882';
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.arc(18, 28, 34, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#7e563e';
-    ctx.beginPath();
-    ctx.moveTo(-58, 118);
-    ctx.quadraticCurveTo(-42, 65, -44, 4);
-    ctx.lineTo(-18, 4);
-    ctx.quadraticCurveTo(-16, 65, -4, 118);
+    ctx.moveTo(-66, 108);
+    ctx.quadraticCurveTo(-54, 48, -56, -8);
+    ctx.lineTo(-34, -8);
+    ctx.quadraticCurveTo(-32, 48, -22, 108);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
 
-    ctx.fillStyle = '#3c8c5c';
-    for (const [cx, cy, rx, ry] of [
-      [-48, -4, 28, 16],
-      [-18, -12, 32, 18],
-      [12, -2, 26, 15],
+    // Decorative bark bands on the Baobab trunk
+    ctx.strokeStyle = 'rgba(235, 220, 250, 0.55)';
+    for (let by = 8; by <= 92; by += 14) {
+      ctx.beginPath();
+      ctx.moveTo(-54, by);
+      ctx.lineTo(-32, by + 3);
+      ctx.stroke();
+    }
+
+    // Curly Baobab branches & hanging golden weaver-bird nests
+    ctx.strokeStyle = '#8c6ea8';
+    ctx.lineWidth = 3;
+    for (const [bx, by] of [
+      [-74, -26],
+      [-52, -38],
+      [-22, -28],
+      [-10, -12],
     ] as const) {
       ctx.beginPath();
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.moveTo(-45, -8);
+      ctx.quadraticCurveTo(-45, by, bx, by);
+      ctx.stroke();
+
+      ctx.fillStyle = '#d89838';
+      ctx.beginPath();
+      ctx.arc(bx, by + 8, 5, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Central figure with teal-blue hair & green tunic raising glowing coral-red sun/drum disc overhead
+    ctx.fillStyle = '#d85852';
+    ctx.beginPath();
+    ctx.arc(6, 10, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ec8878';
+    ctx.beginPath();
+    ctx.arc(6, 10, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Raised arms & hands holding the disc
+    ctx.strokeStyle = '#b86848';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(-4, 62);
+    ctx.lineTo(-10, 24);
+    ctx.moveTo(16, 62);
+    ctx.lineTo(22, 24);
+    ctx.stroke();
+
+    // Blue-teal curly hair crown & green tunic
+    ctx.fillStyle = '#486898';
+    ctx.beginPath();
+    ctx.arc(6, 48, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5a8e48';
+    ctx.fillRect(-4, 60, 20, 28);
+
+    // Small tripod & campfire on the right side of the poster (matching model_1A_preshow.jpg)
+    ctx.strokeStyle = '#584234';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(42, 82);
+    ctx.lineTo(54, 46);
+    ctx.lineTo(66, 82);
+    ctx.moveTo(54, 46);
+    ctx.lineTo(54, 84);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -1142,51 +1562,139 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Generates the hand-painted Seussian icy-blue/white snow cliff & cave rock texture
- * with bold black Dr. Seuss pen-and-ink cross-hatching (matching Model Box slides 3–22).
+ * Generates the 1024×1024 hand-painted Seussian icy-blue/lavender snow cliff & cave rock texture
+ * with multi-layered scenic glazing (glacier blue, slate indigo, frost lavender, creamy snow
+ * highlights <= 0xd8), trompe-l'oeil rock fissures, scenic paint spatter dots, and authentic
+ * curved Dr. Seuss cross-hatch pen strokes (matching Model Box slides 1A–1H).
  */
 export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#c8dcf6');
-    grad.addColorStop(0.5, '#8cb8ec');
-    grad.addColorStop(1, '#6896d4');
+    // 1. Multi-layered glacier-blue, frost-lavender & slate-indigo base glaze (all channels <= 0xd8)
+    const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+    grad.addColorStop(0, '#c0cee0');
+    grad.addColorStop(0.38, '#a4bedc');
+    grad.addColorStop(0.72, '#82a8d4');
+    grad.addColorStop(1, '#648cc0');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Soft lavender/white snow highlights
-    ctx.fillStyle = 'rgba(245, 248, 255, 0.48)';
-    for (let i = 0; i < 12; i++) {
+    // 2. Painterly scumble & sponge-glaze washes (frost lavender, icy cyan, and slate indigo)
+    for (let i = 0; i < 48; i++) {
+      const px = ((i * 193) % 960) + 32;
+      const py = ((i * 139) % 960) + 32;
+      const rx = 110 + (i % 5) * 38;
+      const ry = 54 + (i % 4) * 26;
+      const wash = ctx.createRadialGradient(px, py, 12, px, py, rx);
+      if (i % 4 === 0) {
+        // Toned creamy-snow highlight (<= 0xd8)
+        wash.addColorStop(0, 'rgba(208, 214, 216, 0.38)');
+      } else if (i % 4 === 1) {
+        // Rosy-lavender stage bounce glaze
+        wash.addColorStop(0, 'rgba(198, 178, 212, 0.28)');
+      } else if (i % 4 === 2) {
+        // Deep slate-indigo shadow pocket
+        wash.addColorStop(0, 'rgba(68, 96, 152, 0.26)');
+      } else {
+        // Icy glacier cyan glaze
+        wash.addColorStop(0, 'rgba(136, 184, 216, 0.30)');
+      }
+      wash.addColorStop(1, 'rgba(140, 172, 212, 0)');
+      ctx.fillStyle = wash;
       ctx.beginPath();
-      ctx.ellipse(
-        (i * 97) % 512,
-        (i * 67) % 512,
-        75,
-        36,
-        (i % 3) * 0.4,
-        0,
-        Math.PI * 2
-      );
+      ctx.ellipse(px, py, rx, ry, ((i % 7) - 3) * 0.24, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Bold black Seussian ink contour strokes & cross-hatch clusters
-    ctx.strokeStyle = '#151c2c';
-    ctx.lineWidth = 3.2;
+    // 3. Trompe-l'oeil rock strata fissures with highlight bevel & shadow trough
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let row = 0; row < 12; row++) {
+      const baseY = 68 + row * 82;
+      // Soft cobalt-slate shadow band below fissure
+      ctx.strokeStyle = 'rgba(54, 78, 128, 0.26)';
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY + 6);
+      for (let x = 64; x <= 1024; x += 64) {
+        const wave =
+          Math.sin(x * 0.009 + row * 1.1) * 18 +
+          Math.cos(x * 0.021 - row * 0.7) * 8;
+        ctx.lineTo(x, baseY + wave + 6);
+      }
+      ctx.stroke();
 
-    for (let c = 0; c < 18; c++) {
-      const bx = 32 + ((c * 83) % 440);
-      const by = 32 + ((c * 61) % 440);
-      for (let h = 0; h < 5; h++) {
+      // Toned frost highlight lip above fissure (<= 0xd8)
+      ctx.strokeStyle = 'rgba(206, 214, 216, 0.34)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(0, baseY - 4);
+      for (let x = 64; x <= 1024; x += 64) {
+        const wave =
+          Math.sin(x * 0.009 + row * 1.1) * 18 +
+          Math.cos(x * 0.021 - row * 0.7) * 8;
+        ctx.lineTo(x, baseY + wave - 4);
+      }
+      ctx.stroke();
+    }
+
+    // 4. Fine scenic shop spatter dots (dark indigo & frost flecks)
+    for (let s = 0; s < 680; s++) {
+      const sx = (s * 179 + (s % 9) * 31) % 1020;
+      const sy = (s * 263 + (s % 7) * 23) % 1020;
+      const sr = 1.2 + (s % 3);
+      ctx.fillStyle =
+        s % 2 === 0 ? 'rgba(34, 48, 86, 0.28)' : 'rgba(208, 214, 216, 0.42)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 5. Authentic curved Dr. Seuss pen-and-ink cross-hatch clusters & zig-zag crag lines
+    ctx.strokeStyle = '#151c2c';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let c = 0; c < 36; c++) {
+      const bx = 48 + ((c * 167) % 910);
+      const by = 48 + ((c * 127) % 910);
+      const tilt = ((c % 5) - 2) * 0.14;
+
+      // Primary curved contour stroke
+      ctx.lineWidth = 4.6;
+      ctx.beginPath();
+      ctx.moveTo(bx - 16, by);
+      ctx.quadraticCurveTo(bx + 28, by - 12, bx + 78, by + 4);
+      ctx.stroke();
+
+      // Secondary parallel cross-hatch strokes hanging from contour
+      ctx.lineWidth = 3.4;
+      for (let h = 0; h < 6; h++) {
+        const hx = bx + h * 13;
+        const hy = by + Math.sin(h * 0.5) * 4;
         ctx.beginPath();
-        ctx.moveTo(bx + h * 9, by);
-        ctx.lineTo(bx + h * 9 - 14, by + 26);
+        ctx.moveTo(hx, hy);
+        ctx.quadraticCurveTo(
+          hx - 8 + tilt * 12,
+          hy + 18,
+          hx - 18 + tilt * 20,
+          hy + 38 + (h % 2) * 8
+        );
+        ctx.stroke();
+      }
+
+      // Counter-diagonal cross-hatch scribbles on every 2nd cluster
+      if (c % 2 === 0) {
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(bx - 8, by + 16);
+        ctx.lineTo(bx + 68, by + 24);
+        ctx.moveTo(bx - 4, by + 28);
+        ctx.lineTo(bx + 54, by + 34);
         ctx.stroke();
       }
     }
@@ -1195,8 +1703,10 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
 
 
