@@ -60,6 +60,7 @@ export interface SeatSightlineMetrics {
 }
 
 export type ProductionId =
+  | 'grinch'
   | 'school-of-rock'
   | 'alice-in-wonderland'
   | 'narnia-wardrobe'
@@ -85,6 +86,25 @@ export interface ProductionElementSpec {
   readonly dimensionsLabel: string;
 }
 
+export interface ProductionSceneCue {
+  readonly id: string;
+  readonly sceneNumber?: string;
+  readonly sceneLabel?: string;
+  readonly title: string;
+  readonly actLabel?: string;
+  readonly synopsis: string;
+  readonly visibleElementIds: ReadonlyArray<string>;
+  readonly battenTrimHeightsM?: Readonly<Record<number, number>>;
+  readonly grandDrapeOpenFraction?: number;
+  readonly stageWashColor?: number;
+  readonly stageSpotColor?: number;
+  readonly cycTopColor?: number;
+  readonly cycBottomColor?: number;
+  readonly houseLevel?: number;
+  readonly modelPhotoUrl?: string;
+  readonly groundPlanUrl?: string;
+}
+
 export interface ProductionSpec {
   readonly id: ProductionId;
   readonly title: string;
@@ -99,6 +119,7 @@ export interface ProductionSpec {
   readonly stageSpotColor: number;
   readonly apronWashColor: number;
   readonly elements: ReadonlyArray<ProductionElementSpec>;
+  readonly scenes: ReadonlyArray<ProductionSceneCue>;
 }
 
 export interface RiggingBattenSpec {

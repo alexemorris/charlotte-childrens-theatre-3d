@@ -52,6 +52,9 @@ async function bootstrap(): Promise<void> {
     onProductionChanged: (spec) => {
       hud?.handleProductionChanged(spec);
     },
+    onSceneChanged: (scene, spec) => {
+      hud?.handleSceneChanged(scene, spec);
+    },
     onCustomPiecesChanged: () => {
       hud?.handleCustomPieceSelected();
     },
@@ -62,15 +65,29 @@ async function bootstrap(): Promise<void> {
 
   updateLoadingProgress(
     68,
-    'Rigging 6 Modular Production Sets & Counterweight Fly Battens...'
+    'Rigging 8 Modular Production Sets & 52-Lineset Counterweight Schedule...'
   );
 
   hud = new TheatreHudController(sceneCtrl);
 
-  // Support optional URL query params (?prod=..., ?cam=..., ?seat=..., ?heatmap=1)
+  // Support optional URL query params (?prod=..., ?scene=..., ?cam=..., ?seat=..., ?heatmap=1)
   const prodParam = params.get('prod') as ProductionId | null;
   if (prodParam) {
     sceneCtrl.setProduction(prodParam);
+  }
+
+  const sceneParam = params.get('scene');
+  if (sceneParam) {
+    const spec = sceneCtrl.getActiveProduction();
+    const matched = spec.scenes.find(
+      (s) =>
+        s.id === sceneParam ||
+        s.sceneNumber?.toLowerCase() === sceneParam.toLowerCase() ||
+        s.sceneLabel?.toLowerCase() === sceneParam.toLowerCase()
+    );
+    if (matched) {
+      sceneCtrl.setSceneCue(matched.id);
+    }
   }
 
   const heatmapParam = params.get('heatmap');
@@ -83,7 +100,7 @@ async function bootstrap(): Promise<void> {
   if (seatParam) {
     sceneCtrl.selectSeatById(seatParam, true);
   } else {
-    sceneCtrl.selectSeatById('main-center-left-G-108', false);
+    sceneCtrl.selectSeatById('MF-C-G-108', false);
     if (camParam) {
       sceneCtrl.setCameraPreset(camParam);
     }

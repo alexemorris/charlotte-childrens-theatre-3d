@@ -97,7 +97,8 @@ export function buildMcCollTheatreArchitecture(
   });
 
   // ==========================================================================
-  // 1. STAGE DECK, CURVED APRON, TRAPPED STAGE & 20-PLAYER ORCHESTRA PIT
+  // 1. STAGE DECK, CURVED APRON, TRAPPED STAGE, 52-LINESET RAIL & ORCHESTRA PIT
+  //    (Calibrated to the 1/4" = 1'-0" McColl Family Theatre CAD Ground Plans)
   // ==========================================================================
   const stageGroup = new THREE.Group();
   stageGroup.name = 'StageHouse';
@@ -109,14 +110,110 @@ export function buildMcCollTheatreArchitecture(
     metalness: 0.06,
   });
 
-  // Main upstage deck (with central cutout for 3 modular stage traps)
+  // Main upstage deck (extending to Lineset #52 at 34'-10" / -10.62m + Backstage Crossover)
   const stageFloorMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(18.0, 0.24, 10.6),
+    new THREE.BoxGeometry(19.6, 0.24, 12.2),
     stageFloorMat
   );
-  stageFloorMesh.position.set(0, -0.12, -4.6);
+  stageFloorMesh.position.set(0.4, -0.12, -5.8);
   stageFloorMesh.receiveShadow = true;
   stageGroup.add(stageFloorMesh);
+
+  // Stage Left Offstage Prop & Wagon Storage Wing Bay (seen on right of CAD Ground Plan)
+  const slWingDeck = new THREE.Mesh(
+    new THREE.BoxGeometry(3.8, 0.24, 9.6),
+    new THREE.MeshStandardMaterial({ color: 0x1c1e25, roughness: 0.8 })
+  );
+  slWingDeck.position.set(11.2, -0.12, -5.2);
+  slWingDeck.receiveShadow = true;
+  stageGroup.add(slWingDeck);
+
+  // Backstage Crossover Corridor behind Cyclorama / Star Drop (#46 at -9.50m)
+  const crossoverPartition = new THREE.Mesh(
+    new THREE.BoxGeometry(16.4, 5.2, 0.22),
+    matteBlackMat
+  );
+  crossoverPartition.position.set(0, 2.6, -10.85);
+  stageGroup.add(crossoverPartition);
+
+  // Upstage Right (USR) Stairway & Gallery Landing (top-left of stage in CAD Ground Plan)
+  const usrStairGroup = new THREE.Group();
+  usrStairGroup.name = 'USR_StairUnit';
+  usrStairGroup.position.set(-7.15, 0, -9.95);
+  for (let s = 0; s < 8; s++) {
+    const step = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.18 * (s + 1), 1.15),
+      darkSteelMat
+    );
+    step.position.set(s * 0.24 - 0.85, (0.18 * (s + 1)) / 2, 0);
+    usrStairGroup.add(step);
+  }
+  stageGroup.add(usrStairGroup);
+
+  // Stage Right 52-Lineset Single-Purchase Counterweight Fly Locking Rail & Arbors
+  // (Matches the 52 triangular counterweight arbors along the SR wall on the CAD Ground Plan)
+  const lockingRailGroup = new THREE.Group();
+  lockingRailGroup.name = 'StageRight52LinesetLockingRail';
+  stageGroup.add(lockingRailGroup);
+
+  const lockingRailBeam = new THREE.Mesh(
+    new THREE.BoxGeometry(0.26, 1.05, 10.6),
+    darkSteelMat
+  );
+  lockingRailBeam.position.set(-8.65, 0.52, -5.45);
+  lockingRailGroup.add(lockingRailBeam);
+
+  const arborSteelMat = new THREE.MeshStandardMaterial({
+    color: 0x3b4454,
+    roughness: 0.45,
+    metalness: 0.72,
+  });
+  const purchaseRopeMat = new THREE.MeshStandardMaterial({
+    color: 0xc2b280,
+    roughness: 0.85,
+  });
+
+  for (let line = 1; line <= 52; line++) {
+    const lineZ = -0.25 - ((line - 1) / 51) * 10.37; // 0'-10" (-0.25m) to 34'-10" (-10.62m)
+    // Counterweight arbor carriage & rope lock
+    const arbor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 2.2, 0.08),
+      arborSteelMat
+    );
+    arbor.position.set(-8.76, 3.2 + (line % 3) * 0.85, lineZ);
+    lockingRailGroup.add(arbor);
+
+    if (line % 2 === 1) {
+      const rope = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012, 0.012, 12.6, 6),
+        purchaseRopeMat
+      );
+      rope.position.set(-8.62, 6.4, lineZ);
+      lockingRailGroup.add(rope);
+    }
+  }
+
+  // 7 Overhead Stage Electrics (#3 1st Elec through #41 7th Elec from CAD Schedule)
+  const stageElectricZCoords = [-0.76, -0.97, -1.57, -2.79, -4.83, -6.05, -8.48];
+  for (const ez of stageElectricZCoords) {
+    const elecPipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.032, 14.6, 10),
+      darkSteelMat
+    );
+    elecPipe.rotation.z = Math.PI / 2;
+    elecPipe.position.set(0, 7.85, ez);
+    stageGroup.add(elecPipe);
+
+    for (let lx = -5.4; lx <= 5.4; lx += 1.8) {
+      const fixture = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.09, 0.24, 8),
+        matteBlackMat
+      );
+      fixture.position.set(lx, 7.68, ez);
+      fixture.rotation.x = 0.25;
+      stageGroup.add(fixture);
+    }
+  }
 
   // 3 Modular Stage Trap Doors (Center Stage at z = -2.6m)
   const trapDoorMeshes: THREE.Mesh[] = [];
@@ -167,6 +264,83 @@ export function buildMcCollTheatreArchitecture(
   apronCoverMesh.position.set(0, 0.0, 0);
   apronCoverMesh.receiveShadow = true;
   stageGroup.add(apronCoverMesh);
+
+  // Cross-Hatched Orchestra Pit Lift Deck Overlay (matches diamond cross-hatch on CAD Ground Plan!)
+  const pitHatchGroup = new THREE.Group();
+  pitHatchGroup.name = 'OrchestraPitCrossHatchDeck';
+  pitHatchGroup.position.set(0, 0.008, 1.25);
+  const hatchLineMat = new THREE.MeshBasicMaterial({
+    color: 0x2d3340,
+    transparent: true,
+    opacity: 0.55,
+  });
+  for (let hx = -3.0; hx <= 3.0; hx += 0.45) {
+    const diagA = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.004, 1.65), hatchLineMat);
+    diagA.position.set(hx * 0.85, 0, 0);
+    diagA.rotation.y = 0.52;
+    pitHatchGroup.add(diagA);
+
+    const diagB = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.004, 1.65), hatchLineMat);
+    diagB.position.set(hx * 0.85, 0, 0);
+    diagB.rotation.y = -0.52;
+    pitHatchGroup.add(diagB);
+  }
+  apronCoverMesh.add(pitHatchGroup);
+
+  // Angled House-Left & House-Right Forestage Vomitory Stairways (from CAD Ground Plan)
+  for (const side of [-1, 1]) {
+    const vomStairGroup = new THREE.Group();
+    vomStairGroup.name = side < 0 ? 'VomitoryStairs_HouseLeft' : 'VomitoryStairs_HouseRight';
+    vomStairGroup.position.set(side * 5.85, -0.45, 1.45);
+    vomStairGroup.rotation.y = side * -0.46;
+
+    for (let st = 0; st < 7; st++) {
+      const tread = new THREE.Mesh(
+        new THREE.BoxGeometry(1.45, 0.12, 0.26),
+        new THREE.MeshStandardMaterial({ color: 0x252830, roughness: 0.75 })
+      );
+      tread.position.set(0, 0.36 - st * 0.12, st * 0.25 - 0.75);
+      tread.receiveShadow = true;
+      vomStairGroup.add(tread);
+    }
+
+    // Vomitory Handrails
+    for (const rx of [-0.72, 0.72]) {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.65, 1.85),
+        darkSteelMat
+      );
+      rail.position.set(rx, 0.35, -0.05);
+      rail.rotation.x = 0.42;
+      vomStairGroup.add(rail);
+    }
+    stageGroup.add(vomStairGroup);
+  }
+
+  // Stage Left Forestage Apron "Fireman's Pole" (explicitly labeled on CAD Ground Plan!)
+  const firemansPoleGroup = new THREE.Group();
+  firemansPoleGroup.name = 'StageLeftApron_FiremansPole';
+  firemansPoleGroup.position.set(4.55, 0, 1.12);
+  const brassPoleMat = new THREE.MeshStandardMaterial({
+    color: 0xd8a848,
+    roughness: 0.25,
+    metalness: 0.85,
+  });
+  const firemansPoleMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.042, 0.042, 7.6, 14),
+    brassPoleMat
+  );
+  firemansPoleMesh.position.y = 3.8;
+  firemansPoleMesh.castShadow = true;
+  firemansPoleGroup.add(firemansPoleMesh);
+
+  const poleBaseCollar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.16, 0.06, 16),
+    darkSteelMat
+  );
+  poleBaseCollar.position.y = 0.03;
+  firemansPoleGroup.add(poleBaseCollar);
+  stageGroup.add(firemansPoleGroup);
 
   // Apron Front Fascia Wall & Footlight Trough / Stage Monitors (seen in photo 85e12e12.jpg)
   const apronWall = new THREE.Mesh(
@@ -226,29 +400,36 @@ export function buildMcCollTheatreArchitecture(
     orchestraPitGroup.add(post);
   }
 
-  // Stage House Back Wall & Side Wing Walls
+  // Stage House Back Wall ( behind Crossover at z = -11.85m ) & Side Wing Walls
   const backStageWall = new THREE.Mesh(
-    new THREE.BoxGeometry(18.2, 14.5, 0.35),
+    new THREE.BoxGeometry(22.4, 14.5, 0.35),
     matteBlackMat
   );
-  backStageWall.position.set(0, 6.8, -9.85);
+  backStageWall.position.set(1.2, 6.8, -11.85);
   stageGroup.add(backStageWall);
 
-  for (const side of [-1, 1]) {
-    const wingWall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35, 14.5, 10.6),
-      matteBlackMat
-    );
-    wingWall.position.set(side * 9.0, 6.8, -4.6);
-    stageGroup.add(wingWall);
-  }
+  // Stage Right Wall (with 52-lineset locking rail)
+  const srWingWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 14.5, 12.0),
+    matteBlackMat
+  );
+  srWingWall.position.set(-9.0, 6.8, -5.8);
+  stageGroup.add(srWingWall);
+
+  // Stage Left Outer Wing Bay Wall (recessed at x = +13.1m to house offstage wagons per CAD)
+  const slOuterWingWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 14.5, 12.0),
+    matteBlackMat
+  );
+  slOuterWingWall.position.set(13.1, 6.8, -5.8);
+  stageGroup.add(slOuterWingWall);
 
   // Overhead Steel Rigging Gridiron (Single-Purchase Fly Tower at y = 13.2m)
   const gridGroup = new THREE.Group();
-  gridGroup.position.set(0, 13.2, -4.5);
+  gridGroup.position.set(0, 13.2, -5.5);
   stageGroup.add(gridGroup);
   for (let gx = -7.5; gx <= 7.5; gx += 2.5) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 9.6), darkSteelMat);
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 11.4), darkSteelMat);
     beam.position.set(gx, 0, 0);
     gridGroup.add(beam);
   }
@@ -371,6 +552,82 @@ export function buildMcCollTheatreArchitecture(
   leftTechBox.position.set(-7.65, 4.4, 2.2);
   prosceniumGroup.add(leftTechBox);
 
+  // 2f. FOH #1 Overhead Box Truss & 9 Theatrical Spotlights + Side Box Booms
+  //     (Visible across the top & sides of every Grinch Model Box photo!)
+  const fohTrussGroup = new THREE.Group();
+  fohTrussGroup.name = 'FOH_BoxTrussAndBooms';
+  fohTrussGroup.position.set(0, proscH - 0.35, 0.95);
+  prosceniumGroup.add(fohTrussGroup);
+
+  for (const ty of [-0.16, 0.16]) {
+    for (const tz of [-0.14, 0.14]) {
+      const chord = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.022, 0.022, 11.8, 8),
+        darkSteelMat
+      );
+      chord.rotation.z = Math.PI / 2;
+      chord.position.set(0, ty, tz);
+      fohTrussGroup.add(chord);
+    }
+  }
+  for (let rx = -5.5; rx <= 5.5; rx += 0.55) {
+    const strut = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, 0.32, 6),
+      darkSteelMat
+    );
+    strut.position.set(rx, 0, 0.14);
+    fohTrussGroup.add(strut);
+  }
+  // 9 FOH #1 Truss Spotlights hanging below the box truss
+  for (let i = -4; i <= 4; i++) {
+    const fx = i * 1.18;
+    const yoke = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.04), darkSteelMat);
+    yoke.position.set(fx, -0.26, 0);
+    fohTrussGroup.add(yoke);
+
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.085, 0.11, 0.32, 10),
+      matteBlackMat
+    );
+    body.position.set(fx, -0.38, -0.04);
+    body.rotation.x = 0.45;
+    fohTrussGroup.add(body);
+  }
+
+  // House Left & House Right Multi-Tier FOH Box Boom Ladders (seen flanking proscenium in Model Box photos)
+  for (const side of [-1, 1]) {
+    const boomLadder = new THREE.Group();
+    boomLadder.position.set(side * 6.95, 4.5, 1.35);
+    boomLadder.rotation.y = side * 0.26;
+    for (const vx of [-0.42, 0.42]) {
+      const pipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.024, 0.024, 3.6, 8),
+        darkSteelMat
+      );
+      pipe.position.x = vx;
+      boomLadder.add(pipe);
+    }
+    for (const hy of [-1.2, -0.3, 0.6, 1.4]) {
+      const rung = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 0.88, 8),
+        darkSteelMat
+      );
+      rung.rotation.z = Math.PI / 2;
+      rung.position.y = hy;
+      boomLadder.add(rung);
+
+      const leko = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.075, 0.095, 0.34, 10),
+        matteBlackMat
+      );
+      leko.position.set(0, hy + 0.12, -0.1);
+      leko.rotation.x = 0.38;
+      leko.rotation.z = side * -0.22;
+      boomLadder.add(leko);
+    }
+    prosceniumGroup.add(boomLadder);
+  }
+
   // Grand Valance & Main Crimson Velour Curtain (Flown just behind Proscenium)
   const grandDrapeGroup = new THREE.Group();
   grandDrapeGroup.name = 'GrandDrapeCurtain';
@@ -405,23 +662,40 @@ export function buildMcCollTheatreArchitecture(
   houseGroup.name = 'AuditoriumHouse';
   root.add(houseGroup);
 
-  // 3a. Raked Main Floor Stadium Risers (Rows A–P)
+  // 3a. Raked Main Floor Stadium Risers (Rows A–P: Center Block + Angled Side Wings per CAD Ground Plan)
+  const wingAngle = 0.31;
   for (let r = 0; r < 15; r++) {
     const rowZ = 3.45 + r * 0.92;
     const rowY = -0.82 + r * 0.175 + r * r * 0.0042;
-    const riserWidth = 17.5 + Math.min(r, 10) * 0.65;
+    const centerCount = r === 0 ? 10 : r < 3 ? 12 : 14;
+    const sideCount = r < 2 ? 6 : r === 2 || r === 12 ? 7 : r === 13 ? 6 : r === 14 ? 5 : 8;
+    const halfCenterW = (centerCount / 2) * 0.55;
 
-    const riserSlab = new THREE.Mesh(
-      new THREE.BoxGeometry(riserWidth, 0.36, 0.96),
+    // Center Orchestra Riser Tier
+    const centerRiserSlab = new THREE.Mesh(
+      new THREE.BoxGeometry(halfCenterW * 2 + 0.5, 0.36, 0.96),
       carpetMat
     );
-    riserSlab.position.set(0, rowY - 0.18, rowZ);
-    riserSlab.receiveShadow = true;
-    houseGroup.add(riserSlab);
+    centerRiserSlab.position.set(0, rowY - 0.18, rowZ);
+    centerRiserSlab.receiveShadow = true;
+    houseGroup.add(centerRiserSlab);
 
-    // Warm Amber Aisle Step Marker Strips along the two splayed aisles
-    const halfCenterW = (r < 2 ? 5 : r < 5 ? 6 : 7) * 0.55;
+    // Angled Left & Right Wing Riser Tiers + Warm Amber Aisle Step Marker Strips
+    const wingSpan = (sideCount + 0.8) * 0.55;
     for (const side of [-1, 1]) {
+      const midDist = ((sideCount + 1) * 0.55) / 2;
+      const wx = side * (halfCenterW + 1.32 + Math.cos(wingAngle) * midDist);
+      const wz = rowZ - Math.sin(wingAngle) * midDist;
+
+      const wingRiserSlab = new THREE.Mesh(
+        new THREE.BoxGeometry(wingSpan, 0.36, 0.96),
+        carpetMat
+      );
+      wingRiserSlab.position.set(wx, rowY - 0.18, wz);
+      wingRiserSlab.rotation.y = side * -wingAngle;
+      wingRiserSlab.receiveShadow = true;
+      houseGroup.add(wingRiserSlab);
+
       const aisleX = side * (halfCenterW + 0.65);
       const stepGlow = new THREE.Mesh(
         new THREE.BoxGeometry(0.95, 0.025, 0.05),
@@ -730,6 +1004,7 @@ export function buildMcCollTheatreArchitecture(
   seatBackInstanced.receiveShadow = true;
 
   const tempTransformObj = new THREE.Object3D();
+  tempTransformObj.rotation.order = 'YXZ';
 
   for (let i = 0; i < seatCount; i++) {
     const s = seats[i];
@@ -742,9 +1017,9 @@ export function buildMcCollTheatreArchitecture(
     seatCushionInstanced.setMatrixAt(i, tempTransformObj.matrix);
     seatCushionInstanced.setColorAt(i, BASE_SEAT_TINT);
 
-    // 2. Upholstered Backrest (slightly reclined 10 deg)
+    // 2. Upholstered Backrest (slightly reclined 10 deg along the seat's local axis)
     const backOffsetZ = Math.cos(s.yawRad) * 0.18;
-    const backOffsetX = -Math.sin(s.yawRad) * 0.18;
+    const backOffsetX = Math.sin(s.yawRad) * 0.18;
     tempTransformObj.position.set(
       s.position.x + backOffsetX,
       s.position.y + 0.68,

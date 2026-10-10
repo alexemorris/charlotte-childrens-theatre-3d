@@ -3,6 +3,7 @@ import type {
   CameraPresetId,
   CustomSetPieceKind,
   LightingPresetId,
+  ProductionSceneCue,
   ProductionSpec,
   SeatRecord,
   SeatSightlineMetrics,
@@ -42,8 +43,29 @@ export class TheatreHudController {
     this.initDraggableAndCollapsibleWindows();
     this.initMobileNavigationDock();
     this.renderProductionSwitcher();
-    this.renderScenicElementsAndBattens(this.sceneCtrl.getActiveProduction());
+    const activeProd = this.sceneCtrl.getActiveProduction();
+    this.renderSceneSequencer(activeProd, this.sceneCtrl.getActiveSceneCue());
+    this.renderScenicElementsAndBattens(activeProd);
     this.bindControls();
+  }
+
+  private openReferenceLightbox(badgeText: string, titleText: string, imgUrl: string): void {
+    const modal = document.getElementById('reference-lightbox-modal');
+    const badge = document.getElementById('ref-lightbox-badge');
+    const title = document.getElementById('ref-lightbox-title');
+    const img = document.getElementById('ref-lightbox-img') as HTMLImageElement | null;
+    if (!modal || !img) return;
+    if (badge) badge.textContent = badgeText;
+    if (title) title.textContent = titleText;
+    img.src = imgUrl;
+    modal.hidden = false;
+  }
+
+  private closeReferenceLightbox(): void {
+    const modal = document.getElementById('reference-lightbox-modal');
+    if (modal) {
+      modal.hidden = true;
+    }
   }
 
   private setMobileTab(tab: 'viewport' | 'seats' | 'sets' | 'cams'): void {
@@ -173,7 +195,7 @@ export class TheatreHudController {
       btn.dataset.prodId = prod.id;
       btn.innerHTML = `
         <span class="prod-card-title">${prod.title}</span>
-        <span class="prod-card-sub">${prod.subtitle}</span>
+        <span class="prod-card-sub">${prod.subtitle} (${prod.scenes.length} Scenes)</span>
       `;
       btn.addEventListener('click', () => {
         this.sceneCtrl.setProduction(prod.id);
@@ -190,7 +212,7 @@ export class TheatreHudController {
     const statusSummary = document.getElementById('statusbar-summary');
 
     if (badge) {
-      badge.textContent = spec.title.split(' ')[0] ?? spec.title;
+      badge.textContent = spec.id === 'grinch' ? 'The Grinch' : (spec.title.split(' ')[0] ?? spec.title);
     }
     if (statusSummary) {
       statusSummary.textContent = `570 Seats · ${spec.title}`;
@@ -205,6 +227,114 @@ export class TheatreHudController {
     document.querySelectorAll<HTMLButtonElement>('.prod-card-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.prodId === spec.id);
     });
+  }
+
+  private renderSceneSequencer(
+    spec: ProductionSpec,
+    activeScene: ProductionSceneCue
+  ): void {
+    const pillsGrid = document.getElementById('scene-pills-grid');
+    const counterBadge = document.getElementById('scene-counter-badge');
+    const synopsisBox = document.getElementById('scene-synopsis-box');
+    const refMedia = document.getElementById('scene-reference-media');
+    const orbitSceneInd = document.getElementById('orbit-scene-indicator');
+    const seatSceneBadge = document.getElementById('seat-hud-scene-badge');
+
+    const scenes = spec.scenes;
+    const activeIdx = Math.max(
+      0,
+      scenes.findIndex((s) => s.id === activeScene.id)
+    );
+    const code = activeScene.sceneNumber ?? activeScene.sceneLabel ?? `${activeIdx + 1}`;
+
+    if (counterBadge) {
+      counterBadge.textContent = `${activeIdx + 1} / ${scenes.length} · ${code}`;
+    }
+    if (orbitSceneInd) {
+      orbitSceneInd.textContent = `${code} · ${activeScene.title}`;
+    }
+    if (seatSceneBadge) {
+      seatSceneBadge.textContent = `${code} · ${activeScene.title}`;
+    }
+
+    if (pillsGrid) {
+      pillsGrid.innerHTML = '';
+      for (const sc of scenes) {
+        const scCode = sc.sceneNumber ?? sc.sceneLabel ?? '';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `scene-pill-btn${sc.id === activeScene.id ? ' active' : ''}`;
+        btn.dataset.sceneId = sc.id;
+        btn.innerHTML = `
+          <span class="scene-pill-code">${scCode}</span>
+          <span class="scene-pill-name">${sc.title}</span>
+        `;
+        btn.addEventListener('click', () => {
+          this.sceneCtrl.setSceneCue(sc.id);
+        });
+        pillsGrid.appendChild(btn);
+      }
+    }
+
+    if (synopsisBox) {
+      const actTag = activeScene.actLabel
+        ? `<span class="scene-act-tag">${activeScene.actLabel}</span>`
+        : '';
+      synopsisBox.innerHTML = `
+        <div class="scene-synopsis-header">
+          <span class="scene-code-pill">SCENE ${code}</span>
+          <strong class="scene-synopsis-title">${activeScene.title}</strong>
+          ${actTag}
+        </div>
+        <div class="scene-synopsis-text">${activeScene.synopsis}</div>
+      `;
+    }
+
+    if (refMedia) {
+      if (activeScene.groundPlanUrl || activeScene.modelPhotoUrl) {
+        refMedia.hidden = false;
+        refMedia.innerHTML = '';
+
+        if (activeScene.modelPhotoUrl) {
+          const fig = document.createElement('figure');
+          fig.className = 'scene-ref-card';
+          fig.title = 'Click to enlarge physical 1/4" Model Box Photo';
+          fig.innerHTML = `
+            <img src="${activeScene.modelPhotoUrl}" alt="Scene ${code} Model Box Photo" loading="lazy" />
+            <figcaption><span>📷 Model Box (${code})</span><span class="ref-zoom-hint">Enlarge ⤢</span></figcaption>
+          `;
+          fig.addEventListener('click', () => {
+            this.openReferenceLightbox(
+              `SCENE ${code} · MODEL BOX`,
+              `${activeScene.title} — Scenic Designer Model Box (Andrew Gibbon)`,
+              activeScene.modelPhotoUrl!
+            );
+          });
+          refMedia.appendChild(fig);
+        }
+
+        if (activeScene.groundPlanUrl) {
+          const fig = document.createElement('figure');
+          fig.className = 'scene-ref-card';
+          fig.title = 'Click to enlarge 1/4" = 1\'-0" CAD Ground Plan';
+          fig.innerHTML = `
+            <img src="${activeScene.groundPlanUrl}" alt="Scene ${code} CAD Ground Plan" loading="lazy" />
+            <figcaption><span>📐 1/4" Ground Plan (${code})</span><span class="ref-zoom-hint">Enlarge ⤢</span></figcaption>
+          `;
+          fig.addEventListener('click', () => {
+            this.openReferenceLightbox(
+              `SCENE ${code} · 1/4" = 1'-0" CAD`,
+              `${activeScene.title} — McColl Family Theatre CAD Ground Plan`,
+              activeScene.groundPlanUrl!
+            );
+          });
+          refMedia.appendChild(fig);
+        }
+      } else {
+        refMedia.hidden = true;
+        refMedia.innerHTML = '';
+      }
+    }
   }
 
   private renderScenicElementsAndBattens(spec: ProductionSpec): void {
@@ -231,17 +361,19 @@ export class TheatreHudController {
     }
 
     const battenList = document.getElementById('batten-sliders-list');
-    if (battenList && battenList.children.length === 0) {
+    if (battenList) {
+      battenList.innerHTML = '';
       for (const b of this.sceneCtrl.getRiggingBattens()) {
+        const curTrim = this.sceneCtrl.getBattenTrimHeight(b.lineNumber);
         const wrap = document.createElement('div');
         wrap.className = 'hud-slider-row';
         const valId = `batten-val-${b.lineNumber}`;
         wrap.innerHTML = `
           <div class="hud-slider-label">
             <span>${b.name}</span>
-            <span id="${valId}">+${b.trimHeightM.toFixed(1)}m</span>
+            <span id="${valId}">${curTrim === 0 ? 'In-Trim (0.0m)' : `+${curTrim.toFixed(1)}m Out`}</span>
           </div>
-          <input type="range" min="0" max="6.8" step="0.1" value="${b.trimHeightM}" data-batten-line="${b.lineNumber}" />
+          <input type="range" min="0" max="6.8" step="0.1" value="${curTrim}" data-batten-line="${b.lineNumber}" />
         `;
         const slider = wrap.querySelector('input');
         const valSpan = wrap.querySelector(`#${valId}`);
@@ -258,16 +390,44 @@ export class TheatreHudController {
   }
 
   private bindControls(): void {
+    // Lightbox modal close handlers
+    document
+      .getElementById('ref-lightbox-close-btn')
+      ?.addEventListener('click', () => this.closeReferenceLightbox());
+    document
+      .getElementById('ref-lightbox-backdrop')
+      ?.addEventListener('click', () => this.closeReferenceLightbox());
+
+    // Scene-by-scene progression buttons (Console + Orbit Pill + Seated HUD)
+    document
+      .getElementById('scene-prev-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(-1));
+    document
+      .getElementById('scene-next-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(1));
+    document
+      .getElementById('orbit-prev-scene-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(-1));
+    document
+      .getElementById('orbit-next-scene-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(1));
+    document
+      .getElementById('seat-hud-prev-scene-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(-1));
+    document
+      .getElementById('seat-hud-next-scene-btn')
+      ?.addEventListener('click', () => this.sceneCtrl.stepSceneCue(1));
+
     // Top-center Orbit Quick Seat pills
     document
       .getElementById('quick-seat-director-btn')
       ?.addEventListener('click', () => {
-        this.sceneCtrl.selectSeatById('main-center-left-G-108', true);
+        this.sceneCtrl.selectSeatById('MF-C-G-108', true);
       });
     document
       .getElementById('quick-seat-balcony-btn')
       ?.addEventListener('click', () => {
-        this.sceneCtrl.selectSeatById('lower-balcony-left-AA-105', true);
+        this.sceneCtrl.selectSeatById('LB-R-AA-108', true);
       });
 
     // Top-center 1st-Person Seat View HUD buttons
@@ -736,11 +896,34 @@ export class TheatreHudController {
 
   public handleProductionChanged(spec: ProductionSpec): void {
     this.updateProductionInfoBox(spec);
+    this.renderSceneSequencer(spec, this.sceneCtrl.getActiveSceneCue());
     this.renderScenicElementsAndBattens(spec);
     this.seatingChart.updateModeAndGrades(
       this.sceneCtrl.getChartColorMode(),
       this.sceneCtrl.getAllSeatSightlineGrades()
     );
+  }
+
+  public handleSceneChanged(
+    scene: ProductionSceneCue,
+    spec: ProductionSpec
+  ): void {
+    this.renderSceneSequencer(spec, scene);
+    this.renderScenicElementsAndBattens(spec);
+    const lState = this.sceneCtrl.getLightingState();
+    this.syncLightingSliders(
+      lState.houseLevel,
+      lState.fohRailLevel,
+      lState.stageElectricsLevel,
+      lState.cycWashLevel
+    );
+    const grandSlider = document.getElementById(
+      'grand-drape-slider'
+    ) as HTMLInputElement | null;
+    const grandVal = document.getElementById('grand-drape-val');
+    const pct = Math.round(this.sceneCtrl.getGrandDrapeOpenFraction() * 100);
+    if (grandSlider) grandSlider.value = String(pct);
+    if (grandVal) grandVal.textContent = pct === 0 ? 'Closed' : `${pct}% Open`;
   }
 
   public handleCustomPieceSelected(): void {

@@ -42,6 +42,35 @@ export const techGridSandboxSet: ProductionSetModule = {
         dimensionsLabel: '3 Pairs Soft Legs',
       },
     ],
+    scenes: [
+      {
+        id: 'tech-1',
+        sceneLabel: '1A',
+        title: 'Full Calibration Grid & Scale Figures',
+        synopsis:
+          '1-meter CAD stage floor grid with Child (1.35m) & Adult (1.75m) human scale figures and 1m–7m trim poles.',
+        visibleElementIds: [
+          'sandbox-scale-figures',
+          'sandbox-height-poles',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        grandDrapeOpenFraction: 1,
+      },
+      {
+        id: 'tech-2',
+        sceneLabel: '1B',
+        title: 'Bare Stage Deck (No Masking)',
+        synopsis:
+          'Unmasked stage house showing full offstage wing storage, USR stair unit, and 52-lineset counterweight wall.',
+        visibleElementIds: [
+          'sandbox-scale-figures',
+          'sandbox-height-poles',
+        ],
+        battenTrimHeightsM: { 1: 9.0, 2: 9.0, 3: 9.0, 4: 9.0, 5: 9.0 },
+        grandDrapeOpenFraction: 1,
+      },
+    ],
   },
 
   build({ registerElement }: ProductionSetBuilderContext): THREE.Group {

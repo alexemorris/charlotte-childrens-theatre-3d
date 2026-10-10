@@ -21,8 +21,8 @@
       <div class="loading-specs-row">
         <span class="loading-spec-pill">420 MAIN FLOOR</span>
         <span class="loading-spec-pill">150 BALCONY</span>
-        <span class="loading-spec-pill">7 PRODUCTION SETS</span>
-        <span class="loading-spec-pill">HDR ACES PBR</span>
+        <span class="loading-spec-pill">8 PRODUCTION SETS</span>
+        <span class="loading-spec-pill">52 FLY LINESETS</span>
       </div>
 
       <div class="loading-progress-track">
@@ -36,6 +36,23 @@
     </div>
   </div>
 
+  <!-- Full-Screen Reference Lightbox Modal for 1/4" CAD Ground Plans & Model Box Photos -->
+  <div id="reference-lightbox-modal" class="ref-lightbox-modal" hidden role="dialog" aria-modal="true" aria-label="Scenic Design Reference Viewer">
+    <div class="ref-lightbox-backdrop" id="ref-lightbox-backdrop"></div>
+    <div class="ref-lightbox-content">
+      <header class="ref-lightbox-header">
+        <div>
+          <span id="ref-lightbox-badge" class="ref-lightbox-badge">SCENE 1B</span>
+          <strong id="ref-lightbox-title">Whoville Town Square — 1/4" = 1'-0" Ground Plan</strong>
+        </div>
+        <button id="ref-lightbox-close-btn" class="hud-inline-btn walkthrough-exit-btn" type="button">✕ Close</button>
+      </header>
+      <div class="ref-lightbox-body">
+        <img id="ref-lightbox-img" src="" alt="Scenic Design Reference" />
+      </div>
+    </div>
+  </div>
+
   <div id="app">
     <canvas id="three-canvas"></canvas>
 
@@ -45,14 +62,21 @@
     <!-- Top-Center Quick-Launch Pill (Visible in Orbit Camera Mode) -->
     <div id="orbit-top-pill" class="orbit-top-pill">
       <span class="live-status-dot"></span>
-      <span class="orbit-pill-label">
-        <span class="desktop-only-inline">Click any seat in 3D or 2D Chart for </span><strong>1st-Person Sightline View</strong>
+      <button id="orbit-prev-scene-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Previous Scene Cue (Shortcut: [)">
+        ◀ Scene
+      </button>
+      <span id="orbit-scene-indicator" class="orbit-scene-indicator" title="Active Production Scene Cue">
+        1B · Whoville Town Square
       </span>
+      <button id="orbit-next-scene-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Next Scene Cue (Shortcut: ])">
+        Scene ▶
+      </button>
+      <span class="orbit-pill-divider desktop-only-inline">|</span>
       <button id="quick-seat-director-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Center Orchestra Row G Seat 108">
         Sit Center (G-108)
       </button>
-      <button id="quick-seat-balcony-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Lower Balcony Center Row AA Seat 105">
-        Sit Balcony (AA-105)
+      <button id="quick-seat-balcony-btn" class="hud-inline-btn orbit-pill-btn" type="button" title="Jump to Lower Balcony Center Row AA Seat 108">
+        Sit Balcony (AA-108)
       </button>
     </div>
 
@@ -66,6 +90,13 @@
           <span id="seat-hud-score-badge" class="seat-score-badge grade-optimal">99% OPTIMAL</span>
         </div>
         <div class="walkthrough-hud-actions">
+          <button id="seat-hud-prev-scene-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Previous Scene Cue (Shortcut: [)">
+            ◀ Scene
+          </button>
+          <span id="seat-hud-scene-badge" class="seat-hud-scene-badge">1B · Whoville</span>
+          <button id="seat-hud-next-scene-btn" class="hud-inline-btn walkthrough-action-btn" type="button" title="Next Scene Cue (Shortcut: ])">
+            Scene ▶
+          </button>
           <button
             id="seat-hud-eye-btn"
             class="hud-inline-btn walkthrough-action-btn is-active"
@@ -106,7 +137,7 @@
       </div>
       <div class="walkthrough-hint-row">
         <span><strong>Drag / Swipe</strong> to Look Around Stage &amp; Proscenium</span>
-        <span class="desktop-only-inline">· <kbd>←</kbd><kbd>→</kbd> Seat · <kbd>↑</kbd><kbd>↓</kbd> Row · <kbd>C</kbd> Child/Adult Eye · <kbd>Esc</kbd> Orbit</span>
+        <span class="desktop-only-inline">· <kbd>[</kbd><kbd>]</kbd> Prev/Next Scene · <kbd>←</kbd><kbd>→</kbd> Seat · <kbd>↑</kbd><kbd>↓</kbd> Row · <kbd>C</kbd> Child/Adult Eye · <kbd>Esc</kbd> Orbit</span>
       </div>
     </div>
 
@@ -163,23 +194,23 @@
             <span>CRITICAL SIGHTLINE TEST SEATS</span>
           </div>
           <div class="quick-seat-grid">
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-left-A-101" title="Row A Front Center — Steep upward angle & shallow floor grazing check">
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="MF-C-A-101" title="Row A Front Center — Steep upward angle & shallow floor grazing check">
               Row A Front (A-101)
             </button>
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-left-G-108" title="Row G Center Orchestra — Director's Table reference sightline">
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="MF-C-G-108" title="Row G Center Orchestra — Director's Table reference sightline">
               Director's (G-108)
             </button>
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-left-wing-C-1" title="Extreme House Left Wing — Check Stage Right masking leg & portal reveal">
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="MF-L-C-1" title="Extreme House Left Wing — Check Stage Right masking leg & portal reveal">
               Left Wing (C-1)
             </button>
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-right-wing-C-208" title="Extreme House Right Wing — Check Stage Left masking & Alice red swag drape">
-              Right Wing (C-208)
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="MF-R-C-207" title="Extreme House Right Wing — Check Stage Left masking & portal sightline">
+              Right Wing (C-207)
             </button>
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="main-center-right-N-112" title="Row N Under Lower Balcony Overhang — Check vertical trim cutoff at upstage drop">
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="MF-C-N-112" title="Row N Under Lower Balcony Overhang — Check vertical trim cutoff at upstage drop">
               Under Balc (N-112)
             </button>
-            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="upper-balcony-left-UB-104" title="Upper Balcony Row UB — Steep downward rake onto painted stage floor cloth">
-              Upper Balc (UB-104)
+            <button class="hud-inline-btn quick-seat-btn" type="button" data-seat-id="UB-L-UB-14" title="Upper Balcony Row UB — Steep downward rake onto painted stage floor cloth">
+              Upper Balc (UB-14)
             </button>
           </div>
         </section>
@@ -210,12 +241,16 @@
           <div id="venue-info-drawer" class="hud-drawer" hidden>
             <div class="venue-photo-grid">
               <figure class="venue-photo-card">
-                <img src="reference/school_of_rock_concert.jpg" alt="School of Rock Battle of the Bands Concert Set" loading="lazy" />
-                <figcaption>School of Rock (Concert)</figcaption>
+                <img src="reference/grinch/model_1B_whoville.jpg" alt="How The Grinch Stole Christmas Whoville Model Box" loading="lazy" />
+                <figcaption>Grinch (Whoville 1B)</figcaption>
               </figure>
               <figure class="venue-photo-card">
-                <img src="reference/school_of_rock_classroom.jpg" alt="School of Rock Horace Green Classroom Set" loading="lazy" />
-                <figcaption>School of Rock (Classroom)</figcaption>
+                <img src="reference/grinch/plan_1B_whoville.jpg" alt="McColl Theatre 1/4 inch CAD Ground Plan" loading="lazy" />
+                <figcaption>McColl 1/4" CAD Plan</figcaption>
+              </figure>
+              <figure class="venue-photo-card">
+                <img src="reference/school_of_rock_concert.jpg" alt="School of Rock Battle of the Bands Concert Set" loading="lazy" />
+                <figcaption>School of Rock (Concert)</figcaption>
               </figure>
               <figure class="venue-photo-card">
                 <img src="reference/stage_proscenium_alice.jpg" alt="McColl Proscenium & Alice in Wonderland Set" loading="lazy" />
@@ -234,7 +269,7 @@
               <p><strong>Venue:</strong> Hugh McColl Family Theatre at ImaginOn: The Joe &amp; Joan Martin Center (300 E. 7th St, Charlotte, NC).</p>
               <p><strong>Opened:</strong> October 8, 2005 (Inaugural production: <em>The Lion, the Witch and the Wardrobe</em>).</p>
               <p><strong>Architects &amp; Theatre Consultants:</strong> Holzman Moss Bottino Architecture, Gantt Huberman Architects &amp; Theatre Projects Consultants.</p>
-              <p><strong>Technical Capabilities:</strong> 570 seats (420 Orchestra Rows A–P + 150 Balcony across Lower &amp; Upper tiers), trapped stage deck, single-purchase counterweight fly tower, 20-player orchestra pit, and FOH catwalk.</p>
+              <p><strong>Technical Capabilities:</strong> 570 seats (420 Orchestra Rows A–P + 150 Balcony across Lower &amp; Upper tiers), 52-lineset single-purchase counterweight fly tower (<code>0'-10"</code> Scrim to <code>34'-10"</code> US), Stage Left offstage wagon bay, USR stair unit, cross-hatched curved orchestra pit lift, House Left/Right vomitories, SL apron fireman's pole, and FOH #1 overhead box truss + side box booms.</p>
             </div>
           </div>
         </section>
@@ -248,19 +283,34 @@
       <header id="stage-console-titlebar" class="hud-titlebar" title="Drag to move Set Designer Console">
         <button id="stage-console-collapse-btn" class="hud-win-btn" type="button" title="Collapse / Expand Set Designer Console" aria-label="Collapse Set Designer Console"></button>
         <span class="hud-title">Set Designer &amp; Stage Console</span>
-        <span id="active-prod-badge" class="hud-count">School of Rock</span>
+        <span id="active-prod-badge" class="hud-count">Grinch</span>
         <button id="stage-mobile-close-btn" class="mobile-sheet-close-btn" type="button" aria-label="Minimize Stage Sheet">✕</button>
       </header>
 
       <div id="stage-console-body" class="hud-body">
-        <!-- Section 1: Switchable Production Sets (7 Modular Sets in src/sets/) -->
+        <!-- Section 1: Switchable Production Sets (8 Modular Sets in src/sets/) -->
         <section class="hud-section">
           <div class="hud-section-head">
-            <span>SWITCHABLE PRODUCTION SETS (7)</span>
+            <span>SWITCHABLE PRODUCTION SETS (8)</span>
             <span class="hud-meta"><code>src/sets/*</code></span>
           </div>
           <div id="production-switcher-grid" class="production-switcher-grid"></div>
           <div id="production-info-box" class="production-info-box"></div>
+        </section>
+
+        <!-- Section 1B: Scene-by-Scene Sequencer & CAD / Model Box Reference -->
+        <section id="scene-sequencer-section" class="hud-section">
+          <div class="hud-section-head">
+            <span>SCENE-BY-SCENE PROGRESSION</span>
+            <div class="scene-step-btn-group">
+              <button id="scene-prev-btn" class="hud-inline-btn" type="button" title="Previous Scene Cue (Shortcut: [)">◀ Prev</button>
+              <span id="scene-counter-badge" class="hud-meta">2 / 9</span>
+              <button id="scene-next-btn" class="hud-inline-btn" type="button" title="Next Scene Cue (Shortcut: ])">Next ▶</button>
+            </div>
+          </div>
+          <div id="scene-pills-grid" class="scene-pills-grid"></div>
+          <div id="scene-synopsis-box" class="scene-synopsis-box"></div>
+          <div id="scene-reference-media" class="scene-reference-media" hidden></div>
         </section>
 
         <!-- Section 2: Active Scenic Elements & Counterweight Fly Battens -->

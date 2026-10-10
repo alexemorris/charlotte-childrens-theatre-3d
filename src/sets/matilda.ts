@@ -51,6 +51,37 @@ export const matildaSet: ProductionSetModule = {
         dimensionsLabel: '3 Pairs Soft Legs',
       },
     ],
+    scenes: [
+      {
+        id: 'mat-1',
+        sceneLabel: '1A',
+        title: 'Mrs. Phelps’s Library',
+        synopsis:
+          'Alphabet block portal framing the towering USL/USR library bookcases where Matilda tells her story.',
+        visibleElementIds: [
+          'matilda-alphabet-portal',
+          'matilda-library-towers',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 2: 0, 4: 0 },
+        grandDrapeOpenFraction: 1,
+      },
+      {
+        id: 'mat-2',
+        sceneLabel: '1B',
+        title: 'Crunchem Hall Classroom & Chalkboard',
+        synopsis:
+          'Revolving classroom turntable with student desks and flown chalkboard at Center Stage.',
+        visibleElementIds: [
+          'matilda-alphabet-portal',
+          'matilda-library-towers',
+          'matilda-desk-turntable',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 2: 0, 4: 0 },
+        grandDrapeOpenFraction: 1,
+      },
+    ],
   },
 
   build({ registerElement, textures }: ProductionSetBuilderContext): THREE.Group {

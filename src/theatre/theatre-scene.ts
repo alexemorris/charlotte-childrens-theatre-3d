@@ -19,6 +19,7 @@ import type {
   LightingPresetId,
   LightingState,
   ProductionId,
+  ProductionSceneCue,
   ProductionSpec,
   RiggingBattenSpec,
   SeatRecord,
@@ -40,6 +41,7 @@ export interface TheatreSceneCallbacks {
   onSeatSelected?: (metrics: SeatSightlineMetrics | null, inSeatView: boolean) => void;
   onSeatHovered?: (seat: SeatRecord | null, clientX: number, clientY: number) => void;
   onProductionChanged?: (spec: ProductionSpec) => void;
+  onSceneChanged?: (scene: ProductionSceneCue, spec: ProductionSpec) => void;
   onCustomPiecesChanged?: (
     pieces: ReadonlyArray<CustomSetPiece>,
     selectedId: string | null
@@ -297,7 +299,12 @@ export class TheatreSceneController {
 
   public applyLightingState(): void {
     const prod = this.productionSets.getActiveProduction();
+    const scene = this.productionSets.getActiveScene();
     const s = this.lightingState;
+
+    const stageWashColor = scene?.stageWashColor ?? prod.stageWashColor;
+    const stageSpotColor = scene?.stageSpotColor ?? prod.stageSpotColor;
+    const cycBottomColor = scene?.cycBottomColor ?? prod.cycBottomColor;
 
     this.ambientLight.intensity = 0.28 + s.houseLevel * 0.85;
     for (const pt of this.houseSpotLights) {
@@ -306,8 +313,8 @@ export class TheatreSceneController {
 
     this.fohStageKeyLeft.intensity = s.fohRailLevel * 110;
     this.fohStageKeyRight.intensity = s.fohRailLevel * 110;
-    this.fohStageKeyLeft.color.setHex(prod.stageWashColor);
-    this.fohStageKeyRight.color.setHex(prod.stageWashColor);
+    this.fohStageKeyLeft.color.setHex(stageWashColor);
+    this.fohStageKeyRight.color.setHex(stageWashColor);
 
     // Emissive FOH lenses on the Lower Balcony Rail
     for (const lens of this.architecture.fohLensMeshes) {
@@ -316,12 +323,12 @@ export class TheatreSceneController {
     }
 
     this.stageOverheadKey.intensity = s.stageElectricsLevel * 135;
-    this.stageOverheadKey.color.setHex(prod.stageSpotColor);
+    this.stageOverheadKey.color.setHex(stageSpotColor);
     this.stageWarmFill.intensity = s.stageElectricsLevel * 38;
-    this.stageWarmFill.color.setHex(prod.stageWashColor);
+    this.stageWarmFill.color.setHex(stageWashColor);
 
     this.cycWashLight.intensity = s.cycWashLevel * 52;
-    this.cycWashLight.color.setHex(prod.cycBottomColor);
+    this.cycWashLight.color.setHex(cycBottomColor);
 
     const cycMat = this.productionSets.cycMesh.material as THREE.MeshStandardMaterial;
     cycMat.emissiveIntensity = 0.25 + s.cycWashLevel * 0.95;
@@ -381,15 +388,59 @@ export class TheatreSceneController {
     if (id === 'tech-grid-sandbox') {
       this.cadGridEnabled = true;
     }
+    const activeScene = this.productionSets.getActiveScene();
+    if (activeScene?.grandDrapeOpenFraction !== undefined) {
+      this.setGrandDrapeOpenFraction(activeScene.grandDrapeOpenFraction);
+    }
+    if (activeScene?.houseLevel !== undefined) {
+      this.lightingState.houseLevel = activeScene.houseLevel;
+    }
     this.syncStageFloorTexture();
     this.applyLightingState();
     this.refreshSeatColorsAndMetrics();
     this.callbacks.onProductionChanged?.(spec);
+    if (activeScene) {
+      this.callbacks.onSceneChanged?.(activeScene, spec);
+    }
     return spec;
   }
 
   public getActiveProduction(): ProductionSpec {
     return this.productionSets.getActiveProduction();
+  }
+
+  public setSceneCue(sceneId: string): ProductionSceneCue {
+    const scene = this.productionSets.setActiveScene(sceneId);
+    const spec = this.productionSets.getActiveProduction();
+    if (scene.grandDrapeOpenFraction !== undefined) {
+      this.setGrandDrapeOpenFraction(scene.grandDrapeOpenFraction);
+    }
+    if (scene.houseLevel !== undefined) {
+      this.lightingState.houseLevel = scene.houseLevel;
+    }
+    this.syncStageFloorTexture();
+    this.applyLightingState();
+    this.callbacks.onSceneChanged?.(scene, spec);
+    return scene;
+  }
+
+  public stepSceneCue(delta: -1 | 1): ProductionSceneCue {
+    const scene = this.productionSets.stepScene(delta);
+    const spec = this.productionSets.getActiveProduction();
+    if (scene.grandDrapeOpenFraction !== undefined) {
+      this.setGrandDrapeOpenFraction(scene.grandDrapeOpenFraction);
+    }
+    if (scene.houseLevel !== undefined) {
+      this.lightingState.houseLevel = scene.houseLevel;
+    }
+    this.syncStageFloorTexture();
+    this.applyLightingState();
+    this.callbacks.onSceneChanged?.(scene, spec);
+    return scene;
+  }
+
+  public getActiveSceneCue(): ProductionSceneCue {
+    return this.productionSets.getActiveScene();
   }
 
   public getProductionCatalog(): ReadonlyArray<ProductionSpec> {
@@ -404,6 +455,10 @@ export class TheatreSceneController {
     const floorMat = this.architecture.stageFloorMesh
       .material as THREE.MeshStandardMaterial;
     const activeProd = this.productionSets.getActiveProduction().id;
+    const grinchFloorVisible =
+      activeProd === 'grinch' &&
+      this.productionSets.isElementVisible('grinch-snow-floor') &&
+      !this.cadGridEnabled;
     const schoolOfRockFloorVisible =
       activeProd === 'school-of-rock' &&
       this.productionSets.isElementVisible('sor-plaid-crest-floor') &&
@@ -413,7 +468,10 @@ export class TheatreSceneController {
       this.productionSets.isElementVisible('alice-ray-floor') &&
       !this.cadGridEnabled;
 
-    if (schoolOfRockFloorVisible) {
+    if (grinchFloorVisible) {
+      floorMat.map = this.productionSets.grinchSnowFloorTexture;
+      floorMat.color.setHex(0xffffff);
+    } else if (schoolOfRockFloorVisible) {
       floorMat.map = this.productionSets.schoolOfRockFloorTexture;
       floorMat.color.setHex(0xffffff);
     } else if (aliceFloorVisible) {
@@ -432,6 +490,7 @@ export class TheatreSceneController {
   public setElementVisibility(elementId: string, visible: boolean): void {
     this.productionSets.setElementVisibility(elementId, visible);
     if (
+      elementId === 'grinch-snow-floor' ||
       elementId === 'alice-ray-floor' ||
       elementId === 'sor-plaid-crest-floor'
     ) {
@@ -1042,6 +1101,12 @@ export class TheatreSceneController {
         this.setEyeMode(this.eyeMode === 'child' ? 'adult' : 'child');
       } else if (e.key === 'l' || e.key === 'L') {
         this.setSightlineLaserEnabled(!this.sightlineLaserEnabled);
+      } else if (e.key === '[') {
+        e.preventDefault();
+        this.stepSceneCue(-1);
+      } else if (e.key === ']') {
+        e.preventDefault();
+        this.stepSceneCue(1);
       }
     });
   }

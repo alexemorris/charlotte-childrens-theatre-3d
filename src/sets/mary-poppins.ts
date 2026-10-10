@@ -52,6 +52,52 @@ export const maryPoppinsSet: ProductionSetModule = {
         dimensionsLabel: '3 Pairs Soft Legs',
       },
     ],
+    scenes: [
+      {
+        id: 'mp-1',
+        sceneLabel: '1A',
+        title: '17 Cherry Tree Lane',
+        synopsis:
+          'Telescoping Victorian Banks family home at Center Stage with London rooftop silhouettes.',
+        visibleElementIds: [
+          'poppins-cherry-tree-house',
+          'poppins-chimney-rooftops',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 2: 8.5, 3: 0 },
+        grandDrapeOpenFraction: 1,
+      },
+      {
+        id: 'mp-2',
+        sceneLabel: '1B',
+        title: 'Step in Time (London Rooftops)',
+        synopsis:
+          'Stepped chimney sweep towers tracked in across a starlit London skyline.',
+        visibleElementIds: [
+          'poppins-chimney-rooftops',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 2: 8.5, 3: 0 },
+        grandDrapeOpenFraction: 1,
+        cycTopColor: 0x091026,
+        cycBottomColor: 0x24345a,
+      },
+      {
+        id: 'mp-3',
+        sceneLabel: '1C',
+        title: 'Anything Can Happen (High-Fly Finale)',
+        synopsis:
+          'Mary Poppins ascends to +4.9m on the over-stage flying track above 17 Cherry Tree Lane—critical upper/lower balcony overhang sightline test.',
+        visibleElementIds: [
+          'poppins-fly-performer',
+          'poppins-cherry-tree-house',
+          'poppins-chimney-rooftops',
+          'black-velour-masking',
+        ],
+        battenTrimHeightsM: { 2: 0, 3: 0 },
+        grandDrapeOpenFraction: 1,
+      },
+    ],
   },
 
   build({ registerElement }: ProductionSetBuilderContext): THREE.Group {

@@ -167,7 +167,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
       const x = -(centerHalfWidth + aisleGap + Math.cos(wingAngle) * distFromAisle);
       const z = rowZ - Math.sin(wingAngle) * distFromAisle;
       const seatNumber = s + 1;
-      const yawRad = Math.atan2(-x, z + 2.2);
+      const yawRad = Math.atan2(x, z + 2.2);
 
       pushSeat({
         id: `MF-L-${rowLabel}-${seatNumber}`,
@@ -192,7 +192,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
       const z = rowZ - Math.cos((offsetFromCenter / 5.5) * 0.6) * 0.18 + 0.18;
       const seatNumber = 101 + c;
       const isLeftHalf = x < 0;
-      const yawRad = Math.atan2(-x * 0.65, z + 2.5);
+      const yawRad = Math.atan2(x * 0.65, z + 2.5);
 
       pushSeat({
         id: `MF-C-${rowLabel}-${seatNumber}`,
@@ -216,7 +216,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
       const x = centerHalfWidth + aisleGap + Math.cos(wingAngle) * distFromAisle;
       const z = rowZ - Math.sin(wingAngle) * distFromAisle;
       const seatNumber = 201 + s;
-      const yawRad = Math.atan2(-x, z + 2.2);
+      const yawRad = Math.atan2(x, z + 2.2);
 
       pushSeat({
         id: `MF-R-${rowLabel}-${seatNumber}`,
@@ -259,7 +259,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
       const z = baseZ - Math.abs(norm) * 0.08;
       const isLeft = x < 0;
       const seatNumber = isLeft ? c + 10 : c + 101;
-      const yawRad = Math.atan2(-x * 0.8, z + 1.8);
+      const yawRad = Math.atan2(x * 0.8, z + 1.8);
 
       pushSeat({
         id: `LB-${isLeft ? 'L' : 'R'}-${rowLabel}-${seatNumber}`,
@@ -295,7 +295,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
         x: lx,
         y: rowY,
         z: lz,
-        yawRad: Math.atan2(-lx, lz + 1.2),
+        yawRad: Math.atan2(lx, lz + 1.2),
       });
 
       const rx = -lx;
@@ -312,7 +312,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
         x: rx,
         y: rowY,
         z: rz,
-        yawRad: Math.atan2(-rx, rz + 1.2),
+        yawRad: Math.atan2(rx, rz + 1.2),
       });
     }
   }
@@ -353,7 +353,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
         x,
         y: rowY,
         z,
-        yawRad: Math.atan2(-x * 0.85, z + 1.6),
+        yawRad: Math.atan2(x * 0.85, z + 1.6),
       });
     }
 
@@ -375,7 +375,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
         x: lx,
         y: rowY,
         z: lz,
-        yawRad: Math.atan2(-lx, lz + 1.2),
+        yawRad: Math.atan2(lx, lz + 1.2),
       });
 
       const rx = -lx;
@@ -392,7 +392,7 @@ export function buildTheatreSeatingLayout(): ReadonlyArray<SeatRecord> {
         x: rx,
         y: rowY,
         z: rz,
-        yawRad: Math.atan2(-rx, rz + 1.2),
+        yawRad: Math.atan2(rx, rz + 1.2),
       });
     }
   }
@@ -441,7 +441,12 @@ export function computeSeatSightlineMetrics(
     upstageVis = Math.max(82, Math.round(100 - excess * 1.1));
   }
 
-  if (productionId === 'alice-in-wonderland' && seat.position.x > 5.5) {
+  if (productionId === 'grinch' && absX > 5.8) {
+    upstageVis = Math.max(58, upstageVis - 6);
+    notes.push(
+      'Grinch Snow-Cliff Portal Check: Extreme side wing angle partially masks the miniature Whoville vista inside Grinch\'s Cave (#17).'
+    );
+  } else if (productionId === 'alice-in-wonderland' && seat.position.x > 5.5) {
     upstageVis = Math.max(60, upstageVis - 6);
   } else if (productionId === 'charlottes-web' && absX > 6.2) {
     upstageVis = Math.max(58, upstageVis - 8);
@@ -463,7 +468,11 @@ export function computeSeatSightlineMetrics(
       notes.push(
         `Lower Balcony Overhang clips flown scenery above ${maxVisibleHeightAtBackdropM.toFixed(2)}m (${(maxVisibleHeightAtBackdropM * 3.28084).toFixed(1)} ft) at upstage backdrop.`
       );
-      if (productionId === 'mary-poppins' && maxVisibleHeightAtBackdropM < 5.4) {
+      if (productionId === 'grinch' && maxVisibleHeightAtBackdropM < 5.6) {
+        notes.push(
+          'Grinch Trim Note: Keep "MERRY CHRISTMAS WHOVILLE" banner (Lineset #15) trimmed below 5.3m so rows N–P clear the Lower Balcony soffit.'
+        );
+      } else if (productionId === 'mary-poppins' && maxVisibleHeightAtBackdropM < 5.4) {
         notes.push(
           'Mary Poppins high-fly cue above 5.2m is partially occluded by Lower Balcony soffit from this row.'
         );

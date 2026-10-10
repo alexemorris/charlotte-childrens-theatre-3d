@@ -657,3 +657,234 @@ export function createChalkboardTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+/**
+ * Generates the sparkling lavender-blue Seussian snow stage floor cloth
+ * for Dr. Seuss's How The Grinch Stole Christmas! (Scenic Design by Andrew Gibbon).
+ */
+export function createGrinchSnowFloorTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    const grad = ctx.createRadialGradient(512, 560, 40, 512, 512, 720);
+    grad.addColorStop(0, '#dce4f7');
+    grad.addColorStop(0.55, '#b6c4e8');
+    grad.addColorStop(1, '#8292bf');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Whimsical Seussian curved snow drift contour lines & ink cross-hatching
+    ctx.strokeStyle = 'rgba(34, 42, 78, 0.28)';
+    ctx.lineWidth = 2.4;
+    for (let i = 0; i < 16; i++) {
+      const y = 64 + i * 60;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(
+        260,
+        y + ((i % 2 === 0 ? 1 : -1) * 34),
+        760,
+        y - ((i % 2 === 0 ? 1 : -1) * 34),
+        1024,
+        y
+      );
+      ctx.stroke();
+    }
+
+    // Glittering snow crystal flecks across the stage deck
+    for (let s = 0; s < 420; s++) {
+      const sx = (s * 173) % 1020;
+      const sy = (s * 257) % 1020;
+      ctx.fillStyle = s % 3 === 0 ? 'rgba(255, 255, 255, 0.75)' : 'rgba(215, 232, 255, 0.45)';
+      ctx.fillRect(sx, sy, 3, 3);
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates the Pre-Show Scrim texture (Lineset #1 at 0'-10") from Slide 3 of
+ * the Grinch Scenic Design deck:
+ * - Lavender/violet translucent scrim wash
+ * - Left projection: "Charlotte's Web — Adapted by Joseph Robinette" (Wilbur pig & fence)
+ * - Center projection: `"Dr. Seuss' How The Grinch Stole Christmas!"`
+ * - Right projection: "BENEATH THE BAOBAB TREE" poster art
+ */
+export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    const bg = ctx.createLinearGradient(0, 0, 0, 512);
+    bg.addColorStop(0, '#3e2d6e');
+    bg.addColorStop(0.5, '#6852ad');
+    bg.addColorStop(1, '#7c68c4');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Subtle scrim gauze weave
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < 512; y += 6) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1024, y);
+      ctx.stroke();
+    }
+
+    // 1. Left Poster Card: "Charlotte's Web" (x = 120..310, y = 105..365)
+    ctx.fillStyle = '#c8a882';
+    ctx.fillRect(125, 108, 185, 255);
+    ctx.strokeStyle = '#38281e';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(125, 108, 185, 255);
+
+    // White picket fence in Charlotte's Web poster
+    ctx.fillStyle = '#f2ede4';
+    for (let px = 132; px < 302; px += 14) {
+      ctx.fillRect(px, 285, 9, 48);
+    }
+    // Wilbur the pink pig
+    ctx.fillStyle = '#e5989b';
+    ctx.beginPath();
+    ctx.ellipse(218, 285, 36, 42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#4a2830';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Pig snout
+    ctx.fillStyle = '#f4b4b8';
+    ctx.beginPath();
+    ctx.ellipse(218, 278, 14, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Spiderweb in top-left corner of poster
+    ctx.strokeStyle = '#2a2220';
+    ctx.lineWidth = 1.4;
+    for (let r = 18; r <= 72; r += 18) {
+      ctx.beginPath();
+      ctx.arc(125, 108, r, 0, Math.PI / 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#221a18';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText("Charlotte's Web", 222, 152);
+    ctx.font = '11px Georgia, serif';
+    ctx.fillText('Adapted by Joseph Robinette', 222, 172);
+
+    // 2. Center Title Projection: "Dr. Seuss' How The Grinch Stole Christmas!"
+    ctx.save();
+    ctx.fillStyle = '#e8e4f8';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+    ctx.shadowBlur = 8;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 26px Georgia, serif';
+    ctx.fillText(`"Dr. Seuss'`, 495, 212);
+    ctx.font = 'bold 34px Georgia, serif';
+    ctx.fillText('HOW The GRINCH', 502, 254);
+    ctx.font = 'bold 28px Georgia, serif';
+    ctx.fillText('STOLE', 502, 288);
+    ctx.font = 'bold 34px Georgia, serif';
+    ctx.fillText(`CHRISTMAS!"`, 506, 326);
+    ctx.restore();
+
+    // 3. Right Poster Card: "BENEATH THE BAOBAB TREE" (x = 670..855, y = 170..420)
+    ctx.fillStyle = '#dcd4f0';
+    ctx.fillRect(670, 170, 185, 245);
+    ctx.strokeStyle = '#4a3b78';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(670, 170, 185, 245);
+
+    ctx.fillStyle = '#9a4c78';
+    ctx.font = 'bold 17px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('BENEATH THE', 762, 198);
+    ctx.fillText('BAOBAB', 778, 220);
+    ctx.fillStyle = '#487868';
+    ctx.fillText('TREE', 785, 242);
+
+    // Baobab tree trunk & figure holding glowing disc
+    ctx.fillStyle = '#9c7a64';
+    ctx.fillRect(692, 255, 22, 130);
+    ctx.strokeStyle = '#d45b7a';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(765, 292, 16, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#4a7c59';
+    ctx.fillRect(753, 325, 24, 48);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates the hand-painted Seussian icy-blue/white snow cliff & cave rock texture
+ * with bold black Dr. Seuss pen-and-ink cross-hatching (matching Model Box slides 3–22).
+ */
+export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#c8dcf6');
+    grad.addColorStop(0.5, '#8cb8ec');
+    grad.addColorStop(1, '#6896d4');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Soft lavender/white snow highlights
+    ctx.fillStyle = 'rgba(245, 248, 255, 0.48)';
+    for (let i = 0; i < 12; i++) {
+      ctx.beginPath();
+      ctx.ellipse(
+        (i * 97) % 512,
+        (i * 67) % 512,
+        75,
+        36,
+        (i % 3) * 0.4,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+
+    // Bold black Seussian ink contour strokes & cross-hatch clusters
+    ctx.strokeStyle = '#151c2c';
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+
+    for (let c = 0; c < 18; c++) {
+      const bx = 32 + ((c * 83) % 440);
+      const by = 32 + ((c * 61) % 440);
+      for (let h = 0; h < 5; h++) {
+        ctx.beginPath();
+        ctx.moveTo(bx + h * 9, by);
+        ctx.lineTo(bx + h * 9 - 14, by + 26);
+        ctx.stroke();
+      }
+    }
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+
