@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { drawSeussianDisplayText } from '../../engine/procedural-textures.ts';
+import {
+  createFabricWeaveNormalTexture,
+  createPapierMacheNormalTexture,
+  createSeussianRockNormalTexture,
+  createStuccoPlasterNormalTexture,
+  drawSeussianDisplayText,
+} from '../../engine/procedural-textures.ts';
 import {
   createGrinchCharacter,
   createMaxDogCharacter,
@@ -148,29 +154,33 @@ function createLimeBranchBarkTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (ctx) {
     const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#58c842');
-    grad.addColorStop(0.5, '#3ea832');
-    grad.addColorStop(1, '#26781e');
+    grad.addColorStop(0, '#3ea832');
+    grad.addColorStop(0.5, '#58c842');
+    grad.addColorStop(1, '#3ea832');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Chartreuse dry-brush bark rings & Seussian ink contour ticks
-    for (let y = 16; y < 512; y += 28) {
+    // Chartreuse dry-brush bark rings & Seussian ink contour ticks (periodic across X)
+    for (let y = 16; y < 512; y += 32) {
       ctx.strokeStyle = 'rgba(192, 244, 112, 0.28)';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      for (let x = 0; x <= 512; x += 64) {
-        ctx.lineTo(x, y + Math.sin(x * 0.03 + y) * 6);
+      for (let x = 0; x <= 512; x += 32) {
+        const u = (x / 512) * Math.PI * 2;
+        const wy = y + Math.sin(u * 2 + y * 0.1) * 6;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
       }
       ctx.stroke();
 
       ctx.strokeStyle = 'rgba(16, 42, 12, 0.42)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, y + 4);
-      for (let x = 0; x <= 512; x += 64) {
-        ctx.lineTo(x, y + 4 + Math.sin(x * 0.03 + y) * 6);
+      for (let x = 0; x <= 512; x += 32) {
+        const u = (x / 512) * Math.PI * 2;
+        const wy = y + 4 + Math.sin(u * 2 + y * 0.1) * 6;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
       }
       ctx.stroke();
     }
@@ -758,8 +768,11 @@ export function buildGrinchShoppingCounters(
     color: 0x10182c,
     roughness: 0.82,
   });
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
   const snowCounterTopMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.45, 0.45),
     color: 0xcad2dc,
     roughness: 0.6,
   });
@@ -1185,13 +1198,19 @@ function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
   wagonBase.position.y = 0.06;
   g.add(wagonBase);
 
+  const stuccoNormalTex = createStuccoPlasterNormalTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
   const pinkMat = new THREE.MeshStandardMaterial({
     map: createDsrHousePinkStuccoTexture(),
+    normalMap: stuccoNormalTex,
+    normalScale: new THREE.Vector2(0.42, 0.42),
     roughness: 0.56,
     metalness: 0.04,
   });
   const snowRoofMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.48, 0.48),
     color: 0xbed0d8,
     roughness: 0.62,
   });
@@ -1352,20 +1371,29 @@ export function buildGrinchMtCrumpitSleigh(
   cliffWagon.name = 'MtCrumpitCliffWagon';
   cliffWagon.position.set(2.35, 0, -2.25);
 
+  const rockNormalTex = createSeussianRockNormalTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
+
   const iceRockLowerMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.58, 0.58),
     color: 0x6c92c4,
     roughness: 0.62,
     metalness: 0.06,
   });
   const iceRockUpperMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.54, 0.54),
     color: 0x8cb0d8,
     roughness: 0.58,
     metalness: 0.06,
   });
   const snowLedgeMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.48, 0.48),
     color: 0xc8d2d8,
     roughness: 0.6,
   });
@@ -1647,13 +1675,18 @@ export function buildGrinchMtCrumpitSleigh(
   sleighGroup.add(hornBell);
 
   // 4. COLOSSAL OVERSTUFFED CRIMSON SACK OF STOLEN WHOVILLE PRESENTS!
+  const fabricNormalTex = createFabricWeaveNormalTexture();
   const sackCrimsonMat = new THREE.MeshStandardMaterial({
     map: createStolenSackFabricTexture(false),
+    normalMap: fabricNormalTex,
+    normalScale: new THREE.Vector2(0.45, 0.45),
     roughness: 0.55,
     metalness: 0.05,
   });
   const sackHighlightMat = new THREE.MeshStandardMaterial({
     map: createStolenSackFabricTexture(true),
+    normalMap: fabricNormalTex,
+    normalScale: new THREE.Vector2(0.42, 0.42),
     roughness: 0.56,
   });
 
@@ -1833,8 +1866,11 @@ export function buildGrinchFinaleBanquet(): THREE.Group {
     color: 0x0e2854,
     roughness: 0.75,
   });
+  const fabricNormalTex = createFabricWeaveNormalTexture();
   const whiteTableclothMat = new THREE.MeshStandardMaterial({
     map: createBanquetTableclothTexture(),
+    normalMap: fabricNormalTex,
+    normalScale: new THREE.Vector2(0.36, 0.36),
     color: 0xcfd4d8,
     roughness: 0.58,
   });

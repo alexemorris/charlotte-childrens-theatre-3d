@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { drawSeussianDisplayText } from '../../engine/procedural-textures.ts';
+import {
+  createPapierMacheNormalTexture,
+  createStuccoPlasterNormalTexture,
+  drawSeussianDisplayText,
+  normalizeExtrudeUVs,
+} from '../../engine/procedural-textures.ts';
 import {
   createSculptedIcicleDrip,
   createSeussianIcicleValance,
@@ -784,6 +789,8 @@ function buildSingleWhovilleHouse(
   );
   const stuccoMat = new THREE.MeshStandardMaterial({
     map: stuccoTex,
+    normalMap: createStuccoPlasterNormalTexture(),
+    normalScale: new THREE.Vector2(0.55, 0.55),
     roughness: 0.56,
     metalness: 0.03,
   });
@@ -1161,24 +1168,25 @@ function buildSingleWhovilleHouse(
         ? sharedMats.oliveFrameMat
         : sharedMats.creamFrameMat;
 
+  const doorSurroundGeo = new THREE.ExtrudeGeometry(
+    makeArchShape(cfg.doorWidth + 0.08, cfg.doorHeight + 0.04),
+    { depth: 0.045, bevelEnabled: false, curveSegments: 20 }
+  );
+  normalizeExtrudeUVs(doorSurroundGeo, 'fit');
   const doorSurroundMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(
-      makeArchShape(cfg.doorWidth + 0.08, cfg.doorHeight + 0.04),
-      { depth: 0.045, bevelEnabled: false, curveSegments: 20 }
-    ),
-     sharedMats.creamFrameMat
+    doorSurroundGeo,
+    sharedMats.creamFrameMat
   );
   doorSurroundMesh.position.z = 0.04;
   doorArchGroup.add(doorSurroundMesh);
 
   // Layer 3: Recessed Pink/Coral Arched Door Leaf with Hand-Painted Planks & Swirl Trim (z = 0.085 to 0.125)
-  const doorLeafMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(
-      makeArchShape(cfg.doorWidth - 0.04, cfg.doorHeight - 0.04),
-      { depth: 0.04, bevelEnabled: false, curveSegments: 20 }
-    ),
-    sharedMats.doorPanelMat
+  const doorLeafGeo = new THREE.ExtrudeGeometry(
+    makeArchShape(cfg.doorWidth - 0.04, cfg.doorHeight - 0.04),
+    { depth: 0.04, bevelEnabled: false, curveSegments: 20 }
   );
+  normalizeExtrudeUVs(doorLeafGeo, 'fit');
+  const doorLeafMesh = new THREE.Mesh(doorLeafGeo, sharedMats.doorPanelMat);
   doorLeafMesh.position.z = 0.085;
   doorArchGroup.add(doorLeafMesh);
 
@@ -1276,24 +1284,22 @@ function buildSingleWhovilleHouse(
     winGroup.add(winInk);
 
     // Layer 2: Cream Window Casing (z = 0.035 to 0.07)
-    const winCasing = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(
-        makeArchShape(winSpec.width + 0.04, winSpec.height + 0.04),
-        { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
-      ),
-      sharedMats.creamFrameMat
+    const winCasingGeo = new THREE.ExtrudeGeometry(
+      makeArchShape(winSpec.width + 0.04, winSpec.height + 0.04),
+      { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
     );
+    normalizeExtrudeUVs(winCasingGeo, 'fit');
+    const winCasing = new THREE.Mesh(winCasingGeo, sharedMats.creamFrameMat);
     winCasing.position.set(0, -winSpec.height * 0.5 - 0.02, 0.035);
     winGroup.add(winCasing);
 
     // Layer 3: Glowing Amber Glass Pane (z = 0.07 to 0.105)
-    const winGlass = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(
-        makeArchShape(winSpec.width - 0.03, winSpec.height - 0.03),
-        { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
-      ),
-      sharedMats.windowGlowMat
+    const winGlassGeo = new THREE.ExtrudeGeometry(
+      makeArchShape(winSpec.width - 0.03, winSpec.height - 0.03),
+      { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
     );
+    normalizeExtrudeUVs(winGlassGeo, 'fit');
+    const winGlass = new THREE.Mesh(winGlassGeo, sharedMats.windowGlowMat);
     winGlass.position.set(0, -winSpec.height * 0.5 + 0.015, 0.07);
     winGroup.add(winGlass);
 
@@ -1424,14 +1430,19 @@ export function buildGrinchWhovilleHouses(
 
   // Toned-down snow materials (all channels <= 0xd8, roughness >= 0.55 to avoid spotlight overexposure)
   const snowRoofTex = createWhovilleSnowRoofTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
   const snowCapMat = new THREE.MeshStandardMaterial({
     map: snowRoofTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.65, 0.65),
     color: 0xbcd0d8,
     roughness: 0.62,
     metalness: 0.02,
   });
   const snowShadeMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.68, 0.68),
     color: 0x9ab4cc,
     roughness: 0.66,
     metalness: 0.02,
@@ -1690,14 +1701,19 @@ export function buildGrinchWhovilleTree(
   treeWagonGroup.position.set(0.0, 0, -3.55);
 
   // Toned-down snow turntable materials (max hex channel <= 0xd8, roughness >= 0.55)
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
   const snowTurntableMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.62, 0.62),
     color: 0xbcd0d8,
     roughness: 0.62,
     metalness: 0.02,
   });
   const snowStepMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.65, 0.65),
     color: 0xa4bcd2,
     roughness: 0.65,
     metalness: 0.02,

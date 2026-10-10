@@ -1,233 +1,113 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {
+  createPapierMacheNormalTexture,
+  createSeussianRockNormalTexture,
+  normalizeExtrudeUVs,
+} from '../../engine/procedural-textures.ts';
+import {
   createSculptedIcicleDrip,
   createSeussianIcicleValance,
 } from '../shared-scenic-helpers.ts';
 
-let cachedPapierMacheBumpTex: THREE.CanvasTexture | null = null;
 let cachedSnowMountainCliffTex: THREE.CanvasTexture | null = null;
 let cachedGlacierWavePortalTex: THREE.CanvasTexture | null = null;
 
 /**
- * Generates a 1024×1024 procedural height/bump map simulating hand-layered
- * theatrical papier-mâché strips, scrim/cheesecloth weave, troweled Rosco
- * FoamCoat / plaster-cloth crags, and carved Seussian rock strata crevices.
- */
-function createPapierMacheBumpTexture(): THREE.CanvasTexture {
-  if (cachedPapierMacheBumpTex) {
-    return cachedPapierMacheBumpTex;
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1024;
-  const ctx = canvas.getContext('2d');
-
-  if (ctx) {
-    // Neutral mid-gray height base
-    ctx.fillStyle = '#808080';
-    ctx.fillRect(0, 0, 1024, 1024);
-
-    // 1. Overlapping torn papier-mâché / muslin strips applied over chicken-wire armature
-    for (let i = 0; i < 220; i++) {
-      const cx = (i * 173 + 47) % 1024;
-      const cy = (i * 251 + 83) % 1024;
-      const w = 85 + ((i * 29) % 110);
-      const h = 28 + ((i * 19) % 44);
-      const angle = (((i * 37) % 100) / 100 - 0.5) * 1.15;
-      const isRaised = i % 2 === 0;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angle);
-
-      const stripGrad = ctx.createLinearGradient(0, -h * 0.5, 0, h * 0.5);
-      if (isRaised) {
-        stripGrad.addColorStop(0, 'rgba(215, 215, 215, 0.34)');
-        stripGrad.addColorStop(0.5, 'rgba(182, 182, 182, 0.24)');
-        stripGrad.addColorStop(1, 'rgba(92, 92, 92, 0.32)');
-      } else {
-        stripGrad.addColorStop(0, 'rgba(105, 105, 105, 0.30)');
-        stripGrad.addColorStop(0.5, 'rgba(158, 158, 158, 0.22)');
-        stripGrad.addColorStop(1, 'rgba(210, 210, 210, 0.30)');
-      }
-      ctx.fillStyle = stripGrad;
-      ctx.fillRect(-w * 0.5, -h * 0.5, w, h);
-
-      // Raised torn paper seam edge
-      ctx.strokeStyle = isRaised
-        ? 'rgba(235, 235, 235, 0.38)'
-        : 'rgba(60, 60, 60, 0.35)';
-      ctx.lineWidth = 2.2;
-      ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
-
-      // Fine longitudinal paper wrinkle creases inside each strip
-      ctx.strokeStyle = 'rgba(210, 210, 210, 0.22)';
-      ctx.lineWidth = 1.3;
-      for (let r = -1; r <= 1; r++) {
-        ctx.beginPath();
-        ctx.moveTo(-w * 0.46, r * h * 0.24);
-        ctx.quadraticCurveTo(
-          0,
-          (r + 0.25) * h * 0.26,
-          w * 0.46,
-          r * h * 0.22
-        );
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // 2. Troweled plaster-cloth / FoamCoat stipple mounds and craters
-    for (let i = 0; i < 340; i++) {
-      const px = (i * 131 + 19) % 1024;
-      const py = (i * 197 + 61) % 1024;
-      const rx = 14 + (i % 34);
-      const ry = 8 + (i % 20);
-      const grad = ctx.createRadialGradient(px, py, 2, px, py, rx);
-      if (i % 3 !== 0) {
-        grad.addColorStop(0, 'rgba(230, 230, 230, 0.28)');
-        grad.addColorStop(1, 'rgba(128, 128, 128, 0)');
-      } else {
-        grad.addColorStop(0, 'rgba(48, 48, 48, 0.28)');
-        grad.addColorStop(1, 'rgba(128, 128, 128, 0)');
-      }
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.ellipse(px, py, rx, ry, (i % 7) * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // 3. Horizontal carved Seussian rock-strata crevices & raised snow lips
-    ctx.lineCap = 'round';
-    for (let row = 0; row < 16; row++) {
-      const baseY = 44 + row * 62;
-      // Deep carved crevice groove
-      ctx.strokeStyle = 'rgba(24, 24, 24, 0.62)';
-      ctx.lineWidth = 6.5;
-      ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 24) {
-        const wy =
-          baseY +
-          Math.sin(x * 0.014 + row * 0.9) * 14 +
-          Math.cos(x * 0.031 - row * 1.2) * 7;
-        if (x === 0) ctx.moveTo(x, wy);
-        else ctx.lineTo(x, wy);
-      }
-      ctx.stroke();
-
-      // Raised plaster ridge lip immediately below the crevice
-      ctx.strokeStyle = 'rgba(238, 238, 238, 0.52)';
-      ctx.lineWidth = 4.2;
-      ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 24) {
-        const wy =
-          baseY +
-          5 +
-          Math.sin(x * 0.014 + row * 0.9) * 14 +
-          Math.cos(x * 0.031 - row * 1.2) * 7;
-        if (x === 0) ctx.moveTo(x, wy);
-        else ctx.lineTo(x, wy);
-      }
-      ctx.stroke();
-    }
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(1.35, 1.35);
-  cachedPapierMacheBumpTex = tex;
-  return tex;
-}
-
-/**
- * Generates a 1024×1024 scenic artist texture (`createSnowMountainCliffTexture`)
- * for the side-of-stage Seussian snow-cliff mountains and Mt. Crumpit, combining
- * layered papier-mâché plaster washes, horizontal Seussian rock strata, deep
- * cobalt/glacier-blue shadow fissures, warm lavender/ivory snow highlights, and
- * expressive Tim Parati / Dr. Seuss charcoal cross-hatching.
+ * Generates a 1024×1024 seamlessly tileable scenic artist texture
+ * (`createSnowMountainCliffTexture`) for the side-of-stage Seussian snow-cliff
+ * mountains and Mt. Crumpit, combining layered papier-mâché plaster washes,
+ * periodic horizontal Seussian rock strata, deep cobalt/glacier-blue shadow
+ * fissures, warm lavender/ivory snow highlights, and expressive Tim Parati /
+ * Dr. Seuss charcoal cross-hatching.
  */
 export function createSnowMountainCliffTexture(): THREE.CanvasTexture {
   if (cachedSnowMountainCliffTex) {
     return cachedSnowMountainCliffTex;
   }
 
+  const W = 1024;
+  const H = 1024;
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1024;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // 1. Base Seussian alpine snow & glacier-rock vertical wash
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-    bgGrad.addColorStop(0.0, '#c6d4e2');
-    bgGrad.addColorStop(0.28, '#b2c8de');
-    bgGrad.addColorStop(0.58, '#9cb8d8');
-    bgGrad.addColorStop(0.85, '#86a8d0');
-    bgGrad.addColorStop(1.0, '#7296c4');
+    // 1. Seamlessly periodic vertical Seussian alpine snow & glacier-rock wash (stop 0 === stop 1)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0.0, '#adc4dc');
+    bgGrad.addColorStop(0.22, '#c4d4e2');
+    bgGrad.addColorStop(0.5, '#98b6d6');
+    bgGrad.addColorStop(0.78, '#7c9ec8');
+    bgGrad.addColorStop(1.0, '#adc4dc');
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1024, 1024);
+    ctx.fillRect(0, 0, W, H);
 
-    // 2. Translucent papier-mâché strip glazes (warm lavender-ivory & cool glacier-blue patches)
-    for (let i = 0; i < 160; i++) {
-      const cx = (i * 173 + 47) % 1024;
-      const cy = (i * 251 + 83) % 1024;
+    // 2. Toroidally wrapped translucent papier-mâché strip glazes
+    for (let i = 0; i < 140; i++) {
+      const cx = (i * 173 + 47) % W;
+      const cy = (i * 251 + 83) % H;
       const w = 95 + ((i * 29) % 120);
       const h = 34 + ((i * 19) % 48);
       const angle = (((i * 37) % 100) / 100 - 0.5) * 1.1;
 
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angle);
-      if (i % 3 === 0) {
-        ctx.fillStyle = 'rgba(214, 224, 238, 0.22)';
-      } else if (i % 3 === 1) {
-        ctx.fillStyle = 'rgba(116, 156, 206, 0.20)';
-      } else {
-        ctx.fillStyle = 'rgba(188, 198, 228, 0.20)';
-      }
-      ctx.fillRect(-w * 0.5, -h * 0.5, w, h);
+      for (const ox of [-W, 0, W]) {
+        for (const oy of [-H, 0, H]) {
+          const px = cx + ox;
+          const py = cy + oy;
+          if (px + w < 0 || px - w > W || py + h < 0 || py - h > H) continue;
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(angle);
+          if (i % 3 === 0) {
+            ctx.fillStyle = 'rgba(214, 224, 238, 0.20)';
+          } else if (i % 3 === 1) {
+            ctx.fillStyle = 'rgba(116, 156, 206, 0.18)';
+          } else {
+            ctx.fillStyle = 'rgba(188, 198, 228, 0.18)';
+          }
+          ctx.fillRect(-w * 0.5, -h * 0.5, w, h);
 
-      // Subtle torn paper edge highlight
-      ctx.strokeStyle = 'rgba(226, 234, 244, 0.24)';
-      ctx.lineWidth = 1.6;
-      ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
-      ctx.restore();
+          ctx.strokeStyle = 'rgba(226, 234, 244, 0.22)';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
+          ctx.restore();
+        }
+      }
     }
 
-    // 3. Horizontal Seussian rock strata bands, cobalt shadow fissures & warm snow highlights
+    // 3. Horizontally periodic Seussian rock strata bands (integer harmonics of W)
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let row = 0; row < 16; row++) {
-      const baseY = 44 + row * 62;
+      const baseY = 32 + row * 64;
+      const waveY = (x: number): number => {
+        const u = (x / W) * Math.PI * 2;
+        return (
+          baseY +
+          Math.sin(u * 2 + row * 0.9) * 14 +
+          Math.cos(u * 5 - row * 1.2) * 7
+        );
+      };
 
       // Deep glacier-cobalt shadow wash underneath each stratum shelf
-      ctx.strokeStyle = 'rgba(54, 92, 152, 0.44)';
+      ctx.strokeStyle = 'rgba(54, 92, 152, 0.42)';
       ctx.lineWidth = 18;
       ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 24) {
-        const wy =
-          baseY +
-          8 +
-          Math.sin(x * 0.014 + row * 0.9) * 14 +
-          Math.cos(x * 0.031 - row * 1.2) * 7;
+      for (let x = 0; x <= W; x += 16) {
+        const wy = waveY(x) + 8;
         if (x === 0) ctx.moveTo(x, wy);
         else ctx.lineTo(x, wy);
       }
       ctx.stroke();
 
       // Warm ivory-lavender dry-brushed snow highlight along the top ridge of each shelf
-      ctx.strokeStyle = 'rgba(218, 228, 240, 0.58)';
+      ctx.strokeStyle = 'rgba(218, 228, 240, 0.56)';
       ctx.lineWidth = 10;
       ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 24) {
-        const wy =
-          baseY -
-          5 +
-          Math.sin(x * 0.014 + row * 0.9) * 14 +
-          Math.cos(x * 0.031 - row * 1.2) * 7;
+      for (let x = 0; x <= W; x += 16) {
+        const wy = waveY(x) - 5;
         if (x === 0) ctx.moveTo(x, wy);
         else ctx.lineTo(x, wy);
       }
@@ -237,11 +117,8 @@ export function createSnowMountainCliffTexture(): THREE.CanvasTexture {
       ctx.strokeStyle = 'rgba(22, 34, 56, 0.72)';
       ctx.lineWidth = row % 2 === 0 ? 3.8 : 2.5;
       ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 24) {
-        const wy =
-          baseY +
-          Math.sin(x * 0.014 + row * 0.9) * 14 +
-          Math.cos(x * 0.031 - row * 1.2) * 7;
+      for (let x = 0; x <= W; x += 16) {
+        const wy = waveY(x);
         if (x === 0) ctx.moveTo(x, wy);
         else ctx.lineTo(x, wy);
       }
@@ -251,11 +128,8 @@ export function createSnowMountainCliffTexture(): THREE.CanvasTexture {
       if (row % 2 === 0) {
         ctx.lineWidth = 2.1;
         ctx.strokeStyle = 'rgba(24, 38, 62, 0.56)';
-        for (let x = 20; x < 1004; x += 24 + ((row + x) % 16)) {
-          const wy =
-            baseY +
-            Math.sin(x * 0.014 + row * 0.9) * 14 +
-            Math.cos(x * 0.031 - row * 1.2) * 7;
+        for (let x = 16; x < W - 16; x += 32) {
+          const wy = waveY(x);
           const tickLen = 11 + ((x * 5 + row * 7) % 16);
           const tilt = ((x % 5) - 2) * 0.15;
           ctx.beginPath();
@@ -266,12 +140,12 @@ export function createSnowMountainCliffTexture(): THREE.CanvasTexture {
       }
     }
 
-    // 4. Signature Tim Parati / Dr. Seuss Z-zigzag crag cross-hatching (matching model_1A & model_1B)
+    // 4. Signature Tim Parati / Dr. Seuss Z-zigzag crag cross-hatching (interior of tile)
     ctx.strokeStyle = 'rgba(20, 32, 52, 0.68)';
     ctx.lineWidth = 3.2;
     for (let z = 0; z < 36; z++) {
-      const sx = ((z * 149) % 920) + 48;
-      const sy = ((z * 211) % 920) + 48;
+      const sx = ((z * 149) % 880) + 56;
+      const sy = ((z * 211) % 880) + 56;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
       ctx.lineTo(sx + 38, sy - 9);
@@ -284,66 +158,68 @@ export function createSnowMountainCliffTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(0.55, 0.55);
+  tex.repeat.set(1, 1);
   tex.colorSpace = THREE.SRGBColorSpace;
   cachedSnowMountainCliffTex = tex;
   return tex;
 }
 
 /**
- * Generates a 1024×1024 scenic artist texture (`createGlacierWavePortalTexture`)
- * for the sweeping S-curved glacial ice-wave wing portals and snowdrifts in
- * `model_1B_whoville.jpg`, featuring sweeping cerulean-to-lavender brushstrokes,
- * papier-mâché stipple, glacier-blue underside ribbing, and Seussian ink hatching.
+ * Generates a 1024×1024 seamlessly periodic scenic artist texture
+ * (`createGlacierWavePortalTexture`) for the sweeping S-curved glacial ice-wave
+ * wing portals and snowdrifts in `model_1B_whoville.jpg`.
  */
 export function createGlacierWavePortalTexture(): THREE.CanvasTexture {
   if (cachedGlacierWavePortalTex) {
     return cachedGlacierWavePortalTex;
   }
 
+  const W = 1024;
+  const H = 1024;
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1024;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // Diagonal glacial blue to snowy lavender-frost gradient
-    const bgGrad = ctx.createLinearGradient(0, 1024, 1024, 0);
-    bgGrad.addColorStop(0.0, '#6290c4');
-    bgGrad.addColorStop(0.35, '#86b0da');
-    bgGrad.addColorStop(0.7, '#abc8e2');
-    bgGrad.addColorStop(1.0, '#c6d6e6');
+    // Seamlessly periodic glacial blue to snowy lavender-frost wash
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0.0, '#96badc');
+    bgGrad.addColorStop(0.25, '#c2d4e4');
+    bgGrad.addColorStop(0.55, '#86b0da');
+    bgGrad.addColorStop(0.8, '#6692c4');
+    bgGrad.addColorStop(1.0, '#96badc');
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1024, 1024);
+    ctx.fillRect(0, 0, W, H);
 
-    // Sweeping curved glacial flow ribbons (matching the S-curve brushstrokes in model_1B)
+    // Horizontally periodic sweeping curved glacial flow ribbons (integer harmonics of W)
     ctx.lineCap = 'round';
-    for (let i = 0; i < 28; i++) {
-      const startY = i * 40 - 40;
+    for (let i = 0; i < 24; i++) {
+      const baseY = 20 + i * 42;
       ctx.strokeStyle =
         i % 2 === 0
           ? 'rgba(216, 228, 242, 0.34)'
           : 'rgba(64, 108, 168, 0.28)';
-      ctx.lineWidth = 18 + (i % 4) * 6;
+      ctx.lineWidth = 18 + (i % 4) * 5;
       ctx.beginPath();
-      ctx.moveTo(0, startY + 120);
-      ctx.bezierCurveTo(
-        340,
-        startY - 40,
-        680,
-        startY + 160,
-        1024,
-        startY - 20
-      );
+      for (let x = 0; x <= W; x += 16) {
+        const u = (x / W) * Math.PI * 2;
+        const wy =
+          baseY +
+          Math.sin(u + i * 0.45) * 28 +
+          Math.cos(u * 2 - i * 0.3) * 12;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
+      }
       ctx.stroke();
     }
 
-    // Fine Seussian charcoal ink contour & rib cross-hatching
+    // Fine Seussian charcoal ink contour & rib cross-hatching (baked into texture instead of 3D tubes)
     ctx.strokeStyle = 'rgba(20, 34, 58, 0.65)';
     ctx.lineWidth = 2.6;
-    for (let i = 0; i < 48; i++) {
-      const hx = ((i * 163) % 940) + 40;
-      const hy = ((i * 199) % 940) + 40;
+    for (let i = 0; i < 56; i++) {
+      const hx = ((i * 163) % 900) + 48;
+      const hy = ((i * 199) % 900) + 48;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
       ctx.quadraticCurveTo(hx + 22, hy - 12, hx + 46, hy - 4);
@@ -356,16 +232,16 @@ export function createGlacierWavePortalTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(0.32, 0.32);
+  tex.repeat.set(1, 1);
   tex.colorSpace = THREE.SRGBColorSpace;
   cachedGlacierWavePortalTex = tex;
   return tex;
 }
 
 /**
- * Builds a true 3D vertex-displaced papier-mâché mountain crag or bulbous snow
- * boulder (`SphereGeometry` deformed with deterministic multi-octave rock strata
- * terracing, Seussian S-curve lean, and papier-mâché facet relief).
+ * Builds a 3D papier-mâché mountain crag or bulbous snow boulder (`SphereGeometry`
+ * with smooth Seussian S-curve lean; surface micro-relief is driven by the
+ * tangent-space normal map rather than high-frequency vertex displacement).
  */
 function createSculptedPapierMacheCrag(
   radiusX: number,
@@ -374,9 +250,9 @@ function createSculptedPapierMacheCrag(
   material: THREE.Material,
   seed = 1,
   leanX = 0,
-  cragAmplitude = 0.14
+  cragAmplitude = 0.08
 ): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(1, 24, 18);
+  const geo = new THREE.SphereGeometry(1, 20, 16);
   const pos = geo.attributes.position;
 
   for (let i = 0; i < pos.count; i++) {
@@ -387,24 +263,19 @@ function createSculptedPapierMacheCrag(
     // Flatten bottom slightly so boulders/crags sit solidly on ledges or stage floor
     const yNorm = vy < -0.65 ? -0.65 + (vy + 0.65) * 0.35 : vy;
 
-    // Multi-octave deterministic papier-mâché crag & horizontal rock-strata displacement
-    const strataWave = Math.sin(yNorm * 9.5 + seed * 1.7) * 0.065;
+    // Smooth low-frequency organic Seussian lobe shape (fine relief is in normalMap)
     const lobeWave =
-      Math.sin(vx * 4.2 + vz * 3.8 + seed * 2.3) *
-      Math.cos(yNorm * 5.1 - seed * 1.1) *
-      cragAmplitude;
-    const facetRipple =
-      Math.cos(vx * 8.5 - yNorm * 7.2 + seed * 3.9) *
-      Math.sin(vz * 7.4 + seed * 0.7) *
-      (cragAmplitude * 0.38);
+      Math.sin(vx * 2.4 + vz * 2.1 + seed * 1.7) *
+      Math.cos(yNorm * 2.8 - seed * 0.9) *
+      (cragAmplitude * 0.55);
 
-    const radialScale = 1.0 + strataWave + lobeWave + facetRipple;
+    const radialScale = 1.0 + lobeWave;
     const bendOffset = Math.pow(Math.max(0, (yNorm + 1) * 0.5), 1.45) * leanX;
 
     pos.setXYZ(
       i,
       vx * radiusX * radialScale + bendOffset,
-      yNorm * radiusY * (1.0 + lobeWave * 0.35),
+      yNorm * radiusY,
       vz * radiusZ * radialScale
     );
   }
@@ -417,9 +288,8 @@ function createSculptedPapierMacheCrag(
 }
 
 /**
- * Builds a 3D Seussian charcoal-ink contour stroke (`TubeGeometry`) along a
- * sequence of 3D points so painted ink lines have physical 3D relief on the
- * papier-mâché mountain & snow surfaces without floating boxy bars.
+ * Builds a 3D Seussian charcoal-ink silhouette border stroke (`TubeGeometry`)
+ * along the outer edge of a scenic flat or snow cornice lip.
  */
 function createSeussianInkStrokeTube(
   points: ReadonlyArray<THREE.Vector3>,
@@ -443,12 +313,8 @@ function createSeussianInkStrokeTube(
  * Helper to build a voluptuous, 3D papier-mâché overhanging Seussian snow-drift
  * cornice & pillowy snow mantle (`createSculptedSnowDriftCap`) matching the thick,
  * domed snow caps on the DSL/DSR mountain portals in `model_1A_preshow.jpg` and
- * `model_1B_whoville.jpg`:
- * - Sculpted multi-lobed snow-drift body with 3D pillowy snow mounds on top
- * - 3D `TubeGeometry` overhanging snow cornice roll along the scalloped bottom lip
- * - Bold Seussian charcoal-navy contour rim & 3D ink sketch squiggles on the snow face
- * - Deeply recessed glacier-blue overhang shadow cavity with a continuous wavy
- *   `createSeussianIcicleValance` curtain and `createSculptedIcicleDrip` icicles.
+ * `model_1B_whoville.jpg`. Uses normalized `[0..1]` UVs + tangent-space normal
+ * maps for smooth, artifact-free surface relief.
  */
 function createSculptedSnowDriftCap(
   width: number,
@@ -519,35 +385,14 @@ function createSculptedSnowDriftCap(
     depth,
     bevelEnabled: true,
     bevelSegments: 4,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.075,
     bevelThickness: 0.075,
   };
 
   const capGeo = new THREE.ExtrudeGeometry(capShape, extrudeSettings);
   capGeo.center();
-
-  // Displace vertices on the snow cap so it has organic 3D papier-mâché pillowy fullness
-  const capPos = capGeo.attributes.position;
-  for (let i = 0; i < capPos.count; i++) {
-    const vx = capPos.getX(i);
-    const vy = capPos.getY(i);
-    const vz = capPos.getZ(i);
-    const frontFactor = vz > 0 ? 1.0 : 0.45;
-    const pillowSwell =
-      Math.cos((vx / Math.max(0.5, halfW)) * Math.PI * 0.45) *
-      Math.cos((vy / Math.max(0.3, height * 0.5)) * Math.PI * 0.38) *
-      0.09 *
-      frontFactor;
-    const macheRipple =
-      Math.sin(vx * 4.8 + vy * 5.2 + seed) * 0.018 * frontFactor;
-    capPos.setXYZ(
-      i,
-      vx + macheRipple * 0.5,
-      vy + macheRipple * 0.4,
-      vz + (vz >= 0 ? pillowSwell + macheRipple : -pillowSwell * 0.35)
-    );
-  }
+  normalizeExtrudeUVs(capGeo, 'fit');
   capGeo.computeVertexNormals();
 
   const capMesh = new THREE.Mesh(capGeo, snowCapMat);
@@ -569,7 +414,7 @@ function createSculptedSnowDriftCap(
       snowCapMat,
       seed * 11 + i,
       0,
-      0.08
+      0.06
     );
     pillow.position.set(px, archY, 0.03);
     group.add(pillow);
@@ -594,33 +439,7 @@ function createSculptedSnowDriftCap(
     group.add(inkRimTube);
   }
 
-  // 4. Expressive Seussian charcoal ink sketch squiggles across the snowdrift face (model_1A & 1B)
-  if (height >= 0.75) {
-    const zFront = depth * 0.56;
-    const squiggle1 = createSeussianInkStrokeTube(
-      [
-        new THREE.Vector3(-halfW * 0.42, height * 0.18, zFront),
-        new THREE.Vector3(-halfW * 0.12, height * 0.21, zFront + 0.015),
-        new THREE.Vector3(-halfW * 0.28, height * 0.09, zFront + 0.015),
-        new THREE.Vector3(halfW * 0.16, height * 0.11, zFront),
-      ],
-      0.016,
-      contourInkMat
-    );
-    group.add(squiggle1);
-
-    const squiggle2 = createSeussianInkStrokeTube(
-      [
-        new THREE.Vector3(halfW * 0.14, height * 0.28, zFront),
-        new THREE.Vector3(halfW * 0.56, height * 0.24, zFront + 0.01),
-      ],
-      0.015,
-      contourInkMat
-    );
-    group.add(squiggle2);
-  }
-
-  // 5. Recessed dark glacier-blue shadow cavity tucked underneath the snow overhang
+  // 4. Recessed dark glacier-blue shadow cavity tucked underneath the snow overhang
   const underLipGeo = new RoundedBoxGeometry(
     width * 0.94,
     Math.min(0.34, height * 0.36),
@@ -634,7 +453,7 @@ function createSculptedSnowDriftCap(
   underLip.receiveShadow = true;
   group.add(underLip);
 
-  // 6. Continuous wavy Seussian icicle valance curtain hanging from the shadow cavity
+  // 5. Continuous wavy Seussian icicle valance curtain hanging from the shadow cavity
   const valance = createSeussianIcicleValance(
     width * 0.92,
     Math.min(0.56, height * 0.54),
@@ -660,7 +479,7 @@ function createSculptedSnowDriftCap(
   backValance.position.set(0, -height * 0.4, depth * 0.08);
   group.add(backValance);
 
-  // 7. Organic sculpted icicle drips hanging in staggered Z rows beneath the scalloped lip
+  // 6. Organic sculpted icicle drips hanging in staggered Z rows beneath the scalloped lip
   const dripCount = scallopCount + 3;
   for (let i = 0; i < dripCount; i++) {
     const t = (i + 0.5) / dripCount;
@@ -758,8 +577,6 @@ function createSeussianIceWaveWing(
 ): THREE.Group {
   const wingGroup = new THREE.Group();
 
-  // Build in positive-X local coordinates (outer edge around x=0, curving stage-inward toward +width)
-  // and mirror via scale.x = -side so Stage Right (-1) curves toward +X and Stage Left (+1) curves toward -X.
   const waveShape = new THREE.Shape();
   waveShape.moveTo(-0.08, 0);
   waveShape.bezierCurveTo(
@@ -803,31 +620,11 @@ function createSeussianIceWaveWing(
     depth: 0.28,
     bevelEnabled: true,
     bevelSegments: 4,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.055,
     bevelThickness: 0.055,
   });
-
-  // Add 3D papier-mâché pillowy belly relief across the extruded wave face
-  const wPos = waveGeo.attributes.position;
-  for (let i = 0; i < wPos.count; i++) {
-    const vx = wPos.getX(i);
-    const vy = wPos.getY(i);
-    const vz = wPos.getZ(i);
-    if (vz > 0.05) {
-      const belly =
-        Math.sin(
-          Math.min(1, Math.max(0, vx / Math.max(0.4, width))) * Math.PI
-        ) *
-        Math.sin(Math.min(1, Math.max(0, vy / height)) * Math.PI) *
-        0.11;
-      const ripple =
-        Math.sin(vx * 5.2 + vy * 3.8 + seed) *
-        Math.cos(vy * 4.5 - seed) *
-        0.022;
-      wPos.setZ(i, vz + belly + ripple);
-    }
-  }
+  normalizeExtrudeUVs(waveGeo, 'fit');
   waveGeo.computeVertexNormals();
 
   const waveMesh = new THREE.Mesh(waveGeo, iceFaceMat);
@@ -842,6 +639,7 @@ function createSeussianIceWaveWing(
   wingGroup.add(backOutlineMesh);
 
   // Darker glacier-cobalt ribbed Seussian underside along the inner overhang curve
+  // (cross-hatch ribbing is now provided by the normal map + painted texture!)
   const ribBandShape = new THREE.Shape();
   ribBandShape.moveTo(width * 0.36, height * 0.22);
   ribBandShape.bezierCurveTo(
@@ -871,42 +669,14 @@ function createSeussianIceWaveWing(
     bevelSize: 0.032,
     bevelThickness: 0.032,
   });
+  normalizeExtrudeUVs(ribBandGeo, 'fit');
+  ribBandGeo.computeVertexNormals();
+
   const ribBandMesh = new THREE.Mesh(ribBandGeo, iceRibUndersideMat);
   ribBandMesh.position.set(0, 0, 0.09);
   ribBandMesh.castShadow = true;
   ribBandMesh.receiveShadow = true;
   wingGroup.add(ribBandMesh);
-
-  // 3D curved Seussian cross-hatch ribs along the underside band (matching model_1B)
-  const ribCount = 14;
-  for (let i = 0; i < ribCount; i++) {
-    const t = i / (ribCount - 1);
-    const rx = THREE.MathUtils.lerp(width * 0.44, width * 1.02, Math.pow(t, 1.15));
-    const ry =
-      THREE.MathUtils.lerp(height * 0.14, height * 0.75, t) +
-      Math.sin(t * Math.PI) * 0.12;
-    const angle = -0.45 - t * 0.52;
-    const len = 0.2 + Math.sin(t * Math.PI) * 0.08;
-
-    const ribCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(
-        rx - Math.cos(angle) * len * 0.5,
-        ry - Math.sin(angle) * len * 0.5,
-        0.34
-      ),
-      new THREE.Vector3(rx, ry + 0.018, 0.365),
-      new THREE.Vector3(
-        rx + Math.cos(angle) * len * 0.5,
-        ry + Math.sin(angle) * len * 0.5,
-        0.33
-      ),
-    ]);
-    const ribTube = new THREE.Mesh(
-      new THREE.TubeGeometry(ribCurve, 8, 0.018, 6, false),
-      contourInkMat
-    );
-    wingGroup.add(ribTube);
-  }
 
   // Bold 3D charcoal ink contour border along the inner S-curve seam
   const innerSeamCurve = new THREE.CatmullRomCurve3([
@@ -951,7 +721,6 @@ function createSeussianIceWaveWing(
     wingGroup.add(drip);
   }
 
-  // Flip X so side = -1 (Stage Right) leans inward toward +X, and side = +1 (Stage Left) leans inward toward -X
   wingGroup.scale.x = -side;
 
   return wingGroup;
@@ -982,20 +751,15 @@ function createSideSnowMountainCliffComplex(
 
   // ==========================================================================
   // PLANE 1 (z = +0.26m): OUTER MULTI-FACETED PAPIER-MÂCHÉ SNOW-CLIFF TOWER
-  // Sits 100% downstage of the Line #1 Pre-Show Scrim (z = -0.35m).
-  // Features the two angled proscenium-splay rock faces seen in model_1A & 1B,
-  // crowned by a massive 1.45m-tall pillowy overhanging snowbank mantle at
-  // y = 2.05m–3.65m with a scalloped bottom lip and deep blue icicle cavity!
   // ==========================================================================
   const outerTowerGroup = new THREE.Group();
   outerTowerGroup.position.set(side * 5.78, 0, 0.26);
   outerTowerGroup.rotation.y = side * -0.18;
 
-  // Build in positive-local X and mirror with scale.x = -side so +localX points stage-inward
   const towerMirrored = new THREE.Group();
   towerMirrored.scale.x = -side;
 
-  // 1A. Sculpted organic lower & full-height rock cliff silhouette (tapered Seussian monolith, NOT a box)
+  // 1A. Sculpted organic lower & full-height rock cliff silhouette
   const cliffFaceShape = new THREE.Shape();
   cliffFaceShape.moveTo(-1.35, 0);
   cliffFaceShape.bezierCurveTo(-1.42, 1.25, -1.32, 2.55, -1.18, 3.55);
@@ -1007,29 +771,12 @@ function createSideSnowMountainCliffComplex(
     depth: 0.56,
     bevelEnabled: true,
     bevelSegments: 4,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.08,
     bevelThickness: 0.08,
   });
   cliffFaceGeo.translate(0, 0, -0.28);
-
-  // Displace vertices to create the two-plane vertical proscenium fold crease (at vx ≈ -0.15)
-  // plus organic 3D papier-mâché rock strata and crags!
-  const cPos = cliffFaceGeo.attributes.position;
-  for (let i = 0; i < cPos.count; i++) {
-    const vx = cPos.getX(i);
-    const vy = cPos.getY(i);
-    const vz = cPos.getZ(i);
-    // Two-plane faceted proscenium fold peaking at vx = -0.12 (matches model_1A/1B vertical corner fold!)
-    const foldRidge = Math.max(0, 0.22 - Math.abs(vx + 0.12) * 0.18);
-    const strata =
-      Math.sin(vy * 5.4 + (side === -1 ? 0.5 : 1.8)) * 0.045 +
-      Math.cos(vx * 3.8 + vy * 3.2) * 0.038;
-    if (vz >= 0) {
-      cPos.setZ(i, vz + foldRidge + strata);
-    }
-    cPos.setX(i, vx + Math.sin(vy * 2.6) * 0.035);
-  }
+  normalizeExtrudeUVs(cliffFaceGeo, 'fit');
   cliffFaceGeo.computeVertexNormals();
 
   const cliffBaseMesh = new THREE.Mesh(cliffFaceGeo, snowCliffMat);
@@ -1050,18 +797,6 @@ function createSideSnowMountainCliffComplex(
   );
   towerMirrored.add(outerTowerEdgeStroke);
 
-  // Vertical corner crease shading line where the two faceted cliff planes meet (vx = -0.12)
-  const cornerCreaseStroke = createSeussianInkStrokeTube(
-    [
-      new THREE.Vector3(-0.12, 0.08, 0.51),
-      new THREE.Vector3(-0.14, 1.05, 0.52),
-      new THREE.Vector3(-0.11, 2.02, 0.51),
-    ],
-    0.018,
-    glacierCreviceMat
-  );
-  towerMirrored.add(cornerCreaseStroke);
-
   // Sculpted 3D papier-mâché rock strata ledges & crevices across the lower cliff face (y = 0.4m to 1.8m)
   for (const [lx, ly, lz, rx, ry, rz, lean] of [
     [-0.65, 0.72, 0.26, 0.58, 0.34, 0.22, 0.08],
@@ -1076,29 +811,13 @@ function createSideSnowMountainCliffComplex(
       snowCliffMat,
       side === -1 ? 10 : 20,
       lean,
-      0.11
+      0.08
     );
     rockStratumLobe.position.set(lx, ly, lz);
     towerMirrored.add(rockStratumLobe);
   }
 
-  // Expressive Seussian charcoal ink cross-hatch strokes on the lower cliff face
-  const lowerCliffHatch1 = createSeussianInkStrokeTube(
-    [
-      new THREE.Vector3(0.18, 0.88, 0.44),
-      new THREE.Vector3(0.76, 0.82, 0.42),
-      new THREE.Vector3(0.38, 0.68, 0.43),
-      new THREE.Vector3(0.88, 0.62, 0.41),
-    ],
-    0.015,
-    contourInkMat
-  );
-  towerMirrored.add(lowerCliffHatch1);
-
   // 1B. Massive, Voluptuous Overhanging Papier-Mâché Snow-Drift Mantle (y = 2.05m to 3.68m)
-  // Notice in model_1A_preshow.jpg & model_1B_whoville.jpg: there is ONE giant, thick,
-  // domed snowbank cap crowning the lower cliff, with its scalloped lip at y ≈ 2.15m
-  // and long blue-shaded icicles dripping down across y = 1.50m–2.15m!
   const giantSnowMantle = createSculptedSnowDriftCap(
     2.68,
     1.48,
@@ -1116,8 +835,6 @@ function createSideSnowMountainCliffComplex(
   towerMirrored.add(giantSnowMantle);
 
   // 1C. Upper Sculpted Alpine Papier-Mâché Crag Spires rising from behind the snow mantle
-  // up to the Upper Proscenium Snow-Arch Header (y = 3.55m to 5.95m) so the side mountains
-  // form a continuous, soaring 3D mountain range framing the stage!
   for (const [cx, cy, cz, rx, ry, rz, lean, seedOffset] of [
     [-0.78, 4.25, -0.06, 0.78, 0.98, 0.36, 0.18, 31],
     [0.12, 4.02, -0.08, 0.68, 0.78, 0.34, 0.22, 32],
@@ -1130,7 +847,7 @@ function createSideSnowMountainCliffComplex(
       midSnowFlatMat,
       (side === -1 ? 100 : 200) + seedOffset,
       lean,
-      0.15
+      0.09
     );
     upperCrag.position.set(cx, cy, cz);
     towerMirrored.add(upperCrag);
@@ -1143,7 +860,7 @@ function createSideSnowMountainCliffComplex(
       snowCapMat,
       (side === -1 ? 300 : 400) + seedOffset,
       lean * 0.5,
-      0.09
+      0.06
     );
     cragSnowPillow.position.set(cx + 0.04, cy + ry * 0.68, cz + 0.04);
     towerMirrored.add(cragSnowPillow);
@@ -1174,7 +891,7 @@ function createSideSnowMountainCliffComplex(
       snowCapMat,
       (side === -1 ? 50 : 60) + seedOff,
       0.05,
-      0.12
+      0.08
     );
     baseBoulder.position.set(bx, by, bz);
     towerMirrored.add(baseBoulder);
@@ -1185,11 +902,6 @@ function createSideSnowMountainCliffComplex(
 
   // ==========================================================================
   // PLANE 2 (z = -0.10m): INNER DOWNSTAGE SLOPING SEUSSIAN SNOW-CLIFF CRAG
-  // Sits cleanly downstage of the Line #1 Pre-Show Scrim (z = -0.35m)!
-  // Matches the iconic sloping snow-cliff flat right beside the outer tower in
-  // `model_1A_preshow.jpg` and `model_1B_whoville.jpg`, with its curved black
-  // charcoal outline and bold Seussian Z-zigzag cross-hatch stroke!
-  // Keeps inner stage opening |x| >= 4.46m completely clear for sightlines!
   // ==========================================================================
   const dsInnerCragGroup = new THREE.Group();
   dsInnerCragGroup.position.set(side * 5.05, 0, -0.10);
@@ -1199,10 +911,7 @@ function createSideSnowMountainCliffComplex(
   const innerCragShape = new THREE.Shape();
   innerCragShape.moveTo(-0.95, 0);
   innerCragShape.lineTo(-0.95, 3.28);
-  // Domed sloping snow crest descending from outer shoulder (x=-0.95, y=3.28) toward inner peak (x=+0.18, y=2.82)
   innerCragShape.bezierCurveTo(-0.52, 3.36, -0.08, 3.16, 0.22, 2.78);
-  // Steeply curving Seussian inner cliff edge descending to x = +0.58 at the stage floor
-  // (In world coords: 5.05 - 0.58 = 4.47m -> leaves x ∈ [-4.45m, +4.45m] 100% unobstructed!)
   innerCragShape.bezierCurveTo(0.42, 2.15, 0.48, 1.08, 0.58, 0);
   innerCragShape.closePath();
 
@@ -1210,25 +919,12 @@ function createSideSnowMountainCliffComplex(
     depth: 0.18,
     bevelEnabled: true,
     bevelSegments: 3,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.04,
     bevelThickness: 0.04,
   });
   innerCragGeo.translate(0, 0, -0.09);
-
-  // Subtle 3D papier-mâché surface undulation on the sloping crag face
-  const icPos = innerCragGeo.attributes.position;
-  for (let i = 0; i < icPos.count; i++) {
-    const vx = icPos.getX(i);
-    const vy = icPos.getY(i);
-    const vz = icPos.getZ(i);
-    if (vz > 0) {
-      const swell =
-        Math.sin((vx + 0.95) * 2.1) * Math.sin((vy / 3.2) * Math.PI) * 0.065 +
-        Math.cos(vx * 5.5 + vy * 4.2) * 0.016;
-      icPos.setZ(i, vz + swell);
-    }
-  }
+  normalizeExtrudeUVs(innerCragGeo, 'fit');
   innerCragGeo.computeVertexNormals();
 
   const innerCragMesh = new THREE.Mesh(innerCragGeo, snowCapMat);
@@ -1250,7 +946,7 @@ function createSideSnowMountainCliffComplex(
   slopingCrestTube.scale.set(1, 0.85, 0.68);
   dsInnerCragGroup.add(slopingCrestTube);
 
-  // Bold 3D Seussian charcoal-black ink border tracing the sloping crest & inner cliff edge (model_1A & 1B)
+  // Bold 3D Seussian charcoal-black ink border tracing the sloping crest & inner cliff edge
   const innerCragBorderTube = createSeussianInkStrokeTube(
     [
       new THREE.Vector3(-0.85, 3.3, 0.12),
@@ -1265,55 +961,16 @@ function createSideSnowMountainCliffComplex(
   );
   dsInnerCragGroup.add(innerCragBorderTube);
 
-  // Iconic Seussian Z-zigzag charcoal ink stroke across the mid-face of Plane 2 (prominent in model_1A & 1B!)
-  const signatureZStroke = createSeussianInkStrokeTube(
-    [
-      new THREE.Vector3(-0.42, 1.48, 0.16),
-      new THREE.Vector3(0.14, 1.32, 0.17),
-      new THREE.Vector3(-0.32, 1.14, 0.17),
-      new THREE.Vector3(0.34, 1.04, 0.16),
-    ],
-    0.019,
-    contourInkMat
-  );
-  dsInnerCragGroup.add(signatureZStroke);
-
-  // Upper diagonal Seussian contour stroke on Plane 2
-  const upperContourStroke = createSeussianInkStrokeTube(
-    [
-      new THREE.Vector3(-0.55, 2.38, 0.15),
-      new THREE.Vector3(0.08, 2.12, 0.16),
-    ],
-    0.016,
-    contourInkMat
-  );
-  dsInnerCragGroup.add(upperContourStroke);
-
-  // Lower diagonal Seussian contour stroke near base of Plane 2
-  const lowerContourStroke = createSeussianInkStrokeTube(
-    [
-      new THREE.Vector3(-0.38, 0.58, 0.15),
-      new THREE.Vector3(0.38, 0.24, 0.15),
-    ],
-    0.017,
-    contourInkMat
-  );
-  dsInnerCragGroup.add(lowerContourStroke);
-
   cliffComplex.add(dsInnerCragGroup);
 
   // ==========================================================================
   // PLANE 3 (z = -0.82m): UPSTAGE-OF-SCRIM SCULPTED PAPIER-MÂCHÉ ALPINE BUTTRESS
-  // Sits cleanly upstage of the Line #1 Pre-Show Scrim (z = -0.35m).
-  // Provides 3D multi-tiered papier-mâché crag relief, overhanging snow shelves,
-  // and crooked pine trees between the downstage cliff and the glacial ice waves.
   // ==========================================================================
   const midAlpineButtress = new THREE.Group();
   midAlpineButtress.position.set(side * 5.38, 0, -0.82);
   midAlpineButtress.rotation.y = side * -0.09;
   midAlpineButtress.scale.x = -side;
 
-  // Sculpted 3D papier-mâché crag monolith rising to y = 4.25m
   const buttressShape = new THREE.Shape();
   buttressShape.moveTo(-1.1, 0);
   buttressShape.lineTo(-1.1, 4.15);
@@ -1326,24 +983,12 @@ function createSideSnowMountainCliffComplex(
     depth: 0.34,
     bevelEnabled: true,
     bevelSegments: 4,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.055,
     bevelThickness: 0.055,
   });
   buttressGeo.translate(0, 0, -0.17);
-
-  const bPos = buttressGeo.attributes.position;
-  for (let i = 0; i < bPos.count; i++) {
-    const vx = bPos.getX(i);
-    const vy = bPos.getY(i);
-    const vz = bPos.getZ(i);
-    if (vz >= 0) {
-      const cragRelief =
-        Math.sin(vx * 3.8 + vy * 2.9) * 0.075 +
-        Math.cos(vy * 6.2 - vx * 3.1) * 0.035;
-      bPos.setZ(i, vz + cragRelief);
-    }
-  }
+  normalizeExtrudeUVs(buttressGeo, 'fit');
   buttressGeo.computeVertexNormals();
 
   const buttressMesh = new THREE.Mesh(buttressGeo, midSnowFlatMat);
@@ -1376,7 +1021,7 @@ function createSideSnowMountainCliffComplex(
     snowCliffMat,
     side === -1 ? 71 : 72,
     0.12,
-    0.14
+    0.09
   );
   midOutcropCrag.position.set(0.18, 2.05, 0.14);
   midAlpineButtress.add(midOutcropCrag);
@@ -1417,17 +1062,9 @@ function createSideSnowMountainCliffComplex(
 /**
  * 1. DOWNSTAGE LEFT & RIGHT SCULPTED SEUSSIAN SNOW-CLIFF PORTALS
  *    (`'grinch-snow-portals'`)
- *    Overhauled 5-plane 3D papier-mâché & plaster-cloth mountain portal system:
- *    - Plane 1 (`z = +0.26m`): Multi-faceted Downstage Snow-Cliff Towers with
- *      giant pillowy overhanging snow-drift mantles & deep blue icicle cavities
- *    - Plane 2 (`z = -0.10m`): Sloping Downstage Seussian Z-hatched Snow Crags
- *      (in front of Line #1 Pre-Show Scrim at `z = -0.35m`, matching `model_1A`)
- *    - Plane 3 (`z = -0.82m`): Upstage-of-Scrim Sculpted Papier-Mâché Alpine
- *      Buttresses with tiered snow cornices & crooked ledge pines
- *    - Plane 4 (`z = -1.55m`): Mid-Stage Sweeping Glacial Ice-Wave Wing Arches
- *    - Plane 5 (`z = -2.55m`): Tall S-Curved Seussian Glacial Ice-Wave Wing Portals
- *      (framing Whoville in `model_1B_whoville.jpg`)
- *    - Continuous Sculpted Upper Snow-Arch Header (`y = 5.85m–7.1m`, `z = +0.14m`)
+ *    Uses tangent-space normal maps (`createPapierMacheNormalTexture` and
+ *    `createSeussianRockNormalTexture`) and normalized UVs for high-definition
+ *    papier-mâché surface relief with zero tiling seams.
  */
 export function buildGrinchSnowPortals(
   _rockTex: THREE.CanvasTexture
@@ -1435,25 +1072,25 @@ export function buildGrinchSnowPortals(
   const portalsGroup = new THREE.Group();
   portalsGroup.name = 'Element_grinch-snow-portals';
 
-  const papierMacheBumpTex = createPapierMacheBumpTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
+  const seussianRockNormalTex = createSeussianRockNormalTexture();
   const mountainCliffTex = createSnowMountainCliffTexture();
   const glacierWaveTex = createGlacierWavePortalTexture();
 
-  // Toned-down papier-mâché snow & glacier materials (all RGB channels <= 0xd8, roughness >= 0.55)
+  // Toned-down papier-mâché snow & glacier materials with tangent-space normalMap
   const snowCliffMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.038,
-    color: 0xb6cae0 & 0xd8d8d8, // 0xb6cad8
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    color: 0xb4c8d8,
     roughness: 0.64,
     metalness: 0.03,
   });
-  snowCliffMat.color.setHex(0xb4c8d8);
 
   const snowCapMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.034,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.75, 0.75),
     color: 0xc6d2d8,
     roughness: 0.58,
     metalness: 0.03,
@@ -1461,8 +1098,8 @@ export function buildGrinchSnowPortals(
 
   const midSnowFlatMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.036,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.82, 0.82),
     color: 0xa6bed6,
     roughness: 0.62,
     metalness: 0.04,
@@ -1470,8 +1107,8 @@ export function buildGrinchSnowPortals(
 
   const iceWaveFaceMat = new THREE.MeshStandardMaterial({
     map: glacierWaveTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.032,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.78, 0.78),
     color: 0x98b8d8,
     roughness: 0.58,
     metalness: 0.05,
@@ -1479,16 +1116,16 @@ export function buildGrinchSnowPortals(
 
   const iceWaveRibMat = new THREE.MeshStandardMaterial({
     map: glacierWaveTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.035,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.92, 0.92),
     color: 0x5c88be,
     roughness: 0.6,
     metalness: 0.06,
   });
 
   const underShadowMat = new THREE.MeshStandardMaterial({
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.03,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.7, 0.7),
     color: 0x36547c,
     roughness: 0.68,
     metalness: 0.04,
@@ -1519,10 +1156,6 @@ export function buildGrinchSnowPortals(
     roughness: 0.75,
   });
 
-  // --------------------------------------------------------------------------
-  // A & B. Downstage Right ('grinch-portal-dsr-cliff') & Left ('grinch-portal-dsl-cliff')
-  //        Multi-Plane Papier-Mâché Snow-Cliff Mountain Complexes (Planes 1, 2 & 3)
-  // --------------------------------------------------------------------------
   for (const side of [-1, 1] as const) {
     const sideCliffComplex = createSideSnowMountainCliffComplex(
       side,
@@ -1539,16 +1172,11 @@ export function buildGrinchSnowPortals(
     portalsGroup.add(sideCliffComplex);
   }
 
-  // --------------------------------------------------------------------------
-  // C & D. Sweeping S-Curved Seussian Glacial Ice-Wave Wing Portals
-  //        ('grinch-portal-wing-waves') at Plane 4 (z = -1.55m) & Plane 5 (z = -2.55m)
-  // --------------------------------------------------------------------------
   const wingWavesGroup = new THREE.Group();
   wingWavesGroup.name = 'SnowPortal_WingWaves';
   wingWavesGroup.userData.subUnitId = 'grinch-portal-wing-waves';
 
   for (const side of [-1, 1] as const) {
-    // Plane 4 (z = -1.55m): Mid-Stage Sweeping Glacial Ice-Wave Wing Arch #1
     const midIceWave = createSeussianIceWaveWing(
       side,
       4.35,
@@ -1564,8 +1192,6 @@ export function buildGrinchSnowPortals(
     midIceWave.rotation.y = side * -0.07;
     wingWavesGroup.add(midIceWave);
 
-    // Plane 5 (z = -2.55m): Tall S-Curved Seussian Glacial Ice-Wave Wing Portal #2
-    // (The prominent overarching blue glacial wave portals framing Whoville in model_1B!)
     const tallIceWave = createSeussianIceWaveWing(
       side,
       5.05,
@@ -1584,11 +1210,6 @@ export function buildGrinchSnowPortals(
 
   portalsGroup.add(wingWavesGroup);
 
-  // --------------------------------------------------------------------------
-  // E. Continuous Sculpted Upper Snow-Arch Header / Border ('grinch-portal-upper-header')
-  //    Spans y ≈ 5.85m–7.10m at z = +0.14m (downstage of the Line #1 scrim batten at -0.35m)
-  //    and seamlessly bridges the left and right mountain portals across the top of the stage!
-  // --------------------------------------------------------------------------
   const teaserArchGroup = new THREE.Group();
   teaserArchGroup.name = 'SnowPortal_UpperTeaserArch';
   teaserArchGroup.userData.subUnitId = 'grinch-portal-upper-header';
@@ -1830,7 +1451,7 @@ function createSeussianHillLayer(
   hillMat: THREE.Material,
   snowCrestMat: THREE.Material,
   contourInkMat: THREE.Material,
-  seed = 1
+  _seed = 1
 ): THREE.Group {
   const layerGroup = new THREE.Group();
   layerGroup.position.z = zPlane;
@@ -1860,24 +1481,11 @@ function createSeussianHillLayer(
     depth,
     bevelEnabled: true,
     bevelSegments: 3,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.04,
     bevelThickness: 0.04,
   });
-
-  // Displace vertices on the front of the hill so it has 3D papier-mâché pillowy swell
-  const hPos = hillGeo.attributes.position;
-  for (let i = 0; i < hPos.count; i++) {
-    const vx = hPos.getX(i);
-    const vy = hPos.getY(i);
-    const vz = hPos.getZ(i);
-    if (vz > 0.02) {
-      const pillowSwell =
-        Math.sin(vx * 0.85 + seed) * Math.sin(Math.min(1, vy * 0.5) * Math.PI) * 0.08 +
-        Math.cos(vx * 3.4 + vy * 3.8 + seed) * 0.022;
-      hPos.setZ(i, vz + pillowSwell);
-    }
-  }
+  normalizeExtrudeUVs(hillGeo, 'world', 4.5);
   hillGeo.computeVertexNormals();
 
   const hillMesh = new THREE.Mesh(hillGeo, hillMat);
@@ -1917,10 +1525,6 @@ function createSeussianHillLayer(
 /**
  * 3. UPSTAGE WHOVILLE SNOW HILLS & MT. CRUMPIT PEAK (Lineset #39 / #45)
  *    (`'grinch-whoville-hills-cyc'`)
- *    Multi-layered rolling Seussian papier-mâché snow hills at staggered Z planes
- *    (`z = -5.9m`, `-6.4m`, `-6.9m`), 3D snow-cap ridges, scalloped blue ice-cave
- *    arches, winding snowy path ribbons with miniature glowing trail lanterns &
- *    forced-perspective crooked trees, and the towering S-curved horn of Mt. Crumpit (`z = -7.25m`).
  */
 export function buildGrinchWhovilleHillsAndCrumpit(
   _rockTex: THREE.CanvasTexture
@@ -1928,70 +1532,71 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   const hillsGroup = new THREE.Group();
   hillsGroup.name = 'Element_grinch-whoville-hills-cyc';
 
-  const papierMacheBumpTex = createPapierMacheBumpTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
+  const seussianRockNormalTex = createSeussianRockNormalTexture();
   const mountainCliffTex = createSnowMountainCliffTexture();
   const glacierWaveTex = createGlacierWavePortalTexture();
 
-  // Toned-down Seussian papier-mâché snow & lavender-blue hill palette (all channels <= 0xd8, roughness >= 0.55)
+  // Toned-down Seussian papier-mâché snow & lavender-blue hill palette with tangent-space normalMap
   const fgHillMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.034,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.75, 0.75),
     color: 0xaabed8,
     roughness: 0.6,
     metalness: 0.03,
   });
   const midHillMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.034,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.72, 0.72),
     color: 0x9ab2d4,
     roughness: 0.62,
     metalness: 0.03,
   });
   const bgHillMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.032,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.68, 0.68),
     color: 0x8ca4ca,
     roughness: 0.64,
     metalness: 0.04,
   });
   const snowCrestMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.03,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.7, 0.7),
     color: 0xc4d2d8,
     roughness: 0.56,
     metalness: 0.03,
   });
   const pathRibbonMat = new THREE.MeshStandardMaterial({
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.02,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.55, 0.55),
     color: 0xbaccd8,
     roughness: 0.58,
     metalness: 0.03,
   });
   const iceArcadeMat = new THREE.MeshStandardMaterial({
     map: glacierWaveTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.03,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.78, 0.78),
     color: 0x6c96c8,
     roughness: 0.58,
     metalness: 0.05,
   });
   const crumpitBodyMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.038,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.88, 0.88),
     color: 0x96acd0,
     roughness: 0.59,
     metalness: 0.04,
   });
   const crumpitShadowCliffMat = new THREE.MeshStandardMaterial({
     map: glacierWaveTex,
-    bumpMap: papierMacheBumpTex,
-    bumpScale: 0.036,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.85, 0.85),
     color: 0x6284b6,
     roughness: 0.62,
     metalness: 0.05,
@@ -2019,9 +1624,6 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   // --------------------------------------------------------------------------
   // A. Foreground Groundrow Layer (z = -5.9m)
-  //    Includes the central rounded snow hill with scalloped blue ice-cave
-  //    arches seen right behind the Christmas tree in `model_1B_whoville.jpg`
-  //    and `model_1F_mt_crumpit_sleigh.jpg`.
   // --------------------------------------------------------------------------
   const fgLayer = createSeussianHillLayer(
     [
@@ -2200,11 +1802,6 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   // --------------------------------------------------------------------------
   // D. Towering Crooked S-Curved Papier-Mâché Horn of Mt. Crumpit (z = -7.25m)
-  //    Matches the dramatic sweeping mountain silhouette in `model_1B_whoville.jpg`
-  //    and `model_1F_mt_crumpit_sleigh.jpg`: rising from the Stage-Right foothills
-  //    up to an overhanging hooked summit with long blue-and-white Seussian icicles
-  //    hanging down the right cliff wall, sculpted papier-mâché crags, a glowing
-  //    cave mouth, and the winding "Dump-It-To-Crumpit" sleigh trail with lanterns.
   // --------------------------------------------------------------------------
   const crumpitGroup = new THREE.Group();
   crumpitGroup.name = 'MtCrumpit_PeakUnit';
@@ -2212,16 +1809,11 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   const crumpitShape = new THREE.Shape();
   crumpitShape.moveTo(-3.75, 0);
-  // Long sweeping left ridge climbing up from Stage Right toward Center
   crumpitShape.bezierCurveTo(-3.4, 1.88, -2.55, 2.66, -1.62, 2.98);
-  // Stepped mid-mountain shoulder and steep S-curved upper ascent
   crumpitShape.bezierCurveTo(-0.82, 3.28, -0.42, 4.38, 0.1, 5.02);
-  // Rounded crooked summit dome at y ≈ 5.26m
   crumpitShape.bezierCurveTo(0.4, 5.32, 0.8, 5.22, 0.95, 4.86);
-  // Overhanging upper right cliff nose & jagged ice-finger crags (matching model_1B & 1F)
   crumpitShape.bezierCurveTo(1.08, 4.5, 0.84, 4.18, 0.66, 3.92);
   crumpitShape.bezierCurveTo(0.78, 3.68, 0.58, 3.32, 0.44, 2.95);
-  // Steep lower right cliff descending behind the tree
   crumpitShape.bezierCurveTo(0.56, 2.15, 0.86, 1.15, 1.08, 0);
   crumpitShape.closePath();
 
@@ -2229,24 +1821,11 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     depth: 0.28,
     bevelEnabled: true,
     bevelSegments: 4,
-    steps: 2,
+    steps: 1,
     bevelSize: 0.05,
     bevelThickness: 0.05,
   });
-
-  // Displace Mt. Crumpit's front face with 3D papier-mâché rock strata and crags
-  const crPos = crumpitGeo.attributes.position;
-  for (let i = 0; i < crPos.count; i++) {
-    const vx = crPos.getX(i);
-    const vy = crPos.getY(i);
-    const vz = crPos.getZ(i);
-    if (vz > 0.04) {
-      const ridgeBulk =
-        Math.sin((vy / 5.3) * Math.PI) * 0.11 +
-        Math.sin(vx * 3.6 + vy * 4.1) * 0.032;
-      crPos.setZ(i, vz + ridgeBulk);
-    }
-  }
+  normalizeExtrudeUVs(crumpitGeo, 'fit');
   crumpitGeo.computeVertexNormals();
 
   const crumpitMesh = new THREE.Mesh(crumpitGeo, crumpitBodyMat);

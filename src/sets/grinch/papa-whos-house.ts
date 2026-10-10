@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { drawSeussianDisplayText } from '../../engine/procedural-textures.ts';
+import {
+  createFabricWeaveNormalTexture,
+  createPapierMacheNormalTexture,
+  createSeussianRockNormalTexture,
+  createStuccoPlasterNormalTexture,
+  drawSeussianDisplayText,
+  normalizeExtrudeUVs,
+} from '../../engine/procedural-textures.ts';
 import {
   createGrinchCharacter,
   createMaxDogCharacter,
@@ -22,44 +29,66 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
   canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
+    // Periodic base gradient (stop 0 === stop 1 so RepeatWrapping has zero seam)
     const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
-    grad.addColorStop(0, '#4e6c24');
+    grad.addColorStop(0, '#547428');
     grad.addColorStop(0.35, '#688836');
-    grad.addColorStop(0.7, '#78983e');
-    grad.addColorStop(1, '#425c1d');
+    grad.addColorStop(0.68, '#74943c');
+    grad.addColorStop(1, '#547428');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // 1. Painterly mottled chartreuse & deep moss sponge-scumble glazes
-    for (let i = 0; i < 360; i++) {
+    // 1. Painterly mottled chartreuse & deep moss sponge-scumble glazes (toroidal 3x3 wrap)
+    for (let i = 0; i < 240; i++) {
       const x = (i * 149 + 31) % 1024;
       const y = (i * 277 + 19) % 1024;
-      const r = 24 + (i % 54);
+      const r = 24 + (i % 48);
       ctx.fillStyle =
         i % 3 === 0
-          ? 'rgba(154, 188, 68, 0.16)'
+          ? 'rgba(154, 188, 68, 0.14)'
           : i % 3 === 1
-            ? 'rgba(38, 56, 14, 0.18)'
-            : 'rgba(116, 148, 52, 0.14)';
-      ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.5, r * 0.72, (i % 7) * 0.42, 0, Math.PI * 2);
-      ctx.fill();
+            ? 'rgba(38, 56, 14, 0.16)'
+            : 'rgba(116, 148, 52, 0.12)';
+      for (const ox of [-1024, 0, 1024]) {
+        for (const oy of [-1024, 0, 1024]) {
+          if (
+            x + ox + r * 2 < 0 ||
+            x + ox - r * 2 > 1024 ||
+            y + oy + r * 2 < 0 ||
+            y + oy - r * 2 > 1024
+          ) {
+            continue;
+          }
+          ctx.beginPath();
+          ctx.ellipse(
+            x + ox,
+            y + oy,
+            r * 1.5,
+            r * 0.72,
+            (i % 7) * 0.42,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+      }
     }
 
-    // 2. Hand-painted crooked timber grain & wavy shingle courses with trompe-l'oeil highlight lips
+    // 2. Hand-painted crooked timber grain & wavy shingle courses with integer wave harmonics
     for (let row = 1; row <= 12; row++) {
-      const baseY = row * (1024 / 12);
+      const baseY = row * (1024 / 12) - 42;
       // Dark shadow under course
       ctx.strokeStyle = 'rgba(24, 36, 10, 0.34)';
       ctx.lineWidth = 4.5;
       ctx.beginPath();
-      ctx.moveTo(0, baseY);
-      for (let x = 0; x <= 1024; x += 64) {
+      for (let x = 0; x <= 1024; x += 32) {
+        const u = (x / 1024) * Math.PI * 2;
         const wy =
           baseY +
-          Math.sin(x * 0.015 + row * 1.4) * 12 +
-          Math.cos(x * 0.032 - row) * 5;
-        ctx.lineTo(x, wy);
+          Math.sin(u * 2 + row * 1.4) * 12 +
+          Math.cos(u * 5 - row) * 5;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
       }
       ctx.stroke();
 
@@ -67,23 +96,24 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
       ctx.strokeStyle = 'rgba(176, 208, 86, 0.24)';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(0, baseY + 4);
-      for (let x = 0; x <= 1024; x += 64) {
+      for (let x = 0; x <= 1024; x += 32) {
+        const u = (x / 1024) * Math.PI * 2;
         const wy =
           baseY +
           4 +
-          Math.sin(x * 0.015 + row * 1.4) * 12 +
-          Math.cos(x * 0.032 - row) * 5;
-        ctx.lineTo(x, wy);
+          Math.sin(u * 2 + row * 1.4) * 12 +
+          Math.cos(u * 5 - row) * 5;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
       }
       ctx.stroke();
     }
 
-    // 3. Organic woodgrain fibers & knots
+    // 3. Organic woodgrain fibers & knots (kept inside interior margin)
     ctx.lineCap = 'round';
-    for (let s = 0; s < 160; s++) {
-      const sx = (s * 179) % 1024;
-      const sy = (s * 107) % 1024;
+    for (let s = 0; s < 140; s++) {
+      const sx = 24 + ((s * 179) % 820);
+      const sy = 28 + ((s * 107) % 960);
       ctx.strokeStyle =
         s % 4 === 0 ? 'rgba(168, 198, 78, 0.22)' : 'rgba(26, 38, 10, 0.32)';
       ctx.lineWidth = 1.6 + (s % 3) * 0.8;
@@ -104,8 +134,8 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
     ctx.strokeStyle = 'rgba(18, 26, 8, 0.44)';
     ctx.lineWidth = 2.0;
     for (let c = 0; c < 48; c++) {
-      const cx = (c * 211 + 45) % 940;
-      const cy = (c * 163 + 38) % 940;
+      const cx = 32 + ((c * 211 + 45) % 900);
+      const cy = 32 + ((c * 163 + 38) % 900);
       const hatchCount = 5 + (c % 5);
       for (let h = 0; h < hatchCount; h++) {
         ctx.beginPath();
@@ -128,8 +158,8 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
 
     // 5. Scenic paint shop spatter dots (chartreuse, moss, dark umber)
     for (let sp = 0; sp < 480; sp++) {
-      const px = (sp * 293 + 17) % 1024;
-      const py = (sp * 197 + 53) % 1024;
+      const px = 8 + ((sp * 293 + 17) % 1008);
+      const py = 8 + ((sp * 197 + 53) % 1008);
       const pr = 1.0 + (sp % 3) * 0.85;
       ctx.fillStyle =
         sp % 3 === 0
@@ -145,7 +175,7 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(0.35, 0.35);
+  tex.repeat.set(1, 1);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -161,11 +191,11 @@ function createWhoWallPlasterTexture(): THREE.CanvasTexture {
   canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // Toned base gradient (strictly <= 0xd8 across all channels)
+    // Periodic toned base gradient (stop 0 === stop 1, strictly <= 0xd8 across all channels)
     const grad = ctx.createLinearGradient(0, 0, 0, 1024);
     grad.addColorStop(0, '#c4bcd0');
     grad.addColorStop(0.5, '#d4ccd8');
-    grad.addColorStop(1, '#bab2c6');
+    grad.addColorStop(1, '#c4bcd0');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
@@ -177,12 +207,13 @@ function createWhoWallPlasterTexture(): THREE.CanvasTexture {
           : 'rgba(168, 156, 188, 0.14)';
       ctx.fillRect(sx, 0, 32, 1024);
 
-      // Delicate pinstripe border with wavy Seussian hand-drawn wobble
+      // Delicate pinstripe border with periodic Seussian hand-drawn wobble
       ctx.strokeStyle = 'rgba(128, 108, 146, 0.18)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      for (let y = 0; y <= 1024; y += 64) {
-        const wx = sx + Math.sin(y * 0.02 + sx) * 2.5;
+      for (let y = 0; y <= 1024; y += 32) {
+        const v = (y / 1024) * Math.PI * 2;
+        const wx = sx + Math.sin(v * 3 + sx) * 2.5;
         if (y === 0) ctx.moveTo(wx, y);
         else ctx.lineTo(wx, y);
       }
@@ -194,7 +225,7 @@ function createWhoWallPlasterTexture(): THREE.CanvasTexture {
     ctx.lineWidth = 2.0;
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
-        const cx = col * 128 + (row % 2 === 0 ? 48 : 112);
+        const cx = col * 128 + (row % 2 === 0 ? 48 : 96);
         const cy = row * 128 + 64;
         ctx.beginPath();
         ctx.arc(cx, cy, 14, 0, Math.PI * 1.65);
@@ -211,34 +242,47 @@ function createWhoWallPlasterTexture(): THREE.CanvasTexture {
     for (let x = 0; x < 1024; x += 8) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x + ((x % 16) - 8) * 0.5, 1024);
+      ctx.lineTo(x, 1024);
       ctx.stroke();
     }
-    for (let y = 0; y < 1024; y += 10) {
+    for (let y = 0; y < 1024; y += 16) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(1024, y);
       ctx.stroke();
     }
 
-    // 4. Soft warm aging glazes & Seussian ink cross-hatch plaster patches
-    for (let i = 0; i < 160; i++) {
+    // 4. Soft warm aging glazes & Seussian ink cross-hatch plaster patches (toroidal wrap)
+    for (let i = 0; i < 110; i++) {
       const px = (i * 193 + 29) % 1024;
       const py = (i * 127 + 41) % 1024;
+      const pr = 28 + (i % 38);
       ctx.fillStyle =
         i % 2 === 0
-          ? 'rgba(208, 196, 214, 0.14)'
-          : 'rgba(144, 130, 158, 0.13)';
-      ctx.beginPath();
-      ctx.arc(px, py, 32 + (i % 44), 0, Math.PI * 2);
-      ctx.fill();
+          ? 'rgba(208, 196, 214, 0.12)'
+          : 'rgba(144, 130, 158, 0.11)';
+      for (const ox of [-1024, 0, 1024]) {
+        for (const oy of [-1024, 0, 1024]) {
+          if (
+            px + ox + pr < 0 ||
+            px + ox - pr > 1024 ||
+            py + oy + pr < 0 ||
+            py + oy - pr > 1024
+          ) {
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(px + ox, py + oy, pr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
     }
 
     ctx.strokeStyle = 'rgba(54, 42, 68, 0.24)';
     ctx.lineWidth = 1.5;
     for (let h = 0; h < 36; h++) {
-      const hx = (h * 269 + 50) % 960;
-      const hy = (h * 181 + 40) % 960;
+      const hx = 32 + ((h * 269 + 50) % 920);
+      const hy = 32 + ((h * 181 + 40) % 920);
       for (let k = 0; k < 5; k++) {
         ctx.beginPath();
         ctx.moveTo(hx + k * 6, hy);
@@ -250,7 +294,7 @@ function createWhoWallPlasterTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(0.28, 0.28);
+  tex.repeat.set(1, 1);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -602,8 +646,10 @@ function createSeussianArchedWindow(
   glassShape.quadraticCurveTo(0, hh * 1.08, -hw * 0.68, hh * 0.62);
   glassShape.quadraticCurveTo(-hw * 0.96, hh * 0.2, -hw * 0.88, -hh * 0.88);
 
+  const glassGeo = new THREE.ExtrudeGeometry(glassShape, { depth: 0.018, bevelEnabled: false });
+  normalizeExtrudeUVs(glassGeo, 'fit');
   const glassMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(glassShape, { depth: 0.018, bevelEnabled: false }),
+    glassGeo,
     glassMat
   );
   glassMesh.position.z = 0.01;
@@ -719,22 +765,32 @@ export function buildPapaWhosHouseUnit(
   const fridgeBlueTex = createWhoPaintedFurnitureTexture('#1868d8', '#3888f0', '#10489e', false);
   const fridgePinkTex = createWhoPaintedFurnitureTexture('#dca0bc', '#f0bcd4', '#b47494', false);
   const daybedTuftedTex = createWhoPaintedFurnitureTexture('#1868d8', '#3482ec', '#0e4296', true);
+  const stuccoNormalTex = createStuccoPlasterNormalTexture();
+  const rockNormalTex = createSeussianRockNormalTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
+  const fabricNormalTex = createFabricWeaveNormalTexture();
 
   // Core Scenic Materials (toned down so stage spotlights never overexpose them)
   const oliveTimberMat = new THREE.MeshStandardMaterial({
     map: oliveRoofTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.32, 0.32),
     color: 0x8ea454,
     roughness: 0.62,
     metalness: 0.04,
   });
   const darkOliveTrimMat = new THREE.MeshStandardMaterial({
     map: oliveRoofTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.35, 0.35),
     color: 0x6c863b,
     roughness: 0.64,
     metalness: 0.04,
   });
   const roofGreenMat = new THREE.MeshStandardMaterial({
     map: oliveRoofTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.42, 0.42),
     color: 0x5c7c32,
     roughness: 0.66,
     metalness: 0.04,
@@ -743,6 +799,8 @@ export function buildPapaWhosHouseUnit(
   });
   const wallPlasterOrScrimMat = new THREE.MeshStandardMaterial({
     map: plasterTex,
+    normalMap: stuccoNormalTex,
+    normalScale: new THREE.Vector2(0.38, 0.38),
     color: translucentScrimMode ? 0xc8bfe0 : 0xd6cedc,
     roughness: 0.72,
     metalness: 0.02,
@@ -753,6 +811,8 @@ export function buildPapaWhosHouseUnit(
   });
   const dadoPanelMat = new THREE.MeshStandardMaterial({
     map: plasterTex,
+    normalMap: stuccoNormalTex,
+    normalScale: new THREE.Vector2(0.34, 0.34),
     color: translucentScrimMode ? 0xb4accc : 0xc2bcac,
     roughness: 0.74,
     transparent: true,
@@ -761,29 +821,39 @@ export function buildPapaWhosHouseUnit(
   });
   const chimneyBreastMat = new THREE.MeshStandardMaterial({
     map: fieldstoneTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.58, 0.58),
     color: 0x9aa898,
     roughness: 0.74,
     metalness: 0.04,
   });
   const hearthStoneMat = new THREE.MeshStandardMaterial({
     map: fieldstoneTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.58, 0.58),
     color: 0xb2a8c2,
     roughness: 0.68,
     metalness: 0.05,
   });
   const hearthAccentStoneMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.52, 0.52),
     color: 0x7c7290,
     roughness: 0.72,
   });
   const tonedSnowMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.48, 0.48),
     color: 0xbacbe2,
     roughness: 0.68,
     metalness: 0.02,
   });
   const iceGlazeMat = new THREE.MeshStandardMaterial({
     map: rockTex,
+    normalMap: rockNormalTex,
+    normalScale: new THREE.Vector2(0.38, 0.38),
     color: 0x8ab0dc,
     roughness: 0.58,
   });
@@ -815,6 +885,8 @@ export function buildPapaWhosHouseUnit(
   });
   const daybedTuftedMat = new THREE.MeshStandardMaterial({
     map: daybedTuftedTex,
+    normalMap: fabricNormalTex,
+    normalScale: new THREE.Vector2(0.4, 0.4),
     roughness: 0.54,
     metalness: 0.04,
   });
@@ -865,10 +937,12 @@ export function buildPapaWhosHouseUnit(
   leftWinHole.quadraticCurveTo(-2.26, 1.88, -2.22, 1.12);
   leftWallShape.holes.push(leftWinHole);
 
-  const leftWallBay = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(leftWallShape, { depth: 0.05, bevelEnabled: false }),
-    wallPlasterOrScrimMat
-  );
+  const leftWallGeo = new THREE.ExtrudeGeometry(leftWallShape, {
+    depth: 0.05,
+    bevelEnabled: false,
+  });
+  normalizeExtrudeUVs(leftWallGeo, 'world', 2.8);
+  const leftWallBay = new THREE.Mesh(leftWallGeo, wallPlasterOrScrimMat);
   leftWallBay.position.z = -0.075;
   leftWallBay.castShadow = !translucentScrimMode;
   leftWallBay.receiveShadow = true;
@@ -903,10 +977,12 @@ export function buildPapaWhosHouseUnit(
   rightWinHole.quadraticCurveTo(1.82, 1.82, 1.86, 1.16);
   rightWallShape.holes.push(rightWinHole);
 
-  const rightWallBay = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(rightWallShape, { depth: 0.05, bevelEnabled: false }),
-    wallPlasterOrScrimMat
-  );
+  const rightWallGeo = new THREE.ExtrudeGeometry(rightWallShape, {
+    depth: 0.05,
+    bevelEnabled: false,
+  });
+  normalizeExtrudeUVs(rightWallGeo, 'world', 2.8);
+  const rightWallBay = new THREE.Mesh(rightWallGeo, wallPlasterOrScrimMat);
   rightWallBay.position.z = -0.075;
   rightWallBay.castShadow = !translucentScrimMode;
   rightWallBay.receiveShadow = true;
@@ -926,16 +1002,15 @@ export function buildPapaWhosHouseUnit(
   roofGableShape.lineTo(-0.74, 3.28);
   roofGableShape.bezierCurveTo(-1.62, 3.24, -2.65, 3.02, -3.56, 2.52);
 
-  const roofGablePanel = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(roofGableShape, {
-      depth: 0.06,
-      bevelEnabled: true,
-      bevelThickness: 0.015,
-      bevelSize: 0.015,
-      bevelSegments: 2,
-    }),
-    roofGreenMat
-  );
+  const roofGableGeo = new THREE.ExtrudeGeometry(roofGableShape, {
+    depth: 0.06,
+    bevelEnabled: true,
+    bevelThickness: 0.015,
+    bevelSize: 0.015,
+    bevelSegments: 2,
+  });
+  normalizeExtrudeUVs(roofGableGeo, 'world', 3.2);
+  const roofGablePanel = new THREE.Mesh(roofGableGeo, roofGreenMat);
   roofGablePanel.position.z = -0.04;
   roofGablePanel.castShadow = true;
   roofGablePanel.receiveShadow = true;
@@ -1238,10 +1313,12 @@ export function buildPapaWhosHouseUnit(
   upperBreastShape.lineTo(-0.68, 3.28);
   upperBreastShape.lineTo(-0.68, 1.32);
 
-  const upperChimneyBreast = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(upperBreastShape, { depth: 0.08, bevelEnabled: false }),
-    chimneyBreastMat
-  );
+  const upperBreastGeo = new THREE.ExtrudeGeometry(upperBreastShape, {
+    depth: 0.08,
+    bevelEnabled: false,
+  });
+  normalizeExtrudeUVs(upperBreastGeo, 'fit');
+  const upperChimneyBreast = new THREE.Mesh(upperBreastGeo, chimneyBreastMat);
   upperChimneyBreast.position.set(-0.04, 0, 0.0);
   upperChimneyBreast.castShadow = true;
   upperChimneyBreast.receiveShadow = true;
@@ -1539,10 +1616,12 @@ export function buildPapaWhosHouseUnit(
   doorPanelShape.quadraticCurveTo(0, 2.18, -0.26, 1.9);
   doorPanelShape.bezierCurveTo(-0.42, 1.52, -0.42, 0.82, -0.38, 0.04);
 
-  const doorPanelMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(doorPanelShape, { depth: 0.04, bevelEnabled: false }),
-    darkOliveTrimMat
-  );
+  const doorPanelGeo = new THREE.ExtrudeGeometry(doorPanelShape, {
+    depth: 0.04,
+    bevelEnabled: false,
+  });
+  normalizeExtrudeUVs(doorPanelGeo, 'fit');
+  const doorPanelMesh = new THREE.Mesh(doorPanelGeo, darkOliveTrimMat);
   doorPanelMesh.position.z = 0.015;
   doorPanelMesh.castShadow = true;
   doorGroup.add(doorPanelMesh);
@@ -1638,16 +1717,15 @@ export function buildPapaWhosHouseUnit(
   fridgeDoorShape.quadraticCurveTo(-0.33, 1.54, -0.33, 1.24);
   fridgeDoorShape.lineTo(-0.31, 0.18);
 
-  const fridgeDoor = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(fridgeDoorShape, {
-      depth: 0.04,
-      bevelEnabled: true,
-      bevelThickness: 0.012,
-      bevelSize: 0.012,
-      bevelSegments: 2,
-    }),
-    pastelPinkMat
-  );
+  const fridgeDoorGeo = new THREE.ExtrudeGeometry(fridgeDoorShape, {
+    depth: 0.04,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.012,
+    bevelSegments: 2,
+  });
+  normalizeExtrudeUVs(fridgeDoorGeo, 'fit');
+  const fridgeDoor = new THREE.Mesh(fridgeDoorGeo, pastelPinkMat);
   fridgeDoor.position.set(0, 0, 0.305);
   fridgeDoor.castShadow = true;
   fridgeGroup.add(fridgeDoor);
@@ -1936,16 +2014,15 @@ export function buildPapaWhosHouseUnit(
   backrestShape.bezierCurveTo(0.24, 0.78, -0.16, 1.06, -0.52, 1.04);
   backrestShape.quadraticCurveTo(-0.78, 1.0, -0.72, 0.36);
 
-  const backrestMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(backrestShape, {
-      depth: 0.15,
-      bevelEnabled: true,
-      bevelThickness: 0.028,
-      bevelSize: 0.028,
-      bevelSegments: 2,
-    }),
-    daybedTuftedMat
-  );
+  const backrestGeo = new THREE.ExtrudeGeometry(backrestShape, {
+    depth: 0.15,
+    bevelEnabled: true,
+    bevelThickness: 0.028,
+    bevelSize: 0.028,
+    bevelSegments: 2,
+  });
+  normalizeExtrudeUVs(backrestGeo, 'fit');
+  const backrestMesh = new THREE.Mesh(backrestGeo, daybedTuftedMat);
   backrestMesh.position.set(0, 0, -0.31);
   backrestMesh.castShadow = true;
   daybedGroup.add(backrestMesh);

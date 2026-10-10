@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { createFabricWeaveNormalTexture } from '../engine/procedural-textures.ts';
 import type { RiggingBattenSpec } from '../types/theatre.ts';
 
 export interface McCollLinesetRecord {
@@ -107,9 +108,70 @@ export interface HumanScaleFigureOptions {
 }
 
 /**
+ * Helper to build a sculpted theatrical boot/shoe with distinct heel, arch,
+ * sole welt, and rounded toe box.
+ */
+function createSculptedBoot(
+  scale: number,
+  bootMat: THREE.Material,
+  soleMat: THREE.Material,
+  cuffMat?: THREE.Material
+): THREE.Group {
+  const bootGroup = new THREE.Group();
+
+  // Sole & heel block
+  const sole = new THREE.Mesh(
+    new RoundedBoxGeometry(0.068 * scale, 0.016 * scale, 0.142 * scale, 2, 0.006 * scale),
+    soleMat
+  );
+  sole.position.set(0, 0.008 * scale, 0.022 * scale);
+  bootGroup.add(sole);
+
+  const heel = new THREE.Mesh(
+    new RoundedBoxGeometry(0.064 * scale, 0.022 * scale, 0.048 * scale, 2, 0.005 * scale),
+    soleMat
+  );
+  heel.position.set(0, 0.011 * scale, -0.022 * scale);
+  bootGroup.add(heel);
+
+  // Boot ankle shaft
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.036 * scale, 0.033 * scale, 0.056 * scale, 12),
+    bootMat
+  );
+  shaft.position.set(0, 0.042 * scale, -0.006 * scale);
+  shaft.castShadow = true;
+  bootGroup.add(shaft);
+
+  // Rounded vamp & toe box
+  const toeBox = new THREE.Mesh(
+    new THREE.SphereGeometry(0.036 * scale, 12, 10),
+    bootMat
+  );
+  toeBox.scale.set(0.96, 0.72, 1.55);
+  toeBox.position.set(0, 0.026 * scale, 0.034 * scale);
+  toeBox.castShadow = true;
+  bootGroup.add(toeBox);
+
+  if (cuffMat) {
+    const cuff = new THREE.Mesh(
+      new THREE.TorusGeometry(0.036 * scale, 0.012 * scale, 8, 14),
+      cuffMat
+    );
+    cuff.rotation.x = Math.PI / 2;
+    cuff.position.set(0, 0.068 * scale, -0.006 * scale);
+    bootGroup.add(cuff);
+  }
+
+  return bootGroup;
+}
+
+/**
  * Builds an articulated, expressive 3D theatrical character figure with
- * sculpted boots, trousers, tailored coat/dress, collar, posed arms & hands,
- * facial features (eyes, nose, eyebrows, smile), hair, and costume headgear.
+ * sculpted `LatheGeometry` tailored coat/dress, waist belt, lapels, 2-segment
+ * articulated arms with elbows & hands/thumbs, contoured legs & heeled boots,
+ * and a detailed sculpted face (eye whites, colored irises, pupils, specular
+ * catchlights, cheeks, ears, nose, lips, and layered hair).
  */
 export function createHumanScaleFigure(
   heightM: number,
@@ -122,64 +184,110 @@ export function createHumanScaleFigure(
   const g = new THREE.Group();
   g.userData.isCharacterBlocking = true;
 
+  const fabricNormal = createFabricWeaveNormalTexture();
+
   const coatMat = new THREE.MeshStandardMaterial({
     color: coatColorHex,
-    roughness: 0.54,
-    metalness: 0.06,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    roughness: 0.56,
+    metalness: 0.05,
   });
   const pantsMat = new THREE.MeshStandardMaterial({
     color: options.pantsColorHex ?? 0x262936,
-    roughness: 0.62,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    roughness: 0.64,
   });
   const trimMat = new THREE.MeshStandardMaterial({
-    color: options.trimColorHex ?? 0xf0ece2,
-    roughness: 0.52,
+    color: options.trimColorHex ?? 0xe8e2d6,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.3, 0.3),
+    roughness: 0.54,
   });
   const skinMat = new THREE.MeshStandardMaterial({
     color: options.skinColorHex ?? 0xeac09e,
-    roughness: 0.56,
+    roughness: 0.48,
+    metalness: 0.02,
+  });
+  const cheekBlushMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(options.skinColorHex ?? 0xeac09e).lerp(
+      new THREE.Color(0xe46c7c),
+      0.38
+    ),
+    roughness: 0.5,
   });
   const hairMat = new THREE.MeshStandardMaterial({
     color: options.hairColorHex ?? 0x4a2e1b,
-    roughness: 0.68,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.4, 0.4),
+    roughness: 0.62,
   });
   const shoeMat = new THREE.MeshStandardMaterial({
-    color: 0x1c1a1e,
+    color: 0x221d20,
+    roughness: 0.38,
+    metalness: 0.14,
+  });
+  const soleMat = new THREE.MeshStandardMaterial({
+    color: 0x121014,
+    roughness: 0.65,
+  });
+  const beltMat = new THREE.MeshStandardMaterial({
+    color: 0x241c18,
     roughness: 0.42,
-    metalness: 0.12,
+    metalness: 0.18,
+  });
+  const buckleMat = new THREE.MeshStandardMaterial({
+    color: 0xd4a638,
+    roughness: 0.28,
+    metalness: 0.72,
+  });
+  const scleraMat = new THREE.MeshStandardMaterial({
+    color: 0xd8dce0,
+    roughness: 0.22,
+  });
+  const irisMat = new THREE.MeshStandardMaterial({
+    color: 0x34628c,
+    roughness: 0.2,
   });
   const eyeDarkMat = new THREE.MeshStandardMaterial({
-    color: 0x16161c,
-    roughness: 0.25,
+    color: 0x121318,
+    roughness: 0.15,
+  });
+  const catchlightMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+  });
+  const lipMat = new THREE.MeshStandardMaterial({
+    color: 0xb8525c,
+    roughness: 0.45,
   });
 
   const scale = heightM / 1.7;
-  const legH = heightM * 0.36;
-  const torsoH = heightM * 0.42;
+  const legH = heightM * 0.37;
+  const torsoH = heightM * 0.41;
   const headR = heightM * 0.078;
 
   // Low-profile bevelled blocking stand disc
   const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18 * scale, 0.20 * scale, 0.024, 18),
-    new THREE.MeshStandardMaterial({ color: 0x20242c, roughness: 0.48 })
+    new THREE.CylinderGeometry(0.175 * scale, 0.195 * scale, 0.022, 24),
+    new THREE.MeshStandardMaterial({ color: 0x1e222a, roughness: 0.48 })
   );
-  base.position.y = 0.012;
+  base.position.y = 0.011;
   g.add(base);
 
-  // Shoes & Articulated Legs (supports both standing and seated postures)
-  const hipSpacing = 0.074 * scale;
+  // Articulated Legs (Thigh + Knee Joint + Contoured Calf + Sculpted Boot)
+  const hipSpacing = 0.072 * scale;
   const seatDropY = options.isSeated ? legH * 0.38 : 0;
   for (const side of [-1, 1]) {
     const lx = side * hipSpacing;
     if (options.isSeated) {
-      // Seated posture: thighs extend forward (+Z) at hip height, lower legs drop vertically at knees
       const hipY = 0.04 + legH * 0.62;
       const thighLen = legH * 0.48;
-      const shinLen = legH * 0.54;
+      const shinLen = legH * 0.52;
       const kneeZ = thighLen * 0.88;
 
       const upperLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.052 * scale, 0.045 * scale, thighLen, 10),
+        new THREE.CylinderGeometry(0.052 * scale, 0.044 * scale, thighLen, 12),
         pantsMat
       );
       upperLeg.rotation.x = Math.PI / 2 - 0.12;
@@ -187,152 +295,248 @@ export function createHumanScaleFigure(
       upperLeg.castShadow = true;
       g.add(upperLeg);
 
-      const lowerLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.044 * scale, 0.036 * scale, shinLen, 10),
+      const kneeJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.043 * scale, 10, 10),
         pantsMat
       );
-      lowerLeg.position.set(lx, 0.048 * scale + shinLen * 0.5, kneeZ);
+      kneeJoint.position.set(lx, hipY - 0.02 * scale, kneeZ * 0.95);
+      g.add(kneeJoint);
+
+      const lowerLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.042 * scale, 0.032 * scale, shinLen, 12),
+        pantsMat
+      );
+      lowerLeg.position.set(lx, 0.052 * scale + shinLen * 0.5, kneeZ);
       lowerLeg.castShadow = true;
       g.add(lowerLeg);
 
-      const shoe = new THREE.Mesh(
-        new RoundedBoxGeometry(0.072 * scale, 0.046 * scale, 0.132 * scale, 2, 0.018),
-        shoeMat
-      );
-      shoe.position.set(lx, 0.024 + 0.022 * scale, kneeZ + 0.026 * scale);
-      shoe.castShadow = true;
-      g.add(shoe);
+      const boot = createSculptedBoot(scale, shoeMat, soleMat);
+      boot.position.set(lx, 0.022, kneeZ);
+      g.add(boot);
     } else {
-      const shoe = new THREE.Mesh(
-        new RoundedBoxGeometry(0.072 * scale, 0.048 * scale, 0.135 * scale, 2, 0.018),
-        shoeMat
-      );
-      shoe.position.set(lx, 0.024 + 0.022 * scale, 0.025 * scale);
-      shoe.castShadow = true;
-      g.add(shoe);
+      const boot = createSculptedBoot(scale, shoeMat, soleMat);
+      boot.position.set(lx, 0.022, 0);
+      boot.rotation.y = side * -0.08;
+      g.add(boot);
 
       const lowerLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.044 * scale, 0.036 * scale, legH * 0.50, 10),
+        new THREE.CylinderGeometry(0.043 * scale, 0.032 * scale, legH * 0.48, 12),
         pantsMat
       );
-      lowerLeg.position.set(lx, 0.044 + legH * 0.25, 0);
+      lowerLeg.position.set(lx, 0.065 * scale + legH * 0.24, 0);
       lowerLeg.castShadow = true;
       g.add(lowerLeg);
+
+      const kneeJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.042 * scale, 10, 10),
+        pantsMat
+      );
+      kneeJoint.position.set(lx, 0.065 * scale + legH * 0.48, 0.006 * scale);
+      g.add(kneeJoint);
 
       const upperLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.054 * scale, 0.045 * scale, legH * 0.50, 10),
+        new THREE.CylinderGeometry(0.054 * scale, 0.043 * scale, legH * 0.50, 12),
         pantsMat
       );
-      upperLeg.position.set(lx, 0.044 + legH * 0.75, 0);
+      upperLeg.position.set(lx, 0.065 * scale + legH * 0.73, 0);
       upperLeg.castShadow = true;
       g.add(upperLeg);
     }
   }
 
-  // Flared Coat Skirt / Peplum Hem
-  const skirtHem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.115 * scale, 0.148 * scale, torsoH * 0.34, 16),
-    coatMat
-  );
-  skirtHem.scale.set(1.0, 1.0, 0.74);
-  skirtHem.position.y = 0.04 + legH - seatDropY + torsoH * 0.15;
-  skirtHem.castShadow = true;
-  g.add(skirtHem);
+  // Sculpted Anatomical Coat / Tunic using LatheGeometry (flared hem -> cinched waist -> broad chest -> tapered shoulders)
+  const torsoBaseY = 0.04 + legH - seatDropY;
+  const torsoLathePts = [
+    new THREE.Vector2(0.001, 0),
+    new THREE.Vector2(0.146 * scale, 0.01 * torsoH),
+    new THREE.Vector2(0.136 * scale, 0.14 * torsoH),
+    new THREE.Vector2(0.104 * scale, 0.36 * torsoH), // Cinched waist
+    new THREE.Vector2(0.118 * scale, 0.58 * torsoH), // Ribcage
+    new THREE.Vector2(0.132 * scale, 0.78 * torsoH), // Chest
+    new THREE.Vector2(0.116 * scale, 0.92 * torsoH), // Shoulder slope
+    new THREE.Vector2(0.052 * scale, 1.0 * torsoH),  // Neck base
+  ];
+  const torsoGeo = new THREE.LatheGeometry(torsoLathePts, 20);
+  torsoGeo.scale(1.0, 1.0, 0.72); // Anatomical oval chest/waist cross-section
+  const torsoMesh = new THREE.Mesh(torsoGeo, coatMat);
+  torsoMesh.position.y = torsoBaseY;
+  torsoMesh.castShadow = true;
+  torsoMesh.receiveShadow = true;
+  g.add(torsoMesh);
 
-  // Sculpted Upper Torso & Chest
-  const torso = new THREE.Mesh(
-    new RoundedBoxGeometry(0.242 * scale, torsoH * 0.74, 0.146 * scale, 3, 0.042 * scale),
-    coatMat
-  );
-  const torsoCenterY = 0.04 + legH - seatDropY + torsoH * 0.56;
-  torso.position.y = torsoCenterY;
-  torso.castShadow = true;
-  g.add(torso);
+  const torsoCenterY = torsoBaseY + torsoH * 0.54;
 
-  // Collar / Lapel V-Trim + 3 Coat Buttons (positioned cleanly on top/front of torso)
-  const collar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.064 * scale, 0.016 * scale, 8, 16),
+  // Tailored Coat Belt & Brass Buckle at Cinched Waist
+  const beltY = torsoBaseY + torsoH * 0.36;
+  const belt = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.108 * scale, 0.110 * scale, 0.034 * scale, 20),
+    beltMat
+  );
+  belt.scale.set(1.0, 1.0, 0.74);
+  belt.position.y = beltY;
+  g.add(belt);
+
+  const buckle = new THREE.Mesh(
+    new RoundedBoxGeometry(0.042 * scale, 0.044 * scale, 0.016 * scale, 2, 0.005 * scale),
+    buckleMat
+  );
+  buckle.position.set(0, beltY, 0.082 * scale);
+  g.add(buckle);
+
+  // Coat Hem Trim Ring
+  const hemTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.144 * scale, 0.012 * scale, 8, 22),
     trimMat
   );
-  collar.rotation.x = Math.PI / 2 + 0.18;
-  collar.position.set(0, torsoCenterY + torsoH * 0.385, 0.008 * scale);
+  hemTrim.rotation.x = Math.PI / 2;
+  hemTrim.scale.set(1.0, 0.72, 1.0);
+  hemTrim.position.y = torsoBaseY + 0.015 * torsoH;
+  g.add(hemTrim);
+
+  // Turnover Collar, Lapels & Brass Coat Buttons
+  const collarY = torsoBaseY + torsoH * 0.94;
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(0.058 * scale, 0.016 * scale, 10, 18),
+    trimMat
+  );
+  collar.rotation.x = Math.PI / 2 + 0.16;
+  collar.scale.set(1.0, 0.85, 1.0);
+  collar.position.set(0, collarY, 0.008 * scale);
   g.add(collar);
 
-  for (let b = 0; b < 3; b++) {
-    const btn = new THREE.Mesh(
-      new THREE.SphereGeometry(0.012 * scale, 8, 8),
+  for (const side of [-1, 1]) {
+    const lapel = new THREE.Mesh(
+      new RoundedBoxGeometry(0.036 * scale, 0.12 * scale, 0.014 * scale, 2, 0.004 * scale),
       trimMat
     );
-    btn.position.set(
-      0,
-      torsoCenterY + (1 - b) * 0.075 * scale,
-      0.086 * scale
+    lapel.position.set(side * 0.034 * scale, collarY - 0.058 * scale, 0.084 * scale);
+    lapel.rotation.z = side * 0.24;
+    lapel.rotation.x = -0.12;
+    g.add(lapel);
+  }
+
+  for (let b = 0; b < 3; b++) {
+    const btnY = beltY + (1.4 - b * 0.65) * 0.068 * scale;
+    const btn = new THREE.Mesh(
+      new THREE.SphereGeometry(0.011 * scale, 10, 8),
+      buckleMat
     );
+    btn.scale.set(1, 1, 0.6);
+    btn.position.set(0, btnY, 0.092 * scale);
     g.add(btn);
   }
 
   if (options.hasApron) {
     const apron = new THREE.Mesh(
-      new RoundedBoxGeometry(0.178 * scale, torsoH * 0.80, 0.022 * scale, 2, 0.01),
+      new RoundedBoxGeometry(0.168 * scale, torsoH * 0.76, 0.020 * scale, 2, 0.008 * scale),
       trimMat
     );
-    apron.position.set(0, torsoCenterY - 0.04 * scale, 0.086 * scale);
+    apron.position.set(0, torsoCenterY - 0.04 * scale, 0.088 * scale);
     g.add(apron);
   }
 
-  // Articulated Arms, Cuffs & Hands (shoulders placed cleanly outside torso/belly width)
-  const shoulderY = torsoCenterY + torsoH * 0.28;
-  const shoulderX = 0.158 * scale;
-  const armLen = torsoH * 0.68;
+  // 2-Segment Articulated Arms (Shoulder Cap + Upper Arm + Elbow + Forearm + Cuff + Sculpted Hand & Thumb)
+  const shoulderY = torsoBaseY + torsoH * 0.86;
+  const shoulderX = 0.132 * scale;
+  const upperArmLen = torsoH * 0.36;
+  const forearmLen = torsoH * 0.34;
   const armPose = options.armPose ?? 'relaxed';
 
   for (const side of [-1, 1]) {
-    const armPivot = new THREE.Group();
-    armPivot.position.set(side * shoulderX, shoulderY, 0);
+    const shoulderPivot = new THREE.Group();
+    shoulderPivot.position.set(side * shoulderX, shoulderY, 0);
 
-    if (armPose === 'cheering') {
-      armPivot.rotation.z = side * 2.62;
-      armPivot.rotation.x = -0.24;
-    } else if (armPose === 'presenting') {
-      armPivot.rotation.z = side * -0.14;
-      armPivot.rotation.x = -0.68;
-    } else if (armPose === 'playing') {
-      armPivot.rotation.z = side * 0.18;
-      armPivot.rotation.x = -0.64;
-    } else {
-      armPivot.rotation.z = side * 0.20;
-      armPivot.rotation.x = side > 0 ? -0.18 : -0.06;
-    }
-
-    const sleeve = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035 * scale, 0.029 * scale, armLen, 10),
+    // Shoulder puff cap
+    const shoulderCap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.038 * scale, 10, 10),
       coatMat
     );
-    sleeve.position.y = -armLen / 2;
-    sleeve.castShadow = true;
-    armPivot.add(sleeve);
+    shoulderPivot.add(shoulderCap);
+
+    let elbowPitch = -0.28;
+    let elbowYaw = side * -0.12;
+
+    if (armPose === 'cheering') {
+      shoulderPivot.rotation.z = side * 2.48;
+      shoulderPivot.rotation.x = -0.22;
+      elbowPitch = -0.42;
+    } else if (armPose === 'presenting') {
+      shoulderPivot.rotation.z = side * 0.22;
+      shoulderPivot.rotation.x = -0.45;
+      elbowPitch = -0.78;
+      elbowYaw = side * -0.32;
+    } else if (armPose === 'playing') {
+      shoulderPivot.rotation.z = side * 0.24;
+      shoulderPivot.rotation.x = -0.38;
+      elbowPitch = -0.88;
+      elbowYaw = side * -0.38;
+    } else {
+      shoulderPivot.rotation.z = side * 0.18;
+      shoulderPivot.rotation.x = side > 0 ? -0.12 : -0.04;
+      elbowPitch = side > 0 ? -0.36 : -0.22;
+    }
+
+    const upperArm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.034 * scale, 0.029 * scale, upperArmLen, 10),
+      coatMat
+    );
+    upperArm.position.y = -upperArmLen * 0.5;
+    upperArm.castShadow = true;
+    shoulderPivot.add(upperArm);
+
+    const elbowPivot = new THREE.Group();
+    elbowPivot.position.set(0, -upperArmLen, 0);
+    elbowPivot.rotation.x = elbowPitch;
+    elbowPivot.rotation.z = elbowYaw;
+
+    const elbowSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.029 * scale, 10, 8),
+      coatMat
+    );
+    elbowPivot.add(elbowSphere);
+
+    const forearm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.029 * scale, 0.025 * scale, forearmLen, 10),
+      coatMat
+    );
+    forearm.position.y = -forearmLen * 0.5;
+    forearm.castShadow = true;
+    elbowPivot.add(forearm);
 
     const cuff = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.033 * scale, 0.033 * scale, 0.030 * scale, 10),
+      new THREE.TorusGeometry(0.027 * scale, 0.010 * scale, 8, 14),
       trimMat
     );
-    cuff.position.y = -armLen + 0.015 * scale;
-    armPivot.add(cuff);
+    cuff.rotation.x = Math.PI / 2;
+    cuff.position.y = -forearmLen + 0.008 * scale;
+    elbowPivot.add(cuff);
 
-    const hand = new THREE.Mesh(
-      new THREE.SphereGeometry(0.027 * scale, 10, 10),
+    // Sculpted palm/mitten + distinct thumb
+    const palm = new THREE.Mesh(
+      new THREE.SphereGeometry(0.025 * scale, 10, 10),
       skinMat
     );
-    hand.position.set(0, -armLen - 0.022 * scale, 0.008 * scale);
-    armPivot.add(hand);
+    palm.scale.set(0.85, 1.25, 0.68);
+    palm.position.set(0, -forearmLen - 0.022 * scale, 0.004 * scale);
+    elbowPivot.add(palm);
 
-    g.add(armPivot);
+    const thumb = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.008 * scale, 0.016 * scale, 4, 6),
+      skinMat
+    );
+    thumb.position.set(side * -0.018 * scale, -forearmLen - 0.016 * scale, 0.014 * scale);
+    thumb.rotation.z = side * 0.55;
+    thumb.rotation.x = 0.35;
+    elbowPivot.add(thumb);
+
+    shoulderPivot.add(elbowPivot);
+    g.add(shoulderPivot);
   }
 
   // Optional Electric Guitar strapped cleanly across front of chest
   if (options.hasGuitarHex !== undefined) {
     const guitarGroup = new THREE.Group();
-    guitarGroup.position.set(0.01 * scale, torsoCenterY - 0.03 * scale, 0.122 * scale);
+    guitarGroup.position.set(0.01 * scale, torsoCenterY - 0.02 * scale, 0.118 * scale);
     guitarGroup.rotation.z = -0.46;
     const gBody = new THREE.Mesh(
       new RoundedBoxGeometry(0.20 * scale, 0.15 * scale, 0.030 * scale, 2, 0.02),
@@ -348,91 +552,186 @@ export function createHumanScaleFigure(
     g.add(guitarGroup);
   }
 
-  // Neck & Expressive Head
-  const neckY = torsoCenterY + torsoH * 0.42;
+  // Neck & Sculpted Expressive Head
+  const neckY = torsoBaseY + torsoH * 1.02;
   const neck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.034 * scale, 0.038 * scale, 0.055 * scale, 10),
+    new THREE.CylinderGeometry(0.033 * scale, 0.038 * scale, 0.056 * scale, 12),
     skinMat
   );
   neck.position.y = neckY;
   g.add(neck);
 
-  const headY = neckY + headR + 0.022 * scale;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 16, 14), skinMat);
-  head.scale.set(0.95, 1.05, 0.96);
-  head.position.y = headY;
-  head.castShadow = true;
-  g.add(head);
+  const headY = neckY + headR * 0.98 + 0.018 * scale;
+  const headGroup = new THREE.Group();
+  headGroup.position.y = headY;
 
-  // Sculpted Nose, Eyes & Smile
-  const nose = new THREE.Mesh(
-    new THREE.ConeGeometry(headR * 0.16, headR * 0.32, 8),
-    skinMat
-  );
-  nose.rotation.x = Math.PI / 2 - 0.18;
-  nose.position.set(0, headY, headR * 1.02);
-  g.add(nose);
+  // Cranium + softly tapered lower cheek/jaw contour
+  const cranium = new THREE.Mesh(new THREE.SphereGeometry(headR, 20, 16), skinMat);
+  cranium.scale.set(0.94, 1.06, 0.96);
+  cranium.castShadow = true;
+  headGroup.add(cranium);
 
+  // Rosy sculpted cheek puffs & ears
   for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(headR * 0.11, 8, 8),
-      eyeDarkMat
+    const cheek = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.28, 10, 10),
+      cheekBlushMat
     );
-    eye.position.set(side * headR * 0.34, headY + headR * 0.14, headR * 0.92);
-    g.add(eye);
+    cheek.scale.set(1.05, 0.82, 0.72);
+    cheek.position.set(side * headR * 0.52, -headR * 0.12, headR * 0.76);
+    headGroup.add(cheek);
 
-    const brow = new THREE.Mesh(
-      new THREE.BoxGeometry(headR * 0.24, headR * 0.05, headR * 0.06),
-      hairMat
+    const ear = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.22, 10, 8),
+      skinMat
     );
-    brow.position.set(side * headR * 0.34, headY + headR * 0.32, headR * 0.92);
-    brow.rotation.z = side * -0.14;
-    g.add(brow);
+    ear.scale.set(0.45, 1.15, 0.75);
+    ear.position.set(side * headR * 0.92, -headR * 0.02, -headR * 0.04);
+    headGroup.add(ear);
   }
 
-  // Sculpted Hair Cap
+  // Sculpted Nose with rounded bridge & tip
+  const noseBridge = new THREE.Mesh(
+    new THREE.ConeGeometry(headR * 0.14, headR * 0.30, 10),
+    skinMat
+  );
+  noseBridge.rotation.x = Math.PI / 2 - 0.22;
+  noseBridge.position.set(0, -headR * 0.02, headR * 0.98);
+  headGroup.add(noseBridge);
+
+  const noseTip = new THREE.Mesh(
+    new THREE.SphereGeometry(headR * 0.12, 10, 8),
+    cheekBlushMat
+  );
+  noseTip.position.set(0, -headR * 0.01, headR * 1.11);
+  headGroup.add(noseTip);
+
+  // Expressive Eyes (Sclera + Colored Iris + Dark Pupil + White Specular Catchlight + Upper Eyelid + Curved Brow)
+  for (const side of [-1, 1]) {
+    const ex = side * headR * 0.34;
+    const ey = headR * 0.13;
+    const ez = headR * 0.86;
+
+    const sclera = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.15, 12, 10),
+      scleraMat
+    );
+    sclera.scale.set(1.0, 1.08, 0.65);
+    sclera.position.set(ex, ey, ez);
+    headGroup.add(sclera);
+
+    const iris = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.095, 10, 8),
+      irisMat
+    );
+    iris.scale.set(1.0, 1.05, 0.55);
+    iris.position.set(ex, ey, ez + headR * 0.065);
+    headGroup.add(iris);
+
+    const pupil = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.058, 8, 8),
+      eyeDarkMat
+    );
+    pupil.scale.set(1.0, 1.05, 0.5);
+    pupil.position.set(ex, ey, ez + headR * 0.095);
+    headGroup.add(pupil);
+
+    const catchlight = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.026, 6, 6),
+      catchlightMat
+    );
+    catchlight.position.set(ex + headR * 0.032, ey + headR * 0.038, ez + headR * 0.118);
+    headGroup.add(catchlight);
+
+    // Sculpted upper eyelid & curved eyebrow
+    const eyelid = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.14, headR * 0.028, 6, 12, Math.PI),
+      hairMat
+    );
+    eyelid.position.set(ex, ey + headR * 0.02, ez + headR * 0.04);
+    eyelid.rotation.z = side * -0.08;
+    headGroup.add(eyelid);
+
+    const brow = new THREE.Mesh(
+      new THREE.TorusGeometry(headR * 0.18, headR * 0.028, 6, 12, Math.PI * 0.72),
+      hairMat
+    );
+    brow.position.set(ex - side * headR * 0.02, ey + headR * 0.14, ez + headR * 0.03);
+    brow.rotation.z = Math.PI * 0.14 + side * -0.14;
+    headGroup.add(brow);
+  }
+
+  // Sculpted Smiling Mouth Arc
+  const smileArc = new THREE.Mesh(
+    new THREE.TorusGeometry(headR * 0.20, headR * 0.026, 8, 14, Math.PI * 0.78),
+    lipMat
+  );
+  smileArc.rotation.z = Math.PI * 1.11;
+  smileArc.rotation.x = 0.15;
+  smileArc.position.set(0, -headR * 0.18, headR * 0.88);
+  headGroup.add(smileArc);
+
+  // Layered Sculpted Hair Cap, Sideburns & Back Hair Volume
   const hairCap = new THREE.Mesh(
-    new THREE.SphereGeometry(headR * 1.03, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    new THREE.SphereGeometry(headR * 1.04, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62),
     hairMat
   );
-  hairCap.position.set(0, headY + headR * 0.06, -headR * 0.04);
-  hairCap.rotation.x = -0.18;
-  g.add(hairCap);
+  hairCap.position.set(0, headR * 0.06, -headR * 0.04);
+  hairCap.rotation.x = -0.22;
+  headGroup.add(hairCap);
+
+  // Swept front hair bangs
+  for (const side of [-1, 1]) {
+    const bang = new THREE.Mesh(
+      new THREE.SphereGeometry(headR * 0.36, 12, 10),
+      hairMat
+    );
+    bang.scale.set(1.25, 0.58, 0.72);
+    bang.position.set(side * headR * 0.38, headR * 0.56, headR * 0.68);
+    bang.rotation.z = side * -0.28;
+    bang.rotation.x = 0.32;
+    headGroup.add(bang);
+  }
 
   // Optional Top Hat / Headwear resting cleanly on top of hairCap
   if (hatHeightM > 0.01) {
-    const hatMat = new THREE.MeshStandardMaterial({ color: hatColorHex, roughness: 0.45 });
+    const hatMat = new THREE.MeshStandardMaterial({
+      color: hatColorHex,
+      normalMap: fabricNormal,
+      normalScale: new THREE.Vector2(0.3, 0.3),
+      roughness: 0.48,
+    });
     const brim = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 1.58, headR * 1.58, 0.024 * scale, 18),
+      new THREE.CylinderGeometry(headR * 1.56, headR * 1.56, 0.024 * scale, 22),
       hatMat
     );
-    brim.position.y = headY + headR * 0.96;
-    g.add(brim);
+    brim.position.y = headR * 0.92;
+    headGroup.add(brim);
 
     const crown = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 1.14, headR * 0.94, hatHeightM, 18),
+      new THREE.CylinderGeometry(headR * 1.14, headR * 0.94, hatHeightM, 20),
       hatMat
     );
     crown.position.y = brim.position.y + 0.012 * scale + hatHeightM / 2;
     crown.rotation.z = -0.08;
-    g.add(crown);
+    headGroup.add(crown);
 
     const ribbon = new THREE.Mesh(
-      new THREE.CylinderGeometry(headR * 0.99, headR * 0.97, Math.min(0.052, hatHeightM * 0.22), 18),
+      new THREE.CylinderGeometry(headR * 0.99, headR * 0.97, Math.min(0.052, hatHeightM * 0.22), 20),
       trimMat
     );
     ribbon.position.y = brim.position.y + 0.032;
     ribbon.rotation.z = -0.08;
-    g.add(ribbon);
+    headGroup.add(ribbon);
   }
 
   // Optional Wonderland Hare / Rabbit Ears
   if (hasRabbitEars) {
-    const earOuterMat = new THREE.MeshStandardMaterial({ color: 0xede6dc, roughness: 0.58 });
-    const earInnerMat = new THREE.MeshStandardMaterial({ color: 0xf0a8bc, roughness: 0.55 });
+    const earOuterMat = new THREE.MeshStandardMaterial({ color: 0xd8d2c8, roughness: 0.58 });
+    const earInnerMat = new THREE.MeshStandardMaterial({ color: 0xe69cb0, roughness: 0.55 });
     for (const side of [-1, 1]) {
       const earGroup = new THREE.Group();
-      earGroup.position.set(side * headR * 0.52, headY + headR * 0.98, 0);
+      earGroup.position.set(side * headR * 0.52, headR * 0.94, 0);
       earGroup.rotation.z = side * -0.22;
       earGroup.rotation.x = 0.12;
 
@@ -450,10 +749,11 @@ export function createHumanScaleFigure(
       innerEar.position.set(0, 0.17 * scale, 0.016 * scale);
       earGroup.add(innerEar);
 
-      g.add(earGroup);
+      headGroup.add(earGroup);
     }
   }
 
+  g.add(headGroup);
   return g;
 }
 
@@ -467,9 +767,11 @@ export interface GrinchCharacterOptions {
 
 /**
  * Builds an expressive, bespoke 3D model of the Grinch with his signature
- * pear-shaped furry green body, hunched shoulders, curved long fingers,
- * glowing yellow cat-like eyes, upturned snout, tuft of green hair, and
- * optional tailored red-and-white Santa disguise or stolen gift sack.
+ * pear-shaped furry green body (`LatheGeometry`), slumped S-curved posture,
+ * shaggy fur ruffs around neck/jowls/wrists, articulated arms with long curved
+ * green fingers, glowing yellow-amber cat-like eyes with crimson pupils &
+ * furrowed chartreuse brow ridges, wide mischievous Grinch smirk, and optional
+ * tailored red velvet Santa disguise with white fur trim & stolen gift sack.
  */
 export function createGrinchCharacter(
   options: GrinchCharacterOptions = {}
@@ -479,437 +781,872 @@ export function createGrinchCharacter(
   const g = new THREE.Group();
   g.userData.isCharacterBlocking = true;
 
+  const fabricNormal = createFabricWeaveNormalTexture();
+
   const grinchFurMat = new THREE.MeshStandardMaterial({
-    color: 0x48b632,
+    color: 0x4cb834,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    roughness: 0.62,
+    metalness: 0.03,
+  });
+  const bellyFurMat = new THREE.MeshStandardMaterial({
+    color: 0x62cc44,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.45, 0.45),
     roughness: 0.64,
-    metalness: 0.04,
   });
   const darkGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x1e5c16,
+    color: 0x1c5614,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.4, 0.4),
     roughness: 0.68,
   });
   const santaRedMat = new THREE.MeshStandardMaterial({
-    color: 0xc81e2e,
+    color: 0xc41c2c,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.38, 0.38),
     roughness: 0.52,
   });
   const whiteFurMat = new THREE.MeshStandardMaterial({
-    color: 0xd4d8de,
-    roughness: 0.68,
+    color: 0xd0d6dc,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.6, 0.6),
+    roughness: 0.64,
+  });
+  const beltMat = new THREE.MeshStandardMaterial({
+    color: 0x18161a,
+    roughness: 0.38,
+    metalness: 0.22,
+  });
+  const buckleMat = new THREE.MeshStandardMaterial({
+    color: 0xd8a832,
+    roughness: 0.25,
+    metalness: 0.78,
   });
   const yellowEyeMat = new THREE.MeshStandardMaterial({
-    color: 0xf4df38,
+    color: 0xf0dc34,
     emissive: 0xd8b818,
-    emissiveIntensity: 0.35,
-    roughness: 0.25,
+    emissiveIntensity: 0.42,
+    roughness: 0.2,
   });
   const pupilMat = new THREE.MeshStandardMaterial({
-    color: 0xb8141e,
-    roughness: 0.2,
+    color: 0xb8121c,
+    roughness: 0.15,
+  });
+  const catchlightMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
   });
 
   // Base stand disc
   const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.20 * scale, 0.22 * scale, 0.024, 18),
+    new THREE.CylinderGeometry(0.20 * scale, 0.22 * scale, 0.024, 22),
     new THREE.MeshStandardMaterial({ color: 0x1e222a, roughness: 0.5 })
   );
   base.position.y = 0.012;
   g.add(base);
 
-  // Curled Seussian Grinch Shoes & Furry Legs
+  // Curled Seussian Grinch Shoes & Articulated Furry Legs (Thigh + Knee + Calf + Ankle Ruff)
   for (const side of [-1, 1]) {
-    const lx = side * 0.088 * scale;
-    const shoe = new THREE.Mesh(
-      new RoundedBoxGeometry(0.075 * scale, 0.052 * scale, 0.165 * scale, 2, 0.02),
-      options.santaDisguise ? santaRedMat : darkGreenMat
-    );
-    shoe.position.set(lx, 0.036 * scale, 0.035 * scale);
-    g.add(shoe);
+    const lx = side * 0.092 * scale;
+    const shoeMat = options.santaDisguise ? santaRedMat : darkGreenMat;
 
-    // Curled toe tip
-    const toeTip = new THREE.Mesh(
-      new THREE.SphereGeometry(0.032 * scale, 10, 10),
-      options.santaDisguise ? santaRedMat : darkGreenMat
+    // Long Seussian curled-toe Grinch shoe built from a smooth TubeGeometry
+    const shoeCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(lx, 0.038 * scale, -0.035 * scale),
+      new THREE.Vector3(lx, 0.034 * scale, 0.055 * scale),
+      new THREE.Vector3(lx + side * 0.012 * scale, 0.042 * scale, 0.135 * scale),
+      new THREE.Vector3(lx + side * 0.022 * scale, 0.095 * scale, 0.175 * scale),
+      new THREE.Vector3(lx + side * 0.016 * scale, 0.118 * scale, 0.145 * scale),
+    ]);
+    const shoeTube = new THREE.Mesh(
+      new THREE.TubeGeometry(shoeCurve, 16, 0.032 * scale, 10, false),
+      shoeMat
     );
-    toeTip.position.set(lx, 0.068 * scale, 0.12 * scale);
-    g.add(toeTip);
+    shoeTube.scale.set(1.05, 0.82, 1.0);
+    shoeTube.castShadow = true;
+    g.add(shoeTube);
 
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.048 * scale, 0.038 * scale, 0.58 * scale, 10),
+    // Spindly S-curved Grinch leg (slightly bowed knees)
+    const legCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(lx, 0.05 * scale, -0.01 * scale),
+      new THREE.Vector3(lx + side * 0.018 * scale, 0.28 * scale, 0.025 * scale),
+      new THREE.Vector3(lx, 0.56 * scale, -0.01 * scale),
+    ]);
+    const legMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(legCurve, 14, 0.038 * scale, 10, false),
       grinchFurMat
     );
-    leg.position.set(lx, 0.33 * scale, 0);
-    leg.rotation.z = side * -0.05;
-    leg.castShadow = true;
-    g.add(leg);
+    legMesh.castShadow = true;
+    g.add(legMesh);
+
+    // Shaggy ankle fur tufts
+    const ankleRuff = new THREE.Mesh(
+      new THREE.ConeGeometry(0.048 * scale, 0.065 * scale, 8),
+      grinchFurMat
+    );
+    ankleRuff.position.set(lx, 0.09 * scale, 0.005 * scale);
+    ankleRuff.rotation.x = Math.PI;
+    g.add(ankleRuff);
   }
 
-  // Pear-Shaped Pot-Bellied Grinch Torso
-  const belly = new THREE.Mesh(
-    new THREE.SphereGeometry(0.21 * scale, 16, 14),
-    options.santaDisguise ? santaRedMat : grinchFurMat
-  );
-  belly.scale.set(0.96, 1.18, 0.88);
-  belly.position.set(0, 0.78 * scale, 0.03 * scale);
-  belly.castShadow = true;
-  g.add(belly);
+  // Signature Pear-Shaped Pot-Bellied Grinch Torso (`LatheGeometry` profile)
+  const torsoBaseY = 0.52 * scale;
+  const torsoH = 0.72 * scale;
+  const bodyMat = options.santaDisguise ? santaRedMat : grinchFurMat;
 
-  const chest = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.145 * scale, 0.195 * scale, 0.44 * scale, 14),
-    options.santaDisguise ? santaRedMat : grinchFurMat
+  const grinchTorsoPts = [
+    new THREE.Vector2(0.001, 0),
+    new THREE.Vector2(0.165 * scale, 0.04 * torsoH),
+    new THREE.Vector2(0.205 * scale, 0.24 * torsoH), // Wide pear-shaped pot belly!
+    new THREE.Vector2(0.188 * scale, 0.44 * torsoH),
+    new THREE.Vector2(0.132 * scale, 0.68 * torsoH), // Narrow ribcage
+    new THREE.Vector2(0.145 * scale, 0.88 * torsoH), // Hunched shoulders
+    new THREE.Vector2(0.058 * scale, 1.0 * torsoH),  // Neck base
+  ];
+  const grinchTorsoGeo = new THREE.LatheGeometry(grinchTorsoPts, 22);
+  grinchTorsoGeo.scale(1.0, 1.0, 0.86);
+  const grinchTorso = new THREE.Mesh(grinchTorsoGeo, bodyMat);
+  grinchTorso.position.set(0, torsoBaseY, 0.018 * scale);
+  grinchTorso.rotation.x = 0.08; // Slumped forward Grinch posture
+  grinchTorso.castShadow = true;
+  g.add(grinchTorso);
+
+  // Prominent protruding round belly puff
+  const bellyPatch = new THREE.Mesh(
+    new THREE.SphereGeometry(0.162 * scale, 16, 14),
+    options.santaDisguise ? santaRedMat : bellyFurMat
   );
-  chest.scale.set(1.0, 1.0, 0.78);
-  chest.position.set(0, 1.08 * scale, -0.01 * scale);
-  chest.rotation.x = 0.12;
-  chest.castShadow = true;
-  g.add(chest);
+  bellyPatch.scale.set(0.95, 1.08, 0.88);
+  bellyPatch.position.set(0, 0.73 * scale, 0.068 * scale);
+  g.add(bellyPatch);
 
   if (options.santaDisguise) {
-    // White fur coat hem, vertical front placket, collar & black belt
-    const furHem = new THREE.Mesh(
-      new THREE.TorusGeometry(0.198 * scale, 0.036 * scale, 10, 20),
+    // Plush White Fur Coat Hem, Center Placket, Belt & Collar Ruff
+    const bottomFurRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.172 * scale, 0.034 * scale, 10, 22),
       whiteFurMat
     );
-    furHem.rotation.x = Math.PI / 2;
-    furHem.scale.set(1.0, 0.88, 1.0);
-    furHem.position.set(0, 0.60 * scale, 0.025 * scale);
-    g.add(furHem);
+    bottomFurRim.rotation.x = Math.PI / 2 + 0.06;
+    bottomFurRim.scale.set(1.04, 0.88, 1.0);
+    bottomFurRim.position.set(0, 0.55 * scale, 0.022 * scale);
+    g.add(bottomFurRim);
 
-    const belt = new THREE.Mesh(
-      new THREE.TorusGeometry(0.206 * scale, 0.024 * scale, 8, 20),
-      new THREE.MeshStandardMaterial({ color: 0x18181e, roughness: 0.4 })
+    const centerFurPlacket = new THREE.Mesh(
+      new RoundedBoxGeometry(0.058 * scale, 0.64 * scale, 0.036 * scale, 3, 0.015 * scale),
+      whiteFurMat
     );
-    belt.rotation.x = Math.PI / 2;
+    centerFurPlacket.position.set(0, 0.88 * scale, 0.165 * scale);
+    centerFurPlacket.rotation.x = -0.06;
+    g.add(centerFurPlacket);
+
+    // Santa Black Belt & Gold Buckle cinching the Grinch's pot belly
+    const belt = new THREE.Mesh(
+      new THREE.TorusGeometry(0.188 * scale, 0.022 * scale, 8, 22),
+      beltMat
+    );
+    belt.rotation.x = Math.PI / 2 + 0.08;
     belt.scale.set(1.0, 0.88, 1.0);
-    belt.position.set(0, 0.82 * scale, 0.03 * scale);
+    belt.position.set(0, 0.76 * scale, 0.042 * scale);
     g.add(belt);
 
     const buckle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.065 * scale, 0.058 * scale, 0.022 * scale),
-      new THREE.MeshStandardMaterial({ color: 0xf0c438, roughness: 0.3, metalness: 0.7 })
+      new RoundedBoxGeometry(0.058 * scale, 0.054 * scale, 0.022 * scale, 2, 0.006 * scale),
+      buckleMat
     );
-    buckle.position.set(0, 0.82 * scale, 0.222 * scale);
+    buckle.position.set(0, 0.76 * scale, 0.215 * scale);
     g.add(buckle);
 
-    const furCollar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.138 * scale, 0.034 * scale, 10, 18),
+    const collarFur = new THREE.Mesh(
+      new THREE.TorusGeometry(0.088 * scale, 0.028 * scale, 10, 18),
       whiteFurMat
     );
-    furCollar.rotation.x = Math.PI / 2 + 0.18;
-    furCollar.position.set(0, 1.30 * scale, 0.01 * scale);
-    g.add(furCollar);
+    collarFur.rotation.x = Math.PI / 2 + 0.18;
+    collarFur.position.set(0, 1.21 * scale, 0.045 * scale);
+    g.add(collarFur);
+  } else {
+    // Shaggy Green Neck & Chest Fur Ruff
+    for (let f = 0; f < 9; f++) {
+      const a = (f / 9) * Math.PI * 2;
+      const tuft = new THREE.Mesh(
+        new THREE.ConeGeometry(0.034 * scale, 0.095 * scale, 6),
+        grinchFurMat
+      );
+      tuft.position.set(
+        Math.cos(a) * 0.095 * scale,
+        1.18 * scale,
+        0.04 * scale + Math.sin(a) * 0.085 * scale
+      );
+      tuft.rotation.x = Math.PI * 0.75 + Math.sin(a) * 0.35;
+      tuft.rotation.z = -Math.cos(a) * 0.35;
+      g.add(tuft);
+    }
   }
 
-  // Long Lanky Grinch Arms & Curved Green Fingers (placed cleanly outside chest radius)
+  // Articulated 2-Segment Grinch Arms + Long Spindly Curved Grinch Fingers
+  const shoulderY = 1.15 * scale;
+  const shoulderX = 0.155 * scale;
   for (const side of [-1, 1]) {
     const armGroup = new THREE.Group();
-    armGroup.position.set(side * 0.215 * scale, 1.24 * scale, 0);
+    armGroup.position.set(side * shoulderX, shoulderY, 0.035 * scale);
+
+    let elbowBendX = -0.42;
+    let elbowBendZ = side * -0.18;
     if (options.spyglassPose && side === 1) {
-      armGroup.rotation.x = -0.92;
-      armGroup.rotation.z = -0.18;
-    } else if (options.carvingKnife && side === 1) {
-      armGroup.rotation.x = -1.18;
-      armGroup.rotation.z = 0.24;
+      armGroup.rotation.x = -1.28;
+      armGroup.rotation.z = -0.26;
+      elbowBendX = -0.85;
     } else if (options.holdingSack && side === -1) {
-      armGroup.rotation.x = 0.42;
-      armGroup.rotation.z = -0.32;
+      armGroup.rotation.x = -0.68;
+      armGroup.rotation.z = 0.36;
+      elbowBendX = -0.72;
+    } else if (options.carvingKnife && side === 1) {
+      armGroup.rotation.x = -0.82;
+      armGroup.rotation.z = 0.24;
+      elbowBendX = -0.58;
     } else {
       armGroup.rotation.z = side * 0.24;
-      armGroup.rotation.x = -0.32;
+      armGroup.rotation.x = -0.22;
     }
 
-    const sleeve = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.040 * scale, 0.033 * scale, 0.46 * scale, 10),
-      options.santaDisguise ? santaRedMat : grinchFurMat
+    const upperSleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.036 * scale, 0.030 * scale, 0.24 * scale, 10),
+      bodyMat
     );
-    sleeve.position.y = -0.23 * scale;
-    armGroup.add(sleeve);
+    upperSleeve.position.y = -0.12 * scale;
+    upperSleeve.castShadow = true;
+    armGroup.add(upperSleeve);
+
+    const elbowGroup = new THREE.Group();
+    elbowGroup.position.set(0, -0.24 * scale, 0);
+    elbowGroup.rotation.x = elbowBendX;
+    elbowGroup.rotation.z = elbowBendZ;
+
+    const forearmSleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.030 * scale, 0.026 * scale, 0.22 * scale, 10),
+      bodyMat
+    );
+    forearmSleeve.position.y = -0.11 * scale;
+    forearmSleeve.castShadow = true;
+    elbowGroup.add(forearmSleeve);
 
     if (options.santaDisguise) {
       const cuff = new THREE.Mesh(
-        new THREE.TorusGeometry(0.037 * scale, 0.017 * scale, 8, 12),
+        new THREE.TorusGeometry(0.030 * scale, 0.015 * scale, 8, 14),
         whiteFurMat
       );
       cuff.rotation.x = Math.PI / 2;
-      cuff.position.y = -0.45 * scale;
-      armGroup.add(cuff);
+      cuff.position.y = -0.21 * scale;
+      elbowGroup.add(cuff);
     }
 
-    const hand = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035 * scale, 10, 10),
+    // Long furry Grinch palm + 3 spindly curved fingers
+    const handGroup = new THREE.Group();
+    handGroup.position.set(0, -0.24 * scale, 0);
+    const palm = new THREE.Mesh(
+      new THREE.SphereGeometry(0.026 * scale, 10, 8),
       grinchFurMat
     );
-    hand.scale.set(0.85, 1.32, 0.75);
-    hand.position.set(0, -0.50 * scale, 0.02 * scale);
-    armGroup.add(hand);
+    palm.scale.set(0.85, 1.35, 0.65);
+    handGroup.add(palm);
 
-    if (options.carvingKnife && side === 1) {
-      const knifeHandle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.012 * scale, 0.014 * scale, 0.09 * scale, 8),
-        new THREE.MeshStandardMaterial({ color: 0x4e2e1a, roughness: 0.55 })
+    for (let f = -1; f <= 1; f++) {
+      const fingerCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(f * 0.010 * scale, -0.018 * scale, 0),
+        new THREE.Vector3(f * 0.014 * scale, -0.052 * scale, 0.016 * scale),
+        new THREE.Vector3(f * 0.012 * scale, -0.078 * scale, 0.004 * scale),
+      ]);
+      const finger = new THREE.Mesh(
+        new THREE.TubeGeometry(fingerCurve, 8, 0.0055 * scale, 6, false),
+        grinchFurMat
       );
-      knifeHandle.rotation.x = Math.PI / 2;
-      knifeHandle.position.set(0, -0.51 * scale, 0.05 * scale);
-      armGroup.add(knifeHandle);
-
-      const knifeBlade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.010 * scale, 0.032 * scale, 0.22 * scale),
-        new THREE.MeshStandardMaterial({ color: 0xd8e0ec, roughness: 0.22, metalness: 0.85 })
-      );
-      knifeBlade.position.set(0, -0.51 * scale, 0.19 * scale);
-      armGroup.add(knifeBlade);
+      handGroup.add(finger);
     }
 
+    if (options.carvingKnife && side === 1) {
+      const handle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012 * scale, 0.012 * scale, 0.11 * scale, 8),
+        new THREE.MeshStandardMaterial({ color: 0x4a2c18, roughness: 0.6 })
+      );
+      handle.rotation.x = Math.PI / 2;
+      handle.position.set(0, -0.04 * scale, 0.04 * scale);
+      handGroup.add(handle);
+
+      const blade = new THREE.Mesh(
+        new THREE.ConeGeometry(0.026 * scale, 0.24 * scale, 4),
+        new THREE.MeshStandardMaterial({ color: 0xd0d6dc, roughness: 0.2, metalness: 0.85 })
+      );
+      blade.rotation.x = Math.PI / 2;
+      blade.scale.set(0.25, 1.0, 1.0);
+      blade.position.set(0, -0.04 * scale, 0.18 * scale);
+      handGroup.add(blade);
+    }
+
+    elbowGroup.add(handGroup);
+    armGroup.add(elbowGroup);
     g.add(armGroup);
   }
 
-  // Sculpted Pear-Shaped Grinch Head, Cheek Jowls, Yellow Eyes & Furry Brow
-  const headY = 1.48 * scale;
+  // Forward-Slung Neck & Signature Pear-Shaped Grinch Head (wide furry jowls, narrow forehead)
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.036 * scale, 0.046 * scale, 0.09 * scale, 10),
+    grinchFurMat
+  );
+  neck.position.set(0, 1.26 * scale, 0.048 * scale);
+  neck.rotation.x = 0.22;
+  g.add(neck);
+
+  const headY = 1.40 * scale;
+  const headZ = 0.068 * scale;
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, headY, 0.02 * scale);
+  headGroup.position.set(0, headY, headZ);
 
-  const cranium = new THREE.Mesh(
-    new THREE.SphereGeometry(0.125 * scale, 16, 14),
-    grinchFurMat
+  // Pear-shaped head profile using LatheGeometry
+  const headLathePts = [
+    new THREE.Vector2(0.001, -0.11 * scale),
+    new THREE.Vector2(0.085 * scale, -0.09 * scale), // Chin
+    new THREE.Vector2(0.142 * scale, -0.02 * scale), // Wide furry Grinch jowls!
+    new THREE.Vector2(0.125 * scale, 0.04 * scale),  // Cheekbones
+    new THREE.Vector2(0.088 * scale, 0.11 * scale),  // Narrow temples
+    new THREE.Vector2(0.072 * scale, 0.17 * scale),  // Forehead
+    new THREE.Vector2(0.001, 0.20 * scale),          // Crown
+  ];
+  const headLatheGeo = new THREE.LatheGeometry(headLathePts, 20);
+  headLatheGeo.scale(1.0, 1.0, 0.92);
+  const grinchHeadMesh = new THREE.Mesh(headLatheGeo, grinchFurMat);
+  grinchHeadMesh.castShadow = true;
+  headGroup.add(grinchHeadMesh);
+
+  // Shaggy side-cheek fur tufts flaring outward from the jowls
+  for (const side of [-1, 1]) {
+    for (let t = 0; t < 3; t++) {
+      const cheekTuft = new THREE.Mesh(
+        new THREE.ConeGeometry(0.028 * scale, 0.085 * scale, 6),
+        grinchFurMat
+      );
+      cheekTuft.position.set(
+        side * (0.145 + t * 0.012) * scale,
+        (-0.03 + t * 0.022) * scale,
+        0.01 * scale
+      );
+      cheekTuft.rotation.z = side * -(Math.PI * 0.42 + t * 0.12);
+      headGroup.add(cheekTuft);
+    }
+  }
+
+  // Prominent Muzzle Snout, Dark Green Cat-Nose & Philtrum
+  const muzzle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.072 * scale, 14, 12),
+    bellyFurMat
   );
-  cranium.scale.set(0.92, 1.14, 0.95);
-  headGroup.add(cranium);
+  muzzle.scale.set(1.15, 0.78, 0.95);
+  muzzle.position.set(0, -0.022 * scale, 0.095 * scale);
+  headGroup.add(muzzle);
 
-  const jowls = new THREE.Mesh(
-    new THREE.SphereGeometry(0.138 * scale, 16, 12),
-    grinchFurMat
-  );
-  jowls.scale.set(1.18, 0.68, 0.96);
-  jowls.position.set(0, -0.045 * scale, 0.025 * scale);
-  headGroup.add(jowls);
-
-  const snout = new THREE.Mesh(
-    new THREE.ConeGeometry(0.028 * scale, 0.055 * scale, 8),
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022 * scale, 10, 8),
     darkGreenMat
   );
-  snout.rotation.x = Math.PI / 2 - 0.25;
-  snout.position.set(0, -0.01 * scale, 0.135 * scale);
-  headGroup.add(snout);
+  nose.scale.set(1.2, 0.85, 1.1);
+  nose.position.set(0, 0.012 * scale, 0.158 * scale);
+  headGroup.add(nose);
 
+  // Signature Wide Mischievous Curved Grinch Smirk (`TubeGeometry`)
+  const smirkCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.088 * scale, -0.008 * scale, 0.105 * scale),
+    new THREE.Vector3(-0.045 * scale, -0.048 * scale, 0.142 * scale),
+    new THREE.Vector3(0, -0.056 * scale, 0.156 * scale),
+    new THREE.Vector3(0.045 * scale, -0.048 * scale, 0.142 * scale),
+    new THREE.Vector3(0.088 * scale, -0.008 * scale, 0.105 * scale),
+  ]);
+  const smirkTube = new THREE.Mesh(
+    new THREE.TubeGeometry(smirkCurve, 18, 0.0075 * scale, 6, false),
+    darkGreenMat
+  );
+  headGroup.add(smirkTube);
+
+  // Smirk corner dimples
   for (const side of [-1, 1]) {
+    const dimple = new THREE.Mesh(
+      new THREE.TorusGeometry(0.018 * scale, 0.005 * scale, 6, 10, Math.PI * 0.8),
+      darkGreenMat
+    );
+    dimple.position.set(side * 0.090 * scale, -0.005 * scale, 0.102 * scale);
+    dimple.rotation.z = side === 1 ? -0.4 : Math.PI + 0.4;
+    headGroup.add(dimple);
+  }
+
+  // Glowing Yellow-Amber Eyes, Crimson Pupils, Specular Catchlights & Furrowed Brow Ridges
+  for (const side of [-1, 1]) {
+    const ex = side * 0.044 * scale;
+    const ey = 0.052 * scale;
+    const ez = 0.098 * scale;
+
     const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.024 * scale, 10, 10),
+      new THREE.SphereGeometry(0.025 * scale, 12, 10),
       yellowEyeMat
     );
-    eye.scale.set(1.15, 0.85, 0.65);
-    eye.position.set(side * 0.048 * scale, 0.028 * scale, 0.112 * scale);
+    eye.scale.set(1.15, 0.88, 0.72);
+    eye.position.set(ex, ey, ez);
+    eye.rotation.z = side * -0.18;
     headGroup.add(eye);
 
     const pupil = new THREE.Mesh(
       new THREE.SphereGeometry(0.011 * scale, 8, 8),
       pupilMat
     );
-    pupil.position.set(side * 0.048 * scale, 0.028 * scale, 0.126 * scale);
+    pupil.scale.set(0.75, 1.15, 0.6);
+    pupil.position.set(ex, ey, ez + 0.018 * scale);
     headGroup.add(pupil);
 
-    const brow = new THREE.Mesh(
-      new THREE.BoxGeometry(0.052 * scale, 0.016 * scale, 0.022 * scale),
+    const catchlight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.005 * scale, 6, 6),
+      catchlightMat
+    );
+    catchlight.position.set(ex + 0.006 * scale, ey + 0.006 * scale, ez + 0.024 * scale);
+    headGroup.add(catchlight);
+
+    // Heavy furrowed V-angled Grinch brow ridge
+    const browCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.010 * scale, ey + 0.015 * scale, ez + 0.022 * scale),
+      new THREE.Vector3(side * 0.045 * scale, ey + 0.032 * scale, ez + 0.018 * scale),
+      new THREE.Vector3(side * 0.078 * scale, ey + 0.048 * scale, ez - 0.005 * scale),
+    ]);
+    const browTube = new THREE.Mesh(
+      new THREE.TubeGeometry(browCurve, 10, 0.011 * scale, 6, false),
       darkGreenMat
     );
-    brow.position.set(side * 0.050 * scale, 0.062 * scale, 0.118 * scale);
-    brow.rotation.z = side * 0.34;
-    headGroup.add(brow);
+    headGroup.add(browTube);
+  }
+
+  // Wild Sprouting Green Hair Tufts on Crown + Optional Slouching Santa Hat
+  for (let t = -1; t <= 1; t++) {
+    const tuftCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(t * 0.018 * scale, 0.18 * scale, 0),
+      new THREE.Vector3(t * 0.035 * scale, 0.25 * scale, 0.015 * scale),
+      new THREE.Vector3(t * 0.052 * scale, 0.29 * scale, -0.02 * scale),
+    ]);
+    const hairTuft = new THREE.Mesh(
+      new THREE.TubeGeometry(tuftCurve, 8, 0.012 * scale, 6, false),
+      grinchFurMat
+    );
+    headGroup.add(hairTuft);
   }
 
   if (options.santaDisguise) {
-    const hatCone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.128 * scale, 0.28 * scale, 14),
-      santaRedMat
-    );
-    hatCone.position.set(-0.02 * scale, 0.22 * scale, -0.01 * scale);
-    hatCone.rotation.z = 0.28;
-    headGroup.add(hatCone);
-
     const hatBrim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.122 * scale, 0.028 * scale, 10, 18),
+      new THREE.TorusGeometry(0.088 * scale, 0.026 * scale, 10, 18),
       whiteFurMat
     );
-    hatBrim.rotation.x = Math.PI / 2 - 0.12;
-    hatBrim.position.set(0, 0.105 * scale, 0);
+    hatBrim.rotation.x = Math.PI / 2 - 0.14;
+    hatBrim.position.set(0, 0.175 * scale, -0.005 * scale);
     headGroup.add(hatBrim);
+
+    // Curved drooping Santa cap (`TubeGeometry`)
+    const hatCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.18 * scale, -0.005 * scale),
+      new THREE.Vector3(0.03 * scale, 0.30 * scale, -0.02 * scale),
+      new THREE.Vector3(0.09 * scale, 0.35 * scale, -0.05 * scale),
+      new THREE.Vector3(0.15 * scale, 0.28 * scale, -0.08 * scale),
+    ]);
+    const hatCone = new THREE.Mesh(
+      new THREE.TubeGeometry(hatCurve, 16, 0.055 * scale, 10, false),
+      santaRedMat
+    );
+    headGroup.add(hatCone);
 
     const pom = new THREE.Mesh(
       new THREE.SphereGeometry(0.036 * scale, 10, 10),
       whiteFurMat
     );
-    pom.position.set(-0.08 * scale, 0.34 * scale, -0.01 * scale);
+    pom.position.set(0.155 * scale, 0.265 * scale, -0.085 * scale);
     headGroup.add(pom);
-  } else {
-    // Wild Grinch Hair Tuft
-    const tuft = new THREE.Mesh(
-      new THREE.ConeGeometry(0.045 * scale, 0.14 * scale, 8),
-      grinchFurMat
-    );
-    tuft.position.set(0, 0.18 * scale, 0);
-    tuft.rotation.z = -0.22;
-    headGroup.add(tuft);
   }
 
   g.add(headGroup);
 
+  // Optional Overstuffed Stolen Christmas Sack slung beside/behind left hip
   if (options.holdingSack) {
-    // Slung cleanly beside/behind left hip at x = -0.36 * scale, z = -0.18 * scale (zero torso or mantel overlap)
-    const sack = new THREE.Mesh(
-      new THREE.SphereGeometry(0.175 * scale, 14, 12),
+    const sackGroup = new THREE.Group();
+    sackGroup.position.set(-0.34 * scale, 0.78 * scale, -0.16 * scale);
+
+    const sackBody = new THREE.Mesh(
+      new THREE.SphereGeometry(0.185 * scale, 16, 14),
       santaRedMat
     );
-    sack.scale.set(0.95, 1.18, 0.88);
-    sack.position.set(-0.36 * scale, 0.82 * scale, -0.18 * scale);
-    sack.castShadow = true;
-    g.add(sack);
+    sackBody.scale.set(0.96, 1.22, 0.90);
+    sackBody.castShadow = true;
+    sackGroup.add(sackBody);
+
+    const sackNeck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.075 * scale, 0.055 * scale, 0.09 * scale, 12),
+      santaRedMat
+    );
+    sackNeck.position.y = 0.22 * scale;
+    sackGroup.add(sackNeck);
+
+    // Protruding stolen present corner
+    const cornerGift = new THREE.Mesh(
+      new RoundedBoxGeometry(0.075 * scale, 0.075 * scale, 0.075 * scale, 2, 0.008 * scale),
+      buckleMat
+    );
+    cornerGift.position.set(0.015 * scale, 0.27 * scale, 0.01 * scale);
+    cornerGift.rotation.set(0.3, 0.4, -0.25);
+    sackGroup.add(cornerGift);
+
+    g.add(sackGroup);
   }
 
   return g;
 }
 
+export interface MaxDogOptions {
+  readonly scale?: number;
+  readonly withAntler?: boolean;
+  readonly sitting?: boolean;
+}
+
 /**
- * Builds an expressive 3D model of Max the Dog with floppy brown ears,
- * wagging tail, red collar, and optional oversized single reindeer antler.
+ * Builds an expressive, organic 3D model of Max the Dog with a sculpted canine
+ * chest/ribcage/waist (`LatheGeometry`), muscular haunches, 4-toed paws, long
+ * floppy hound ears, wet black nose, soulful eyes with catchlights, happy pink
+ * tongue, red collar with gold tag, and his signature oversized crooked reindeer
+ * antler tied on with a red ribbon bow.
  */
-export function createMaxDogCharacter(
-  options: { readonly withAntler?: boolean; readonly sitting?: boolean } = {}
-): THREE.Group {
+export function createMaxDogCharacter(options: MaxDogOptions = {}): THREE.Group {
+  const scale = options.scale ?? 1.0;
   const g = new THREE.Group();
   g.userData.isCharacterBlocking = true;
+  g.scale.setScalar(scale);
+
+  const fabricNormal = createFabricWeaveNormalTexture();
 
   const coatMat = new THREE.MeshStandardMaterial({
-    color: 0xc48244,
+    color: 0xc28042,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.38, 0.38),
     roughness: 0.62,
   });
   const earMat = new THREE.MeshStandardMaterial({
-    color: 0x683c1e,
-    roughness: 0.68,
+    color: 0x683c1c,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.42, 0.42),
+    roughness: 0.66,
   });
   const chestMat = new THREE.MeshStandardMaterial({
-    color: 0xdfc298,
-    roughness: 0.65,
+    color: 0xd8c4a6,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.32, 0.32),
+    roughness: 0.62,
   });
   const redMat = new THREE.MeshStandardMaterial({
-    color: 0xd42232,
+    color: 0xc81e2c,
     roughness: 0.45,
   });
+  const goldTagMat = new THREE.MeshStandardMaterial({
+    color: 0xd8a832,
+    roughness: 0.25,
+    metalness: 0.78,
+  });
   const antlerMat = new THREE.MeshStandardMaterial({
-    color: 0xd8c49e,
-    roughness: 0.55,
+    color: 0xc8aa78,
+    roughness: 0.56,
+  });
+  const noseMat = new THREE.MeshStandardMaterial({
+    color: 0x161418,
+    roughness: 0.18,
+    metalness: 0.1,
+  });
+  const scleraMat = new THREE.MeshStandardMaterial({
+    color: 0xd8dce0,
+    roughness: 0.2,
+  });
+  const pupilMat = new THREE.MeshStandardMaterial({
+    color: 0x181210,
+    roughness: 0.15,
+  });
+  const catchlightMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+  });
+  const tongueMat = new THREE.MeshStandardMaterial({
+    color: 0xe06878,
+    roughness: 0.42,
   });
 
   // Base disc
   const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.18, 0.02, 16),
+    new THREE.CylinderGeometry(0.16, 0.18, 0.02, 18),
     new THREE.MeshStandardMaterial({ color: 0x20242c, roughness: 0.5 })
   );
   base.position.y = 0.01;
   g.add(base);
 
-  // Body & Chest
-  const body = new THREE.Mesh(
-    new RoundedBoxGeometry(0.19, 0.22, 0.36, 3, 0.06),
-    coatMat
-  );
-  body.position.set(0, options.sitting ? 0.24 : 0.26, -0.02);
-  body.rotation.x = options.sitting ? -0.42 : 0;
-  body.castShadow = true;
-  g.add(body);
+  // Sculpted Organic Canine Torso (`LatheGeometry`: broad chest -> tucked waist -> round rump)
+  const bodyLathePts = [
+    new THREE.Vector2(0.001, 0),
+    new THREE.Vector2(0.078, 0.04),  // Rump
+    new THREE.Vector2(0.082, 0.12),  // Haunches
+    new THREE.Vector2(0.068, 0.22),  // Tucked waist
+    new THREE.Vector2(0.092, 0.32),  // Deep ribcage / chest
+    new THREE.Vector2(0.072, 0.40),  // Shoulders
+    new THREE.Vector2(0.001, 0.43),
+  ];
+  const bodyGeo = new THREE.LatheGeometry(bodyLathePts, 18);
+  bodyGeo.scale(0.88, 1.0, 1.05);
+  const bodyMesh = new THREE.Mesh(bodyGeo, coatMat);
+  if (options.sitting) {
+    bodyMesh.rotation.x = Math.PI / 2 - 0.52;
+    bodyMesh.position.set(0, 0.15, -0.14);
+  } else {
+    bodyMesh.rotation.x = Math.PI / 2 - 0.08;
+    bodyMesh.position.set(0, 0.24, -0.18);
+  }
+  bodyMesh.castShadow = true;
+  g.add(bodyMesh);
 
+  // Fluffy Cream Chest Patch
   const chest = new THREE.Mesh(
-    new THREE.SphereGeometry(0.105, 12, 10),
+    new THREE.SphereGeometry(0.078, 14, 12),
     chestMat
   );
-  chest.position.set(0, 0.28, 0.12);
+  chest.scale.set(0.88, 1.12, 0.92);
+  chest.position.set(0, options.sitting ? 0.30 : 0.27, 0.11);
   g.add(chest);
 
-  // 4 Legs & Paws
-  for (const lx of [-0.065, 0.065]) {
-    for (const lz of [-0.12, 0.11]) {
-      const leg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.024, 0.18, 8),
-        coatMat
-      );
-      leg.position.set(lx, 0.10, lz);
-      g.add(leg);
-    }
-  }
-
-  // Red Collar
-  const collar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.088, 0.018, 8, 16),
-    redMat
-  );
-  collar.rotation.x = Math.PI / 2 - 0.35;
-  collar.position.set(0, 0.36, 0.12);
-  g.add(collar);
-
-  // Head, Snout, Nose & Floppy Ears
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 14, 12), coatMat);
-  head.position.set(0, 0.45, 0.14);
-  head.castShadow = true;
-  g.add(head);
-
-  const snout = new THREE.Mesh(
-    new RoundedBoxGeometry(0.082, 0.068, 0.11, 2, 0.025),
-    chestMat
-  );
-  snout.position.set(0, 0.43, 0.22);
-  g.add(snout);
-
-  const nose = new THREE.Mesh(
-    new THREE.SphereGeometry(0.022, 8, 8),
-    new THREE.MeshStandardMaterial({ color: 0x161418, roughness: 0.25 })
-  );
-  nose.position.set(0, 0.45, 0.275);
-  g.add(nose);
-
+  // Articulated Front Legs, Muscular Hind Haunches & Sculpted Paws
   for (const side of [-1, 1]) {
-    const ear = new THREE.Mesh(
-      new RoundedBoxGeometry(0.042, 0.18, 0.068, 2, 0.018),
-      earMat
+    // Front leg + paw
+    const fX = side * 0.064;
+    const fZ = 0.10;
+    const frontLeg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.020, 0.22, 10),
+      coatMat
     );
-    ear.position.set(side * 0.105, 0.39, 0.13);
-    ear.rotation.z = side * 0.18;
-    g.add(ear);
+    frontLeg.position.set(fX, 0.13, fZ);
+    frontLeg.castShadow = true;
+    g.add(frontLeg);
+
+    const frontPaw = new THREE.Mesh(
+      new THREE.SphereGeometry(0.026, 10, 8),
+      chestMat
+    );
+    frontPaw.scale.set(0.95, 0.62, 1.35);
+    frontPaw.position.set(fX, 0.028, fZ + 0.018);
+    g.add(frontPaw);
+
+    // Hind haunch + lower hock + paw
+    const bX = side * 0.072;
+    const bZ = -0.12;
+    const haunch = new THREE.Mesh(
+      new THREE.SphereGeometry(0.052, 12, 10),
+      coatMat
+    );
+    haunch.scale.set(0.68, 1.25, 1.05);
+    haunch.position.set(bX, options.sitting ? 0.12 : 0.21, bZ);
+    haunch.rotation.x = options.sitting ? 0.65 : 0.18;
+    g.add(haunch);
+
+    const hindShank = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.024, 0.019, options.sitting ? 0.12 : 0.20, 10),
+      coatMat
+    );
+    hindShank.position.set(bX, options.sitting ? 0.06 : 0.11, options.sitting ? bZ + 0.04 : bZ - 0.01);
+    hindShank.rotation.x = options.sitting ? -0.45 : -0.12;
+    g.add(hindShank);
+
+    const hindPaw = new THREE.Mesh(
+      new THREE.SphereGeometry(0.026, 10, 8),
+      chestMat
+    );
+    hindPaw.scale.set(0.95, 0.62, 1.35);
+    hindPaw.position.set(bX, 0.028, options.sitting ? bZ + 0.07 : bZ + 0.012);
+    g.add(hindPaw);
   }
 
-  // Wagging Tail
-  const tail = new THREE.Mesh(
-    new THREE.ConeGeometry(0.024, 0.18, 8),
+  // Neck, Red Collar & Gold Dog Tag
+  const neckY = options.sitting ? 0.38 : 0.35;
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.046, 0.058, 0.10, 12),
     coatMat
   );
-  tail.position.set(0, 0.34, -0.22);
-  tail.rotation.x = -0.68;
-  g.add(tail);
+  neck.position.set(0, neckY, 0.12);
+  neck.rotation.x = 0.28;
+  g.add(neck);
 
-  // Single Crooked Reindeer Antler with Red Ribbon Bow
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(0.054, 0.013, 8, 16),
+    redMat
+  );
+  collar.rotation.x = Math.PI / 2 - 0.28;
+  collar.position.set(0, neckY - 0.01, 0.125);
+  g.add(collar);
+
+  const dogTag = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.016, 0.016, 0.006, 12),
+    goldTagMat
+  );
+  dogTag.rotation.x = Math.PI / 2;
+  dogTag.position.set(0, neckY - 0.032, 0.182);
+  g.add(dogTag);
+
+  // Expressive Hound Head, Snout, Happy Open Mouth & Pink Tongue, Soulful Eyes & Floppy Ears
+  const headY = options.sitting ? 0.46 : 0.43;
+  const headZ = 0.15;
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, headY, headZ);
+
+  const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.088, 16, 14), coatMat);
+  cranium.scale.set(0.96, 1.02, 1.06);
+  cranium.castShadow = true;
+  headGroup.add(cranium);
+
+  // Sculpted snout & muzzle puffs
+  const snout = new THREE.Mesh(
+    new THREE.SphereGeometry(0.052, 14, 12),
+    chestMat
+  );
+  snout.scale.set(0.96, 0.78, 1.38);
+  snout.position.set(0, -0.018, 0.082);
+  headGroup.add(snout);
+
+  // Happy open lower jaw & pink tongue lolling out
+  const lowerJaw = new THREE.Mesh(
+    new THREE.SphereGeometry(0.036, 10, 8),
+    coatMat
+  );
+  lowerJaw.scale.set(0.88, 0.52, 1.25);
+  lowerJaw.position.set(0, -0.052, 0.068);
+  lowerJaw.rotation.x = 0.24;
+  headGroup.add(lowerJaw);
+
+  const tongue = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022, 10, 8),
+    tongueMat
+  );
+  tongue.scale.set(0.85, 0.35, 1.45);
+  tongue.position.set(0.008, -0.046, 0.105);
+  tongue.rotation.x = 0.38;
+  tongue.rotation.z = 0.18;
+  headGroup.add(tongue);
+
+  // Shiny wet black nose
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022, 10, 8),
+    noseMat
+  );
+  nose.scale.set(1.15, 0.88, 0.95);
+  nose.position.set(0, 0.004, 0.148);
+  headGroup.add(nose);
+
+  // Soulful Hound Eyes + Catchlights + Expressive Brows
+  for (const side of [-1, 1]) {
+    const ex = side * 0.034;
+    const ey = 0.024;
+    const ez = 0.076;
+
+    const sclera = new THREE.Mesh(
+      new THREE.SphereGeometry(0.020, 10, 10),
+      scleraMat
+    );
+    sclera.scale.set(0.95, 1.15, 0.65);
+    sclera.position.set(ex, ey, ez);
+    headGroup.add(sclera);
+
+    const pupil = new THREE.Mesh(
+      new THREE.SphereGeometry(0.013, 8, 8),
+      pupilMat
+    );
+    pupil.scale.set(0.95, 1.15, 0.55);
+    pupil.position.set(ex, ey - 0.002, ez + 0.011);
+    headGroup.add(pupil);
+
+    const catchlight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.005, 6, 6),
+      catchlightMat
+    );
+    catchlight.position.set(ex + 0.004, ey + 0.005, ez + 0.018);
+    headGroup.add(catchlight);
+
+    const brow = new THREE.Mesh(
+      new THREE.TorusGeometry(0.022, 0.005, 6, 10, Math.PI * 0.7),
+      earMat
+    );
+    brow.position.set(ex, ey + 0.022, ez + 0.006);
+    brow.rotation.z = Math.PI * 0.15 + side * 0.22;
+    headGroup.add(brow);
+
+    // Long curved floppy hound ears (`TubeGeometry` with flared tip)
+    const earCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.072, 0.035, -0.01),
+      new THREE.Vector3(side * 0.105, -0.025, 0.005),
+      new THREE.Vector3(side * 0.112, -0.105, 0.020),
+      new THREE.Vector3(side * 0.095, -0.165, 0.032),
+    ]);
+    const earTube = new THREE.Mesh(
+      new THREE.TubeGeometry(earCurve, 12, 0.024, 8, false),
+      earMat
+    );
+    earTube.scale.set(0.55, 1.0, 1.35);
+    earTube.castShadow = true;
+    headGroup.add(earTube);
+  }
+
+  // Single Crooked Reindeer Antler with Red Ribbon Bow & String
   if (options.withAntler) {
-    const ribbon = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), redMat);
-    ribbon.position.set(0, 0.55, 0.14);
-    g.add(ribbon);
+    for (const side of [-1, 1]) {
+      const bowLoop = new THREE.Mesh(
+        new THREE.TorusGeometry(0.022, 0.007, 6, 12),
+        redMat
+      );
+      bowLoop.position.set(side * 0.022, 0.092, 0.005);
+      bowLoop.rotation.y = side * 0.35;
+      headGroup.add(bowLoop);
+    }
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), redMat);
+    knot.position.set(0, 0.090, 0.010);
+    headGroup.add(knot);
 
+    // S-curved organic reindeer antler beam (`TubeGeometry`)
+    const antlerBeamCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.092, 0.0),
+      new THREE.Vector3(0.025, 0.18, -0.01),
+      new THREE.Vector3(-0.015, 0.28, 0.01),
+      new THREE.Vector3(0.035, 0.38, 0.02),
+    ]);
     const mainBeam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.012, 0.018, 0.28, 8),
+      new THREE.TubeGeometry(antlerBeamCurve, 16, 0.013, 8, false),
       antlerMat
     );
-    mainBeam.position.set(0.02, 0.68, 0.14);
-    mainBeam.rotation.z = -0.18;
-    g.add(mainBeam);
+    headGroup.add(mainBeam);
 
-    for (const [ty, tz, rotZ] of [
-      [0.64, 0.16, 0.65],
-      [0.72, 0.14, -0.58],
-      [0.78, 0.15, 0.48],
+    // Branched antler tines
+    for (const [p0, p1] of [
+      [new THREE.Vector3(0.018, 0.16, -0.008), new THREE.Vector3(-0.048, 0.22, 0.035)],
+      [new THREE.Vector3(-0.008, 0.25, 0.005), new THREE.Vector3(0.068, 0.31, 0.028)],
+      [new THREE.Vector3(0.012, 0.32, 0.012), new THREE.Vector3(-0.045, 0.39, 0.035)],
     ] as const) {
+      const tineCurve = new THREE.CatmullRomCurve3([p0, p1]);
       const tine = new THREE.Mesh(
-        new THREE.ConeGeometry(0.012, 0.11, 8),
+        new THREE.TubeGeometry(tineCurve, 8, 0.009, 6, false),
         antlerMat
       );
-      tine.position.set(rotZ > 0 ? -0.02 : 0.06, ty, tz);
-      tine.rotation.z = rotZ;
-      g.add(tine);
+      headGroup.add(tine);
     }
   }
+
+  g.add(headGroup);
+
+  // Curved Wagging Tail (`TubeGeometry`)
+  const tailCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, options.sitting ? 0.14 : 0.27, -0.17),
+    new THREE.Vector3(0.015, options.sitting ? 0.22 : 0.35, -0.24),
+    new THREE.Vector3(-0.012, options.sitting ? 0.31 : 0.43, -0.27),
+  ]);
+  const tail = new THREE.Mesh(
+    new THREE.TubeGeometry(tailCurve, 12, 0.016, 8, false),
+    coatMat
+  );
+  g.add(tail);
 
   return g;
 }
@@ -925,8 +1662,10 @@ export interface WhoCharacterOptions {
 }
 
 /**
- * Builds a plump, whimsical Seussian Who character with a rounded belly coat,
- * fur collar/cuffs, upturned Who nose, beehive/looped hairdo, and winter boots.
+ * Builds a plump, whimsical Seussian Who character with a sculpted pear/bell-shaped
+ * winter coat (`LatheGeometry`), plush white/cream fur collar & cuffs, knitted winter
+ * muffler scarf, upturned Seussian Who button-snout nose, rosy Who cheeks, and
+ * elaborate Seussian beehive / looped braid hairstyles (`TubeGeometry` curls & bows).
  */
 export function createWhoCharacter(options: WhoCharacterOptions): THREE.Group {
   const g = createHumanScaleFigure(
@@ -943,45 +1682,181 @@ export function createWhoCharacter(options: WhoCharacterOptions): THREE.Group {
   );
 
   const scale = options.heightM / 1.7;
-  // Add signature round Seussian Who belly coat puff (cleanly inside arm clearance)
-  const bellyPuff = new THREE.Mesh(
-    new THREE.SphereGeometry(0.145 * scale, 14, 12),
-    new THREE.MeshStandardMaterial({ color: options.coatColorHex, roughness: 0.54 })
-  );
-  bellyPuff.scale.set(1.0, 0.92, 0.86);
-  bellyPuff.position.set(0, options.heightM * 0.48, 0.015 * scale);
-  g.add(bellyPuff);
+  const fabricNormal = createFabricWeaveNormalTexture();
+  const coatMat = new THREE.MeshStandardMaterial({
+    color: options.coatColorHex,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.38, 0.38),
+    roughness: 0.54,
+  });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: options.trimColorHex ?? 0xd8dce4,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.45, 0.45),
+    roughness: 0.58,
+  });
+  const hairMat = new THREE.MeshStandardMaterial({
+    color: options.hairColorHex ?? 0xe8b43c,
+    normalMap: fabricNormal,
+    normalScale: new THREE.Vector2(0.4, 0.4),
+    roughness: 0.58,
+  });
+  const ribbonMat = new THREE.MeshStandardMaterial({
+    color: options.hatColorHex ?? 0xe62e5c,
+    roughness: 0.42,
+  });
 
+  // Signature Plump Seussian Bell-Shaped Who Winter Coat (`LatheGeometry`)
+  const bellBaseY = options.heightM * 0.28;
+  const bellH = options.heightM * 0.44;
+  const whoBellPts = [
+    new THREE.Vector2(0.001, 0),
+    new THREE.Vector2(0.172 * scale, 0.04 * bellH), // Flared scalloped winter coat skirt
+    new THREE.Vector2(0.165 * scale, 0.28 * bellH), // Plump Seussian Who belly!
+    new THREE.Vector2(0.148 * scale, 0.56 * bellH),
+    new THREE.Vector2(0.122 * scale, 0.84 * bellH),
+    new THREE.Vector2(0.062 * scale, 1.0 * bellH),
+  ];
+  const whoBellGeo = new THREE.LatheGeometry(whoBellPts, 20);
+  whoBellGeo.scale(1.0, 1.0, 0.88);
+  const whoBellCoat = new THREE.Mesh(whoBellGeo, coatMat);
+  whoBellCoat.position.set(0, bellBaseY, 0.012 * scale);
+  whoBellCoat.castShadow = true;
+  g.add(whoBellCoat);
+
+  // Plush Fur Hem Roll at bottom of Who bell coat
+  const furHem = new THREE.Mesh(
+    new THREE.TorusGeometry(0.168 * scale, 0.024 * scale, 10, 22),
+    trimMat
+  );
+  furHem.rotation.x = Math.PI / 2;
+  furHem.scale.set(1.0, 0.88, 1.0);
+  furHem.position.set(0, bellBaseY + 0.02 * bellH, 0.012 * scale);
+  g.add(furHem);
+
+  // Cozy Knitted Winter Scarf / Muffler with hanging tail
+  const scarfRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.072 * scale, 0.022 * scale, 10, 18),
+    ribbonMat
+  );
+  scarfRing.rotation.x = Math.PI / 2 + 0.14;
+  scarfRing.position.set(0, options.heightM * 0.75, 0.018 * scale);
+  g.add(scarfRing);
+
+  const scarfTail = new THREE.Mesh(
+    new RoundedBoxGeometry(0.036 * scale, 0.14 * scale, 0.018 * scale, 2, 0.006 * scale),
+    ribbonMat
+  );
+  scarfTail.position.set(0.042 * scale, options.heightM * 0.69, 0.095 * scale);
+  scarfTail.rotation.z = 0.16;
+  scarfTail.rotation.x = -0.12;
+  g.add(scarfTail);
+
+  // Signature Upturned Seussian Who Snout & Button Nose Tip
+  const headY = options.heightM * 0.885;
+  const whoSnout = new THREE.Mesh(
+    new THREE.ConeGeometry(0.026 * scale, 0.052 * scale, 10),
+    new THREE.MeshStandardMaterial({ color: 0xeac09e, roughness: 0.48 })
+  );
+  whoSnout.rotation.x = Math.PI / 2 - 0.38;
+  whoSnout.position.set(0, headY - 0.005 * scale, 0.142 * scale);
+  g.add(whoSnout);
+
+  // Whimsical Seussian Beehive / Looped Braid Hairdo
   if (options.hasBraids) {
-    const hairMat = new THREE.MeshStandardMaterial({
-      color: options.hairColorHex ?? 0xf0c248,
-      roughness: 0.6,
-    });
     for (const side of [-1, 1]) {
       const loopBraid = new THREE.Mesh(
-        new THREE.TorusGeometry(0.052 * scale, 0.015 * scale, 8, 14),
+        new THREE.TorusGeometry(0.056 * scale, 0.017 * scale, 10, 18),
         hairMat
       );
-      loopBraid.position.set(side * 0.155 * scale, options.heightM * 0.88, 0);
+      loopBraid.position.set(side * 0.148 * scale, headY + 0.01 * scale, -0.01 * scale);
+      loopBraid.rotation.z = side * 0.25;
       g.add(loopBraid);
+
+      const braidBow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.022 * scale, 8, 8),
+        ribbonMat
+      );
+      braidBow.scale.set(1.4, 0.85, 0.75);
+      braidBow.position.set(side * 0.105 * scale, headY + 0.035 * scale, 0.01 * scale);
+      g.add(braidBow);
+    }
+
+    // Tall central Cindy-Lou / Mama Who top-knot curl with bow
+    if (options.hatColorHex === undefined) {
+      const topCurl = new THREE.Mesh(
+        new THREE.TorusGeometry(0.042 * scale, 0.015 * scale, 8, 16),
+        hairMat
+      );
+      topCurl.position.set(0, headY + 0.155 * scale, -0.01 * scale);
+      g.add(topCurl);
+
+      const topBow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.026 * scale, 8, 8),
+        ribbonMat
+      );
+      topBow.scale.set(1.5, 0.9, 0.8);
+      topBow.position.set(0, headY + 0.115 * scale, 0.02 * scale);
+      g.add(topBow);
+    }
+  } else if (options.hatColorHex === undefined) {
+    // Tiered Seussian beehive curl stack
+    for (let tier = 0; tier < 3; tier++) {
+      const r = (0.068 - tier * 0.016) * scale;
+      const hiveTier = new THREE.Mesh(
+        new THREE.TorusGeometry(r, 0.018 * scale, 8, 16),
+        hairMat
+      );
+      hiveTier.rotation.x = Math.PI / 2 - 0.12;
+      hiveTier.position.set(
+        (tier % 2 === 0 ? 1 : -1) * 0.008 * scale,
+        headY + (0.095 + tier * 0.032) * scale,
+        -0.01 * scale
+      );
+      g.add(hiveTier);
     }
   }
 
   if (options.holdingGift) {
-    // Held cleanly in front of bellyPuff (z = 0.22 * scale, depth = 0.14 * scale -> back face at 0.15 * scale)
-    const gift = new THREE.Mesh(
-      new RoundedBoxGeometry(0.15 * scale, 0.13 * scale, 0.14 * scale, 2, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0xe62e48, roughness: 0.45 })
-    );
-    gift.position.set(0, options.heightM * 0.55, 0.22 * scale);
-    g.add(gift);
+    const giftGroup = new THREE.Group();
+    giftGroup.position.set(0, options.heightM * 0.56, 0.215 * scale);
+    giftGroup.rotation.x = 0.08;
 
-    const ribbonBow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.026 * scale, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0xf4c838, roughness: 0.35, metalness: 0.3 })
+    const giftBox = new THREE.Mesh(
+      new RoundedBoxGeometry(0.145 * scale, 0.125 * scale, 0.135 * scale, 2, 0.018 * scale),
+      new THREE.MeshStandardMaterial({ color: 0xd82842, roughness: 0.45 })
     );
-    ribbonBow.position.set(0, options.heightM * 0.55 + 0.075 * scale, 0.22 * scale);
-    g.add(ribbonBow);
+    giftBox.castShadow = true;
+    giftGroup.add(giftBox);
+
+    const goldRibbonMat = new THREE.MeshStandardMaterial({
+      color: 0xe8bd34,
+      roughness: 0.32,
+      metalness: 0.35,
+    });
+    const vWrap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.028 * scale, 0.130 * scale, 0.140 * scale),
+      goldRibbonMat
+    );
+    giftGroup.add(vWrap);
+
+    const hWrap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.150 * scale, 0.130 * scale, 0.028 * scale),
+      goldRibbonMat
+    );
+    giftGroup.add(hWrap);
+
+    for (const side of [-1, 1]) {
+      const bowLoop = new THREE.Mesh(
+        new THREE.TorusGeometry(0.026 * scale, 0.008 * scale, 8, 14),
+        goldRibbonMat
+      );
+      bowLoop.position.set(side * 0.024 * scale, 0.078 * scale, 0);
+      bowLoop.rotation.z = side * -0.35;
+      giftGroup.add(bowLoop);
+    }
+
+    g.add(giftGroup);
   }
 
   return g;
