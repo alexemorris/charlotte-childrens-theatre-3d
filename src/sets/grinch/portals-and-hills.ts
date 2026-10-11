@@ -1575,13 +1575,13 @@ export function buildGrinchSnowPortals(
     wingWavesGroup.add(layer2);
 
     // Layer 3: Iconic Back Overhanging Cantilevered Cliff Prows (z = -3.38m SR / -3.42m SL)
-    // Back-left cliff (`side === -1`, audience left) shifted 30cm (+0.30m) further offstage!
+    // Back-left (`side === -1`) and back-right (`side === 1`) cliffs shifted 30cm (+0.30m) further offstage!
     const layer3BackProw = createBackOverhangingSnowCliffProw({
       side,
       seed: side === -1 ? 587 : 691,
-      outerEdgeAbsX: side === -1 ? 6.18 : 5.9,
-      baseInnerAbsX: side === -1 ? 4.68 : 4.42,
-      prowInnerAbsX: side === -1 ? 3.38 : 3.14,
+      outerEdgeAbsX: side === -1 ? 6.18 : 6.2,
+      baseInnerAbsX: side === -1 ? 4.68 : 4.72,
+      prowInnerAbsX: side === -1 ? 3.38 : 3.44,
       height: side === -1 ? 4.62 : 4.72,
       zPos: side === -1 ? -3.38 : -3.42,
       extrudeDepth: 0.22,
