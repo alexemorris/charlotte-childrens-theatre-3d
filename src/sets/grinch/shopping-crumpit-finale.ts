@@ -16,6 +16,7 @@ import {
   createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
 import { buildDsrWhovilleHouseWagon } from './whoville-town.ts';
+import { createJaggedRockCliffFaceTexture } from './portals-and-hills.ts';
 
 /**
  * Generates a Scenic Artist Hand-Painted Timber Wainscot & Trompe-l'oeil Beveled Panel
@@ -1910,30 +1911,31 @@ export function buildGrinchMtCrumpitSleigh(
 
   const rockNormalTex = createSeussianRockNormalTexture();
   const papierMacheNormalTex = createPapierMacheNormalTexture();
+  const jaggedRockTex = createJaggedRockCliffFaceTexture();
 
   const iceRockLowerMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
+    map: jaggedRockTex,
     normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.85, 0.85),
-    color: 0x767068,
+    normalScale: new THREE.Vector2(0.52, 0.52),
+    color: 0xc2b098,
     roughness: 0.72,
-    metalness: 0.06,
+    metalness: 0.05,
     flatShading: true,
   });
   const iceRockUpperMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
+    map: jaggedRockTex,
     normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.82, 0.82),
-    color: 0x888076,
+    normalScale: new THREE.Vector2(0.48, 0.48),
+    color: 0xcfbd9e,
     roughness: 0.68,
-    metalness: 0.06,
+    metalness: 0.05,
     flatShading: true,
   });
   const rockOchreLedgeMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
+    map: jaggedRockTex,
     normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.8, 0.8),
-    color: 0x988874,
+    normalScale: new THREE.Vector2(0.46, 0.46),
+    color: 0xd6c4a8,
     roughness: 0.74,
     metalness: 0.05,
     flatShading: true,

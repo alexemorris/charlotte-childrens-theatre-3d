@@ -5,6 +5,7 @@ import {
   createSeussianRockNormalTexture,
   normalizeExtrudeUVs,
 } from '../../engine/procedural-textures.ts';
+import { createSculptedIcicleDrip } from '../shared-scenic-helpers.ts';
 
 let cachedSnowMountainCliffTex: THREE.CanvasTexture | null = null;
 let cachedGlacierWavePortalTex: THREE.CanvasTexture | null = null;
@@ -236,18 +237,19 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
 
   if (ctx) {
-    // 1. Deep weathered alpine charcoal-slate & warm limestone rock base (periodic stop 0 === stop 1)
+    // 1. Warm light-brown / golden-tan & weathered buff dolomite stone base (periodic stop 0 === stop 1)
+    //    Matches the warm light-brown stone in the reference cliff photos rather than dark charcoal/black!
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0.0, '#464e5a');
-    bgGrad.addColorStop(0.22, '#5c5852');
-    bgGrad.addColorStop(0.48, '#3d4552');
-    bgGrad.addColorStop(0.74, '#665c50');
-    bgGrad.addColorStop(1.0, '#464e5a');
+    bgGrad.addColorStop(0.0, '#9c866e');
+    bgGrad.addColorStop(0.24, '#ae967a');
+    bgGrad.addColorStop(0.5, '#8c765e');
+    bgGrad.addColorStop(0.76, '#a68e72');
+    bgGrad.addColorStop(1.0, '#9c866e');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // 2. Stratified warm ochre-tan dolomite & dark slate granite rock blocks (toroidal wrap)
-    for (let i = 0; i < 84; i++) {
+    // 2. Stratified warm ochre-tan dolomite, buff sandstone & weathered umber rock blocks (toroidal wrap)
+    for (let i = 0; i < 88; i++) {
       const bx = (i * 197 + 31) % W;
       const by = (i * 139 + 53) % H;
       const bw = 96 + ((i * 43) % 160);
@@ -261,37 +263,37 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
 
           if (i % 5 === 0) {
             // Warm golden-ochre dolomite rock face (matching reference cliff photo)
-            ctx.fillStyle = 'rgba(168, 136, 96, 0.28)';
+            ctx.fillStyle = 'rgba(206, 178, 138, 0.34)';
           } else if (i % 5 === 1) {
-            // Deep charcoal-slate granite shadow face
-            ctx.fillStyle = 'rgba(34, 40, 50, 0.30)';
+            // Medium warm umber-brown recessed rock facet (brown stone shadow, not black)
+            ctx.fillStyle = 'rgba(114, 94, 74, 0.28)';
           } else if (i % 5 === 2) {
-            // Weathered tan-sienna limestone block
-            ctx.fillStyle = 'rgba(146, 118, 86, 0.24)';
+            // Light buff limestone / sandstone block
+            ctx.fillStyle = 'rgba(218, 196, 166, 0.30)';
           } else if (i % 5 === 3) {
-            // Cool blue-grey alpine slate
-            ctx.fillStyle = 'rgba(92, 104, 120, 0.22)';
+            // Weathered taupe-grey alpine limestone block
+            ctx.fillStyle = 'rgba(162, 152, 140, 0.26)';
           } else {
-            // Dark iron-grey crag facet
-            ctx.fillStyle = 'rgba(48, 54, 64, 0.24)';
+            // Rich sienna-tan rock stratum facet
+            ctx.fillStyle = 'rgba(182, 148, 108, 0.30)';
           }
           ctx.fillRect(px, py, bw, bh);
         }
       }
     }
 
-    // 3. Diagonal rock couloirs / crevices holding thin pockets of wind-blown alpine snow
+    // 3. Diagonal rock couloirs & crevices holding crisp pockets of alpine snow & glacier ice
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    for (let g = 0; g < 14; g++) {
+    for (let g = 0; g < 18; g++) {
       const gx = ((g * 179 + 64) % 860) + 64;
       const gy = ((g * 131 + 48) % 820) + 48;
       const dir = g % 2 === 0 ? 1 : -1;
-      const lenY = 70 + (g % 4) * 32;
+      const lenY = 74 + (g % 4) * 34;
 
-      // Dark rock crevice shadow
-      ctx.strokeStyle = 'rgba(18, 22, 30, 0.48)';
-      ctx.lineWidth = 10;
+      // Warm dark-brown rock crevice shadow
+      ctx.strokeStyle = 'rgba(62, 48, 36, 0.44)';
+      ctx.lineWidth = 11;
       ctx.beginPath();
       ctx.moveTo(gx, gy);
       ctx.quadraticCurveTo(
@@ -302,8 +304,21 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
       );
       ctx.stroke();
 
-      // Thin ribbon of snow tucked inside the rock gully
-      ctx.strokeStyle = 'rgba(204, 216, 228, 0.42)';
+      // Translucent glacier-ice blue rim inside the rock couloir
+      ctx.strokeStyle = 'rgba(164, 206, 232, 0.52)';
+      ctx.lineWidth = 7.5;
+      ctx.beginPath();
+      ctx.moveTo(gx + dir * 1.5, gy + 3);
+      ctx.quadraticCurveTo(
+        gx + dir * 24.5,
+        gy + lenY * 0.5,
+        gx + dir * 40.5,
+        gy + lenY - 3
+      );
+      ctx.stroke();
+
+      // Crisp ribbon of snow tucked inside the rock gully
+      ctx.strokeStyle = 'rgba(226, 234, 242, 0.72)';
       ctx.lineWidth = 4.5;
       ctx.beginPath();
       ctx.moveTo(gx + dir * 2, gy + 4);
@@ -316,7 +331,7 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
       ctx.stroke();
     }
 
-    // 4. Stepped horizontal rock strata bedding joints with thin snow dustings on rock shelves
+    // 4. Stepped horizontal rock strata bedding joints with snow & ice shelf accumulations
     for (let row = 0; row < 10; row++) {
       const baseY = 48 + row * 98;
       const stepY = (x: number): number => {
@@ -332,8 +347,8 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
         return baseY + h0 * (1 - t) + h1 * t;
       };
 
-      // Deep crevice shadow directly beneath each rock stratum shelf
-      ctx.strokeStyle = 'rgba(18, 22, 30, 0.48)';
+      // Warm dark-brown crevice shadow directly beneath each rock stratum shelf
+      ctx.strokeStyle = 'rgba(58, 44, 34, 0.46)';
       ctx.lineWidth = 8;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
@@ -343,22 +358,47 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
       }
       ctx.stroke();
 
-      // Natural snow/frost accumulation resting on top of horizontal rock ledges
-      ctx.strokeStyle =
-        row % 2 === 0
-          ? 'rgba(208, 218, 228, 0.46)'
-          : 'rgba(186, 162, 128, 0.30)';
-      ctx.lineWidth = row % 2 === 0 ? 5.5 : 3.5;
+      // Crystalline blue-white ice glaze resting along the rock shelf edge
+      ctx.strokeStyle = 'rgba(166, 206, 230, 0.54)';
+      ctx.lineWidth = 7.5;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
-        const sy = stepY(x) - 3;
+        const sy = stepY(x) - 1.5;
         if (x === 0) ctx.moveTo(x, sy);
         else ctx.lineTo(x, sy);
       }
       ctx.stroke();
 
-      // Crisp dark slate bedding seam
-      ctx.strokeStyle = 'rgba(16, 20, 28, 0.56)';
+      // Natural snow accumulation resting on top of horizontal rock ledges
+      ctx.strokeStyle =
+        row % 2 === 0
+          ? 'rgba(228, 236, 244, 0.74)'
+          : 'rgba(214, 226, 238, 0.58)';
+      ctx.lineWidth = row % 2 === 0 ? 5.5 : 4.2;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 16) {
+        const sy = stepY(x) - 3.5;
+        if (x === 0) ctx.moveTo(x, sy);
+        else ctx.lineTo(x, sy);
+      }
+      ctx.stroke();
+
+      // Subtle frozen ice-melt rills hanging briefly from occasional rock shelf steps
+      for (let seg = 0; seg < 16; seg++) {
+        if ((seg + row) % 3 !== 0) continue;
+        const rx = seg * 64 + 28;
+        const ry = stepY(rx);
+        const rillLen = 12 + ((seg * 5 + row) % 3) * 6;
+        ctx.strokeStyle = 'rgba(192, 222, 240, 0.56)';
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(rx, ry - 1);
+        ctx.lineTo(rx, ry + rillLen);
+        ctx.stroke();
+      }
+
+      // Crisp warm-umber bedding seam
+      ctx.strokeStyle = 'rgba(52, 38, 28, 0.52)';
       ctx.lineWidth = 2.2;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
@@ -369,13 +409,13 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
       ctx.stroke();
     }
 
-    // 5. Vertical rock fracture joints & fine wet snow-melt streaks down the cliff face
-    for (let v = 0; v < 22; v++) {
+    // 5. Vertical rock fracture joints & frozen ice-melt streaks down the cliff face
+    for (let v = 0; v < 24; v++) {
       const vx = ((v * 157) % 900) + 52;
       const vy = ((v * 223) % 800) + 48;
       const vLen = 54 + (v % 3) * 28;
 
-      ctx.strokeStyle = 'rgba(18, 22, 30, 0.42)';
+      ctx.strokeStyle = 'rgba(64, 50, 38, 0.42)';
       ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.moveTo(vx, vy);
@@ -384,11 +424,11 @@ export function createJaggedRockCliffFaceTexture(): THREE.CanvasTexture {
       ctx.stroke();
 
       if (v % 2 === 0) {
-        ctx.strokeStyle = 'rgba(200, 214, 226, 0.22)';
-        ctx.lineWidth = 2.6;
+        ctx.strokeStyle = 'rgba(198, 222, 238, 0.44)';
+        ctx.lineWidth = 3.0;
         ctx.beginPath();
         ctx.moveTo(vx + 3, vy + 4);
-        ctx.lineTo(vx + 2, vy + vLen * 0.78);
+        ctx.lineTo(vx + 2, vy + vLen * 0.82);
         ctx.stroke();
       }
     }
@@ -484,141 +524,159 @@ function createCliffRng(seed: number): () => number {
 }
 
 /**
- * Builds a seamless, vertex-tapered 3D alpine snow mantle (`createIntegratedRidgeSnowMantle`)
- * that sits 100% flush along a polyline ridge of a rock cliff (`upperRidgePts`, ordered from
- * left to right in local X) and drapes naturally down the upper rock face without looking
- * like a separate blob placed on top.
- *
- * - The upper snow slope follows the exact rock ridge contour (`upperRidgePts`), rising
- *   into a wind-sculpted snow crest.
- * - The lower edge drapes irregularly into the rock strata and gullies (`lowerDripPts`),
- *   and its front/back `Z` coordinates are vertex-tapered flush into the rock surface
- *   so there is zero protruding blob step between the snow mantle and the cliff face!
+ * Builds a seamless, topology-conforming 3D alpine snow mantle (`createIntegratedRidgeSnowMantle`)
+ * that sits 100% flush along a polyline ridge of a rock mountain/cliff (`upperRidgePts`),
+ * preserves every vertex/peak of the rock topology, and conforms its 3D front/back `Z` surface
+ * to the exact 3D chiseled rock surface (`surfaceZOffsetFn`) so the mountain never clips through!
  */
 function createIntegratedRidgeSnowMantle(
   upperRidgePts: ReadonlyArray<readonly [number, number]>,
   cliffDepth: number,
   snowThickness: number,
   snowCapMat: THREE.Material,
-  seed = 1
+  seed = 1,
+  surfaceZOffsetFn?: (x: number, y: number) => number
 ): THREE.Mesh {
   const rng = createCliffRng(seed * 131 + 17);
-  const n = upperRidgePts.length;
-  const firstPt = upperRidgePts[0] ?? [0, 0];
-  const lastPt = upperRidgePts[n - 1] ?? [1, 0];
-  const xMin = Math.min(firstPt[0], lastPt[0]);
-  const xMax = Math.max(firstPt[0], lastPt[0]);
-  const spanW = Math.max(0.4, xMax - xMin);
 
-  // Interpolate rock ridge Y at any X
+  // Sort ridge points from left (min X) to right (max X) so the polygon is always well-oriented
+  const sortedPts = [...upperRidgePts].sort((a, b) => a[0] - b[0]);
+  const n = sortedPts.length;
+  const firstPt = sortedPts[0] ?? [0, 0];
+  const lastPt = sortedPts[n - 1] ?? [1, 0];
+  const xMin = firstPt[0];
+  const xMax = lastPt[0];
+  const spanW = Math.max(0.25, xMax - xMin);
+
+  // Interpolate exact rock ridge Y at any X along the piecewise-linear mountain topology
   const sampleRidgeY = (x: number): number => {
+    if (x <= firstPt[0]) return firstPt[1];
+    if (x >= lastPt[0]) return lastPt[1];
     for (let i = 0; i < n - 1; i++) {
-      const p0 = upperRidgePts[i]!;
-      const p1 = upperRidgePts[i + 1]!;
-      const minX = Math.min(p0[0], p1[0]);
-      const maxX = Math.max(p0[0], p1[0]);
-      if (x >= minX - 0.001 && x <= maxX + 0.001) {
+      const p0 = sortedPts[i]!;
+      const p1 = sortedPts[i + 1]!;
+      if (x >= p0[0] - 1e-4 && x <= p1[0] + 1e-4) {
         const dx = p1[0] - p0[0];
         const t = Math.abs(dx) > 1e-4 ? (x - p0[0]) / dx : 0;
         return p0[1] + t * (p1[1] - p0[1]);
       }
     }
-    return Math.abs(x - firstPt[0]) < Math.abs(x - lastPt[0])
-      ? firstPt[1]
-      : lastPt[1];
+    return lastPt[1];
   };
 
-  const shape = new THREE.Shape();
-  const sampleCount = 22;
+  // Build sample points by subdividing every segment of `sortedPts` so EVERY peak/corner
+  // of the mountain topology is an exact vertex of the snow mantle (never cutting across a rock peak!)
+  const samplePoints: Array<{
+    readonly x: number;
+    readonly rockY: number;
+    readonly u: number;
+  }> = [];
+  const subStepsPerSeg = Math.max(2, Math.ceil(20 / Math.max(1, n - 1)));
+  for (let seg = 0; seg < n - 1; seg++) {
+    const p0 = sortedPts[seg]!;
+    const p1 = sortedPts[seg + 1]!;
+    const steps = seg === n - 2 ? subStepsPerSeg : subStepsPerSeg - 1;
+    for (let s = 0; s <= steps; s++) {
+      const frac = s / subStepsPerSeg;
+      const x = p0[0] + (p1[0] - p0[0]) * frac;
+      const rockY = p0[1] + (p1[1] - p0[1]) * frac;
+      const u = THREE.MathUtils.clamp((x - xMin) / spanW, 0, 1);
+      samplePoints.push({ x, rockY, u });
+    }
+  }
 
-  // 1. Upper wind-sculpted snow crest (left to right along the exact cliff top ridge)
-  for (let i = 0; i <= sampleCount; i++) {
-    const u = i / sampleCount;
-    const x = THREE.MathUtils.lerp(firstPt[0], lastPt[0], u);
-    const rockY = sampleRidgeY(x);
-    // Natural wind-drifted snow crown thickness (thicker across the middle slope, tapering at edges)
+  const shape = new THREE.Shape();
+
+  // 1. Upper wind-sculpted snow crest (left to right, strictly above `rockY + 0.045` everywhere)
+  for (let i = 0; i < samplePoints.length; i++) {
+    const { x, rockY, u } = samplePoints[i]!;
     const edgeTaper = Math.sin(u * Math.PI);
     const driftWave =
-      Math.sin(u * Math.PI * 3 + seed * 0.7) * 0.035 +
-      Math.cos(u * Math.PI * 5 - seed * 1.1) * 0.018;
-    const topY =
-      rockY +
-      snowThickness * (0.28 + 0.72 * Math.pow(edgeTaper, 0.55)) +
-      driftWave;
+      Math.sin(u * Math.PI * 3 + seed * 0.7) * 0.022 * edgeTaper +
+      Math.cos(u * Math.PI * 5 - seed * 1.1) * 0.012 * edgeTaper;
+    const crownLift = Math.max(
+      0.045,
+      snowThickness * (0.36 + 0.64 * Math.pow(edgeTaper, 0.55)) + driftWave
+    );
+    const topY = rockY + crownLift;
     if (i === 0) shape.moveTo(x, topY);
     else shape.lineTo(x, topY);
   }
 
   // 2. Lower snow-drape & couloir melt line (right to left along the rock face below the ridge)
-  //    Uses irregular geological couloir dips rather than uniform scalloped blobs!
   const gullyPhase1 = 0.24 + rng() * 0.16;
   const gullyPhase2 = 0.62 + rng() * 0.18;
-  for (let i = sampleCount; i >= 0; i--) {
-    const u = i / sampleCount;
-    const x = THREE.MathUtils.lerp(firstPt[0], lastPt[0], u);
-    const rockY = sampleRidgeY(x);
+  for (let i = samplePoints.length - 1; i >= 0; i--) {
+    const { x, rockY, u } = samplePoints[i]!;
     const edgeTaper = Math.sin(u * Math.PI);
 
-    // Irregular snow-filled rock couloirs where snow extends deeper into a rock cleft
     const gully1 =
       Math.exp(-Math.pow((u - gullyPhase1) / 0.085, 2)) *
       snowThickness *
-      0.78;
+      0.65 *
+      edgeTaper;
     const gully2 =
       Math.exp(-Math.pow((u - gullyPhase2) / 0.07, 2)) *
       snowThickness *
-      0.62;
+      0.52 *
+      edgeTaper;
     const microStrata =
-      Math.sin(u * Math.PI * 7 + seed * 1.3) * 0.025 +
-      Math.cos(u * Math.PI * 11 - seed * 0.9) * 0.014;
+      (Math.sin(u * Math.PI * 7 + seed * 1.3) * 0.018 +
+        Math.cos(u * Math.PI * 11 - seed * 0.9) * 0.01) *
+      edgeTaper;
 
-    const drapeDrop =
-      snowThickness * (0.22 + 0.34 * edgeTaper) +
-      gully1 +
-      gully2 +
-      microStrata;
+    const drapeDrop = Math.max(
+      0.038,
+      snowThickness * (0.2 + 0.34 * edgeTaper) + gully1 + gully2 + microStrata
+    );
     const botY = rockY - drapeDrop;
     shape.lineTo(x, botY);
   }
   shape.closePath();
 
-  const mantleDepth = cliffDepth + 0.028;
   const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: mantleDepth,
+    depth: cliffDepth,
     bevelEnabled: true,
-    bevelSegments: 3,
+    bevelSegments: 2,
     steps: 1,
-    bevelSize: 0.022,
-    bevelThickness: 0.022,
+    bevelSize: 0.018,
+    bevelThickness: 0.018,
   });
-  geo.translate(0, 0, -mantleDepth * 0.5);
+  geo.translate(0, 0, -cliffDepth * 0.5);
 
-  // 3. Sculpt vertices in 3D so the lower snow edge tapers 100% flush into the rock cliff face
-  //    while the upper snow crest has a natural wind-cornice overhang!
+  // 3. Conform every 3D vertex to the exact chiseled rock surface `surfaceZOffsetFn(vx, vy)`
+  //    with guaranteed positive outward clearance so the mountain NEVER clips through the snow!
   const pos = geo.attributes.position;
+  const halfRockD = cliffDepth * 0.5 + 0.022;
   for (let i = 0; i < pos.count; i++) {
     const vx = pos.getX(i);
     const vy = pos.getY(i);
     const vz = pos.getZ(i);
     const rockY = sampleRidgeY(vx);
-    // relY > 0 above rock ridge, relY < 0 where snow drapes down the vertical rock face
     const relY = vy - rockY;
     const normAbove = THREE.MathUtils.clamp(
-      (relY + snowThickness * 0.9) / (snowThickness * 1.8),
+      (relY + snowThickness * 0.85) / (snowThickness * 1.75),
       0,
       1
     );
-    // At the bottom of the snow drape (normAbove -> 0), pull Z inward so it sits flush with the rock face;
-    // at the upper ridge lip (normAbove ~ 0.65), swell slightly forward like a natural alpine cornice.
-    const corniceSwell = Math.sin(normAbove * Math.PI) * 0.028;
-    const zScale = 0.86 + 0.16 * Math.pow(normAbove, 0.7);
-    const uX = (vx - xMin) / spanW;
+
+    const surfZ = surfaceZOffsetFn ? surfaceZOffsetFn(vx, vy) : 0;
+    const corniceSwell = Math.sin(normAbove * Math.PI) * 0.026;
+    const uX = THREE.MathUtils.clamp((vx - xMin) / spanW, 0, 1);
     const windRippleZ =
-      Math.sin(uX * Math.PI * 4 + vy * 3.2 + seed) * 0.01 * normAbove;
-    pos.setZ(
-      i,
-      vz * zScale + (vz >= 0 ? corniceSwell + windRippleZ : -corniceSwell * 0.4)
-    );
+      Math.sin(uX * Math.PI * 4 + vy * 3.2 + seed) * 0.008 * normAbove;
+
+    // Outward clearance tapers smoothly from +0.018m at the lower melt line (hugging the rock)
+    // up to +0.046m along the upper snow cornice lip, always strictly outside the rock surface!
+    const clearance = 0.018 + 0.016 * normAbove + corniceSwell + windRippleZ;
+
+    if (vz >= 0) {
+      const zFrac = THREE.MathUtils.clamp(vz / (cliffDepth * 0.5 + 0.018), 0.15, 1);
+      pos.setZ(i, (halfRockD + Math.max(0, surfZ) + clearance) * zFrac);
+    } else {
+      const zFrac = THREE.MathUtils.clamp(-vz / (cliffDepth * 0.5 + 0.018), 0.15, 1);
+      pos.setZ(i, -(halfRockD + Math.max(0, -surfZ) + clearance * 0.65) * zFrac);
+    }
   }
 
   normalizeExtrudeUVs(geo, 'fit');
@@ -875,6 +933,7 @@ function createProceduralStratifiedCliffWing(
     primaryRockMat,
     secondaryRockMat,
     snowCapMat,
+    icicleMat,
     pineGreenMat,
     trunkMat,
     includePine = false,
@@ -891,8 +950,7 @@ function createProceduralStratifiedCliffWing(
   const totalSpanW = Math.max(0.85, outerEdgeAbsX - innerEdgeAbsX);
 
   const outerTopY = height * (0.95 + rng() * 0.05);
-  const midRidgeY =
-    height * (0.86 + (rng() - 0.5) * 0.05);
+  const midRidgeY = height * (0.86 + (rng() - 0.5) * 0.05);
   const innerShoulderY =
     archetype === 'overhanging-bluff'
       ? height * (0.82 + rng() * 0.05)
@@ -911,7 +969,7 @@ function createProceduralStratifiedCliffWing(
   const upperLedgeY = innerShoulderY * 0.72;
   const upperLedgeU = Math.min(totalSpanW, topReachW + 0.05 + rng() * 0.05);
   const midLedgeY = innerShoulderY * 0.44;
-  const midLedgeU = Math.min(totalSpanW, upperLedgeU + 0.06 + rng() * 0.06);
+  const midLedgeU = Math.min(totalSpanW, upperLedgeU + 0.08 + rng() * 0.06);
   const baseU = Math.min(totalSpanW, midLedgeU + 0.05 + rng() * 0.05);
 
   const pts: Array<readonly [number, number]> = [
@@ -922,7 +980,7 @@ function createProceduralStratifiedCliffWing(
     [topReachW * 0.48, midRidgeY],
     [topReachW, innerShoulderY],
     [upperLedgeU, upperLedgeY],
-    [upperLedgeU - 0.04, upperLedgeY - 0.14],
+    [upperLedgeU - 0.02, upperLedgeY - 0.16],
     [midLedgeU, midLedgeY],
     [baseU, 0],
   ];
@@ -946,6 +1004,16 @@ function createProceduralStratifiedCliffWing(
   });
   cliffGeo.translate(0, 0, -extrudeDepth * 0.5);
 
+  // Shared 3D surface Z displacement function so both the chiseled rock cliff AND its
+  // snow mantles follow the exact same 3D planar facets and strata steps!
+  const cliffSurfaceZOffset = (x: number, y: number): number => {
+    const stratumStep = Math.floor((y / height) * 7) * 0.012;
+    const cragFacet =
+      Math.sin(x * 3.1 + seed * 0.7) * 0.028 +
+      Math.cos(y * 4.3 - seed * 1.1) * 0.02;
+    return cragFacet - stratumStep;
+  };
+
   // Chisel craggy 3D planar rock strata facets across the exposed vertical cliff face
   const cPos = cliffGeo.attributes.position;
   for (let i = 0; i < cPos.count; i++) {
@@ -953,11 +1021,7 @@ function createProceduralStratifiedCliffWing(
     const vy = cPos.getY(i);
     const vz = cPos.getZ(i);
     if (vz > 0 && vy > 0.05) {
-      const stratumStep = Math.floor((vy / height) * 7) * 0.012;
-      const cragFacet =
-        Math.sin(vx * 3.1 + seed * 0.7) * 0.028 +
-        Math.cos(vy * 4.3 - seed * 1.1) * 0.02;
-      cPos.setZ(i, vz + cragFacet - stratumStep);
+      cPos.setZ(i, vz + cliffSurfaceZOffset(vx, vy));
     }
   }
   normalizeExtrudeUVs(cliffGeo, 'fit');
@@ -968,98 +1032,126 @@ function createProceduralStratifiedCliffWing(
   cliffMesh.receiveShadow = true;
   group.add(cliffMesh);
 
-  // 2. Angular warm ochre-tan / dark slate rock buttress facets jutting from the lower/mid cliff face
-  //    (matching the warm tan/ochre & dark charcoal rock ledges in the cliff reference photos!)
+  // 2. Angular warm ochre-tan / buff stone buttress facets jutting from the lower/mid cliff face
+  //    Each buttress has a topology-conforming snow & ice cap seated directly on its actual 3D top ridge!
   const rockButtressSpecs = [
     {
-      u: topReachW * 0.36,
-      y: height * 0.34,
-      w: totalSpanW * 0.44,
-      h: height * 0.42,
-      d: extrudeDepth * 0.52,
-      lean: inwardSign * 0.08,
+      u: topReachW * 0.34,
+      y: height * 0.31,
+      w: totalSpanW * 0.42,
+      h: height * 0.38,
+      d: extrudeDepth * 0.48,
+      zCenter: extrudeDepth * 0.24,
+      lean: inwardSign * 0.07,
       sOff: 19,
     },
     {
-      u: topReachW * 0.72,
-      y: height * 0.24,
-      w: totalSpanW * 0.38,
-      h: height * 0.34,
-      d: extrudeDepth * 0.46,
-      lean: inwardSign * -0.06,
+      u: topReachW * 0.7,
+      y: height * 0.21,
+      w: totalSpanW * 0.36,
+      h: height * 0.3,
+      d: extrudeDepth * 0.44,
+      zCenter: extrudeDepth * 0.22,
+      lean: inwardSign * -0.05,
       sOff: 37,
     },
   ] as const;
+
   for (const rb of rockButtressSpecs) {
+    const bSeed = seed + rb.sOff;
     const cragBlock = createJaggedRockShardBlock(
       rb.w,
       rb.h,
       rb.d,
       secondaryRockMat,
-      seed + rb.sOff,
+      bSeed,
       rb.lean
     );
-    cragBlock.position.set(
-      inwardSign * rb.u,
-      rb.y,
-      extrudeDepth * 0.34
-    );
+    cragBlock.position.set(inwardSign * rb.u, rb.y, rb.zCenter);
     group.add(cragBlock);
+
+    // Exact 3-point top ridge of `createJaggedRockShardBlock` so fallen snow follows the buttress topology 100%!
+    const hw = rb.w * 0.5;
+    const hh = rb.h * 0.5;
+    const j1 = ((bSeed * 7) % 5) * 0.025;
+    const j2 = ((bSeed * 11) % 5) * 0.025;
+    const buttressRidgePts: Array<readonly [number, number]> = [
+      [-hw * 0.58 + rb.lean, hh * (0.94 + j2)],
+      [hw * 0.12 + rb.lean, hh * (1.04 - j1)],
+      [hw * 0.76 + rb.lean * 0.6, hh * (0.86 + j1)],
+    ];
+    const buttressSurfaceZ = (bx: number, by: number): number => {
+      const ridgeFacet =
+        (1.0 - Math.min(1.0, Math.abs(bx - rb.lean * 0.3) / (hw + 0.05))) *
+        rb.d *
+        0.24;
+      const stepFacet =
+        Math.floor(((by + hh) / Math.max(0.1, rb.h)) * 4) * 0.015;
+      return ridgeFacet - stepFacet;
+    };
+
+    const buttressSnowCap = createIntegratedRidgeSnowMantle(
+      buttressRidgePts,
+      rb.d,
+      0.13,
+      snowCapMat,
+      bSeed + 5,
+      buttressSurfaceZ
+    );
+    buttressSnowCap.position.set(inwardSign * rb.u, rb.y, rb.zCenter);
+    group.add(buttressSnowCap);
+
+    // Subtle crystalline ice rills tucked under the rock buttress snow lip
+    if (includeMidSnowDripBand) {
+      const iceRill = createSculptedIcicleDrip(
+        0.22 + rng() * 0.08,
+        0.028,
+        icicleMat,
+        inwardSign * 0.015
+      );
+      iceRill.position.set(
+        inwardSign * rb.u + rb.lean * 0.5,
+        rb.y + hh * 0.86,
+        rb.zCenter + rb.d * 0.5 + 0.025
+      );
+      group.add(iceRill);
+    }
   }
 
   // 3. Integrated Summit Snow Mantle (`createIntegratedRidgeSnowMantle`)
-  //    Follows the exact upper ridge vertices of `pts` and tapers flush into the rock face!
-  const ridgePtsLocal: Array<readonly [number, number]> =
-    inwardSign === 1
-      ? [
-          [-0.04, outerTopY - 0.04],
-          [0.02, outerTopY],
-          [topReachW * 0.48, midRidgeY],
-          [topReachW, innerShoulderY],
-          [upperLedgeU, upperLedgeY],
-        ]
-      : [
-          [-upperLedgeU, upperLedgeY],
-          [-topReachW, innerShoulderY],
-          [-topReachW * 0.48, midRidgeY],
-          [-0.02, outerTopY],
-          [0.04, outerTopY - 0.04],
-        ];
+  //    Follows the exact upper ridge vertices of `pts` AND the 3D `cliffSurfaceZOffset`!
+  const ridgePtsLocal: Array<readonly [number, number]> = [
+    [-0.04 * inwardSign, outerTopY - 0.04],
+    [0.02 * inwardSign, outerTopY],
+    [topReachW * 0.48 * inwardSign, midRidgeY],
+    [topReachW * inwardSign, innerShoulderY],
+    [upperLedgeU * inwardSign, upperLedgeY],
+  ];
 
   const summitSnowMantle = createIntegratedRidgeSnowMantle(
     ridgePtsLocal,
     extrudeDepth,
-    0.36 + rng() * 0.08,
+    0.34 + rng() * 0.07,
     snowCapMat,
-    seed + 11
+    seed + 11,
+    cliffSurfaceZOffset
   );
   group.add(summitSnowMantle);
 
-  // 4. Optional thin, flush-tapered rock-ledge snow pocket resting along a mid-cliff stratum shelf
-  if (includeMidSnowDripBand) {
-    const shelfY0 = height * 0.54;
-    const shelfY1 = height * 0.48;
-    const shelfPts: Array<readonly [number, number]> =
-      inwardSign === 1
-        ? [
-            [0.08, shelfY0],
-            [topReachW * 0.46, (shelfY0 + shelfY1) * 0.5 + 0.04],
-            [topReachW * 0.88, shelfY1],
-          ]
-        : [
-            [-topReachW * 0.88, shelfY1],
-            [-topReachW * 0.46, (shelfY0 + shelfY1) * 0.5 + 0.04],
-            [-0.08, shelfY0],
-          ];
-    const ledgeSnowPocket = createIntegratedRidgeSnowMantle(
-      shelfPts,
-      extrudeDepth + 0.02,
-      0.22,
-      snowCapMat,
-      seed + 43
-    );
-    group.add(ledgeSnowPocket);
-  }
+  // 4. Stepped inner cliff terrace snow pocket seated directly on the actual `[upperLedgeU - 0.02, upperLedgeY - 0.16] -> [midLedgeU, midLedgeY]` rock step!
+  const stepTerracePts: Array<readonly [number, number]> = [
+    [(upperLedgeU - 0.02) * inwardSign, upperLedgeY - 0.16],
+    [midLedgeU * inwardSign, midLedgeY],
+  ];
+  const stepTerraceSnow = createIntegratedRidgeSnowMantle(
+    stepTerracePts,
+    extrudeDepth,
+    0.15,
+    snowCapMat,
+    seed + 43,
+    cliffSurfaceZOffset
+  );
+  group.add(stepTerraceSnow);
 
   // 5. Optional crooked alpine spruce tree (Showpiece Tree geometry) perched on the upper cliff shoulder
   if (includePine) {
@@ -1107,7 +1199,7 @@ function createProceduralStratifiedCliffWing(
     bankGeo.computeVertexNormals();
 
     const bankMesh = new THREE.Mesh(bankGeo, snowCapMat);
-    bankMesh.position.set(0, 0, extrudeDepth * 0.5 + 0.02);
+    bankMesh.position.set(0, 0, extrudeDepth * 0.5 + 0.04);
     bankMesh.receiveShadow = true;
     group.add(bankMesh);
   }
@@ -1119,9 +1211,9 @@ function createProceduralStratifiedCliffWing(
  * Builds the iconic tall, inward-arching Overhanging Cliff Prows at the back
  * of the wings (`z = -3.38m` SR / `-3.42m` SL, directly behind the DSR & MSL Whoville
  * Houses, matching `model_1B_whoville.jpg` and the cliff reference photos):
- * - Exposed stratified dark slate & ochre-tan rock cliff wall on the vertical face and undercut
- * - Continuous, flush-fitting 3D snow mantle crowning the upper arch slope and wrapping
- *   naturally over the overhanging prow crest (zero `SphereGeometry` blob drops!).
+ * - Exposed stratified warm brown & ochre-tan rock cliff wall on the vertical face and undercut
+ * - Continuous, flush-fitting 3D snow mantle crowning the exact cubic Bezier arch slope and wrapping
+ *   naturally over the overhanging prow crest (zero `SphereGeometry` blob drops and zero rock clipping!).
  */
 function createBackOverhangingSnowCliffProw(spec: {
   readonly side: -1 | 1;
@@ -1159,19 +1251,21 @@ function createBackOverhangingSnowCliffProw(spec: {
   const baseSpanW = outerEdgeAbsX - baseInnerAbsX; // ~1.45m at floor
   const prowReachW = outerEdgeAbsX - prowInnerAbsX; // ~2.75m at overhanging top hood
 
-  // 1. Main sweeping cantilevered rock-cliff body (`snowCliffMat` = stratified slate/ochre rock)
+  // 1. Main sweeping cantilevered rock-cliff body (`snowCliffMat` = stratified warm brown/ochre rock)
   const outerTopH = height * (0.93 + rng() * 0.04);
+  const p0x = 0;
+  const p0y = outerTopH;
+  const p1x = inwardSign * (prowReachW * 0.38);
+  const p1y = height * 1.0;
+  const p2x = inwardSign * (prowReachW * 0.82);
+  const p2y = height * 0.96;
+  const p3x = inwardSign * prowReachW;
+  const p3y = height * 0.86;
+
   const hoodShape = new THREE.Shape();
   hoodShape.moveTo(0, 0);
-  hoodShape.lineTo(0, outerTopH);
-  hoodShape.bezierCurveTo(
-    inwardSign * (prowReachW * 0.38),
-    height * 1.0,
-    inwardSign * (prowReachW * 0.82),
-    height * 0.96,
-    inwardSign * prowReachW,
-    height * 0.86
-  );
+  hoodShape.lineTo(p0x, p0y);
+  hoodShape.bezierCurveTo(p1x, p1y, p2x, p2y, p3x, p3y);
   // Angular craggy overhanging rock prow nose
   hoodShape.lineTo(inwardSign * (prowReachW * 0.96), height * 0.77);
   hoodShape.lineTo(inwardSign * (prowReachW * 0.76), height * 0.66);
@@ -1203,64 +1297,84 @@ function createBackOverhangingSnowCliffProw(spec: {
   hoodMesh.receiveShadow = true;
   group.add(hoodMesh);
 
-  // 2. Recessed dark slate-blue striated shadow belly underneath the overhanging prow
+  // 2. Recessed warm shaded rock belly underneath the overhanging prow (kept strictly below y = height * 0.74)
   const underBellShape = new THREE.Shape();
-  underBellShape.moveTo(inwardSign * (prowReachW * 0.95), height * 0.78);
+  underBellShape.moveTo(inwardSign * (prowReachW * 0.88), height * 0.72);
   underBellShape.bezierCurveTo(
-    inwardSign * (prowReachW * 0.78),
-    height * 0.71,
-    inwardSign * (baseSpanW * 1.14),
-    height * 0.54,
-    inwardSign * (baseSpanW * 0.94),
-    height * 0.24
+    inwardSign * (prowReachW * 0.74),
+    height * 0.66,
+    inwardSign * (baseSpanW * 1.12),
+    height * 0.5,
+    inwardSign * (baseSpanW * 0.92),
+    height * 0.22
   );
-  underBellShape.lineTo(inwardSign * (baseSpanW * 0.74), height * 0.28);
+  underBellShape.lineTo(inwardSign * (baseSpanW * 0.72), height * 0.26);
   underBellShape.bezierCurveTo(
-    inwardSign * (baseSpanW * 0.98),
-    height * 0.56,
-    inwardSign * (prowReachW * 0.62),
-    height * 0.75,
-    inwardSign * (prowReachW * 0.86),
-    height * 0.82
+    inwardSign * (baseSpanW * 0.94),
+    height * 0.52,
+    inwardSign * (prowReachW * 0.58),
+    height * 0.68,
+    inwardSign * (prowReachW * 0.78),
+    height * 0.74
   );
   underBellShape.closePath();
 
   const underBellGeo = new THREE.ExtrudeGeometry(underBellShape, {
-    depth: extrudeDepth + 0.03,
+    depth: extrudeDepth + 0.012,
     bevelEnabled: true,
     bevelSegments: 1,
     steps: 1,
-    bevelSize: 0.014,
-    bevelThickness: 0.014,
+    bevelSize: 0.012,
+    bevelThickness: 0.012,
   });
-  underBellGeo.translate(0, 0, -extrudeDepth * 0.5 + 0.012);
+  underBellGeo.translate(0, 0, -extrudeDepth * 0.5 + 0.008);
   normalizeExtrudeUVs(underBellGeo, 'fit');
   underBellGeo.computeVertexNormals();
 
   const underBellMesh = new THREE.Mesh(underBellGeo, glacierUnderMat);
   group.add(underBellMesh);
 
-  // 3. Integrated 3D Summit Snow Mantle crowning the upper arch slope of the overhanging prow
-  //    (Replaces the old tube + 9 SphereGeometry blobs!)
+  // 3. Integrated 3D Summit Snow Mantle evaluated along the EXACT cubic Bezier arch curve of `hoodShape`!
   const archRidgeSamples: Array<readonly [number, number]> = [];
-  const archSteps = 8;
+  const archSteps = 12;
   for (let s = 0; s <= archSteps; s++) {
-    const t = inwardSign === 1 ? s / archSteps : 1 - s / archSteps;
-    const x = inwardSign * prowReachW * t;
-    const archH =
-      outerTopH * (1 - t) +
-      height * 0.86 * t +
-      Math.sin(t * Math.PI) * height * 0.09;
-    archRidgeSamples.push([x, archH]);
+    const t = s / archSteps;
+    const mt = 1 - t;
+    const bx =
+      mt * mt * mt * p0x +
+      3 * mt * mt * t * p1x +
+      3 * mt * t * t * p2x +
+      t * t * t * p3x;
+    const by =
+      mt * mt * mt * p0y +
+      3 * mt * mt * t * p1y +
+      3 * mt * t * t * p2y +
+      t * t * t * p3y;
+    archRidgeSamples.push([bx, by]);
   }
   const prowSnowMantle = createIntegratedRidgeSnowMantle(
     archRidgeSamples,
-    extrudeDepth + 0.02,
-    0.38,
+    extrudeDepth,
+    0.36,
     snowCapMat,
     seed + 29
   );
   group.add(prowSnowMantle);
+
+  // 4. Mid-wall rock shelf snow pocket along the exposed cliff face of the back prow
+  const midProwShelfPts: Array<readonly [number, number]> = [
+    [inwardSign * (baseSpanW * 0.14), height * 0.56],
+    [inwardSign * (baseSpanW * 0.46), height * 0.59],
+    [inwardSign * (baseSpanW * 0.78), height * 0.52],
+  ];
+  const midProwShelfSnow = createIntegratedRidgeSnowMantle(
+    midProwShelfPts,
+    extrudeDepth,
+    0.16,
+    snowCapMat,
+    seed + 61
+  );
+  group.add(midProwShelfSnow);
 
   return group;
 }
@@ -1268,11 +1382,11 @@ function createBackOverhangingSnowCliffProw(spec: {
 /**
  * 1. DOWNSTAGE LEFT & RIGHT ROCK-AND-SNOW CLIFF PORTALS & BACK OVERHANGING CLIFF PROWS
  *    (`'grinch-snow-portals'`, matching `model_1B_whoville.jpg` & the real cliff reference images):
- *    - **Exposed Stratified Rock Cliff Faces**: Craggy dark charcoal-slate granite and warm
- *      ochre-tan dolomite limestone (`createJaggedRockCliffFaceTexture`) with snow tucked into
- *      recessed rock gullies and horizontal bedding ledges.
+ *    - **Exposed Stratified Warm Light-Brown & Ochre Dolomite Rock Cliff Faces**:
+ *      Warm tan, buff, and weathered brown stone (`createJaggedRockCliffFaceTexture`) with snow
+ *      and crystalline ice tucked into recessed rock gullies and horizontal bedding ledges.
  *    - **Flush-Integrated 3D Alpine Snow Mantles**: Continuous wind-sculpted snow blankets crowning
- *      the upper cliff ridges and tapering seamlessly into the rock strata (zero separate blobs!).
+ *      the upper cliff ridges and rock buttresses, following the exact 3D rock topology!
  */
 export function buildGrinchSnowPortals(
   _rockTex: THREE.CanvasTexture
@@ -1286,43 +1400,43 @@ export function buildGrinchSnowPortals(
   const glacierWaveTex = createGlacierWavePortalTexture();
   const jaggedRockTex = createJaggedRockCliffFaceTexture();
 
-  // Exposed stratified dark slate & warm ochre-tan dolomite rock cliff material
+  // Exposed stratified warm light-brown & golden-tan dolomite rock cliff material
   // (matching `media_1791674016996_ec819d4f.png` & `media_1791674009718_5788e74e.png`)
   const rockCliffMat = new THREE.MeshStandardMaterial({
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.42, 0.42),
-    color: 0x8e8880,
-    roughness: 0.74,
+    color: 0xc8b69e,
+    roughness: 0.72,
     metalness: 0.05,
   });
 
-  // Warm ochre-limestone & slate rock buttress material
+  // Warm buff-ochre limestone rock buttress material
   const rockOchreFacetMat = new THREE.MeshStandardMaterial({
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.4, 0.4),
-    color: 0x9c8c78,
-    roughness: 0.74,
+    color: 0xd4c0a4,
+    roughness: 0.72,
     metalness: 0.05,
   });
 
-  // Back overhanging rock-cliff prow material (deeper canyon slate & weathered limestone)
+  // Back overhanging rock-cliff prow material (warm medium-brown canyon dolomite)
   const rockDeepCanyonMat = new THREE.MeshStandardMaterial({
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.4, 0.4),
-    color: 0x7a808a,
-    roughness: 0.75,
+    color: 0xb8a48c,
+    roughness: 0.74,
     metalness: 0.05,
   });
 
-  // Recessed dark slate-blue striated underside material for the back overhanging cliff prows
+  // Shaded warm brown stone underside material for the back overhanging cliff prows
   const glacierUnderMat = new THREE.MeshStandardMaterial({
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.36, 0.36),
-    color: 0x52647c,
+    color: 0x968470,
     roughness: 0.74,
     metalness: 0.05,
   });
@@ -1341,29 +1455,29 @@ export function buildGrinchSnowPortals(
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.38, 0.38),
-    color: 0x586270,
-    roughness: 0.76,
+    color: 0xa6927c,
+    roughness: 0.75,
     metalness: 0.05,
   });
 
   const underShadowMat = new THREE.MeshStandardMaterial({
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.24, 0.24),
-    color: 0x283446,
+    color: 0x483c32,
     roughness: 0.78,
     metalness: 0.04,
   });
 
   const contourInkMat = new THREE.MeshStandardMaterial({
-    color: 0x18202c,
+    color: 0x2c221a,
     roughness: 0.78,
     metalness: 0.02,
   });
 
   const icicleMat = new THREE.MeshStandardMaterial({
-    color: 0xc0d2dc,
-    roughness: 0.54,
-    metalness: 0.06,
+    color: 0xb8d4e4,
+    roughness: 0.48,
+    metalness: 0.08,
   });
 
   const pineGreenMat = new THREE.MeshStandardMaterial({
@@ -1448,7 +1562,7 @@ export function buildGrinchSnowPortals(
       trunkMat,
       includePine: true,
       includeBaseSnow: false,
-      includeMidSnowDripBand: false,
+      includeMidSnowDripBand: true,
     });
     wingWavesGroup.add(layer2);
 
@@ -1662,40 +1776,53 @@ function createSeussianHillLayer(
   hillMat: THREE.Material,
   snowCrestMat: THREE.Material,
   contourInkMat: THREE.Material,
-  _seed = 1
+  seed = 1
 ): THREE.Group {
   const layerGroup = new THREE.Group();
   layerGroup.position.z = zPlane;
 
   const shape = new THREE.Shape();
-  shape.moveTo(points[0][0], 0);
-  shape.lineTo(points[0][0], points[0][1]);
+  shape.moveTo(points[0]![0], 0);
+  shape.lineTo(points[0]![0], points[0]![1]);
 
-  const ridgeCurvePts: THREE.Vector3[] = [
-    new THREE.Vector3(points[0][0], points[0][1], depth * 0.65),
+  // Sample exact points along the quadratic Bezier hill silhouette so the snow crest
+  // and ink contour follow the hill's true topology without any Y/Z scale distortion!
+  const silhouettePts2D: Array<readonly [number, number]> = [
+    [points[0]![0], points[0]![1]],
+  ];
+  const inkCurvePts: THREE.Vector3[] = [
+    new THREE.Vector3(points[0]![0], points[0]![1] + 0.02, -depth * 0.5 - 0.02),
   ];
 
+  const subSteps = 6;
   for (let i = 0; i < points.length - 1; i++) {
-    const [x0, y0] = points[i];
-    const [x1, y1] = points[i + 1];
+    const [x0, y0] = points[i]!;
+    const [x1, y1] = points[i + 1]!;
     const midX = (x0 + x1) * 0.5;
     const ctrlY = Math.max(y0, y1) + 0.24;
     shape.quadraticCurveTo(midX, ctrlY, x1, y1);
 
-    ridgeCurvePts.push(new THREE.Vector3(midX, ctrlY - 0.06, depth * 0.72));
-    ridgeCurvePts.push(new THREE.Vector3(x1, y1, depth * 0.65));
+    for (let s = 1; s <= subSteps; s++) {
+      const t = s / subSteps;
+      const mt = 1 - t;
+      const bx = mt * mt * x0 + 2 * mt * t * midX + t * t * x1;
+      const by = mt * mt * y0 + 2 * mt * t * ctrlY + t * t * y1;
+      silhouettePts2D.push([bx, by]);
+      inkCurvePts.push(new THREE.Vector3(bx, by + 0.02, -depth * 0.5 - 0.02));
+    }
   }
-  shape.lineTo(points[points.length - 1][0], 0);
+  shape.lineTo(points[points.length - 1]![0], 0);
   shape.closePath();
 
   const hillGeo = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: true,
-    bevelSegments: 3,
+    bevelSegments: 2,
     steps: 1,
-    bevelSize: 0.04,
-    bevelThickness: 0.04,
+    bevelSize: 0.032,
+    bevelThickness: 0.032,
   });
+  hillGeo.translate(0, 0, -depth * 0.5);
   normalizeExtrudeUVs(hillGeo, 'world', 4.5);
   hillGeo.computeVertexNormals();
 
@@ -1704,31 +1831,25 @@ function createSeussianHillLayer(
   hillMesh.receiveShadow = true;
   layerGroup.add(hillMesh);
 
-  // 3D TubeGeometry snow-cap ridge along the upper hill silhouette
-  if (ridgeCurvePts.length >= 3) {
-    const ridgeCurve = new THREE.CatmullRomCurve3(ridgeCurvePts);
-    const snowRidgeTube = new THREE.Mesh(
-      new THREE.TubeGeometry(ridgeCurve, 44, 0.11, 8, false),
-      snowCrestMat
-    );
-    snowRidgeTube.scale.set(1, 0.85, 0.65);
-    snowRidgeTube.castShadow = true;
-    layerGroup.add(snowRidgeTube);
+  // Topology-conforming 3D snow-cap mantle along the exact quadratic Bezier hill silhouette
+  const hillSnowMantle = createIntegratedRidgeSnowMantle(
+    silhouettePts2D,
+    depth + 0.03,
+    0.2,
+    snowCrestMat,
+    seed * 23 + 7
+  );
+  layerGroup.add(hillSnowMantle);
 
-    // Crisp 3D Seussian charcoal ink border tracing the hill crest
+  // Crisp 3D Seussian ink border tracing the exact hill crest
+  if (inkCurvePts.length >= 3) {
+    const ridgeCurve = new THREE.CatmullRomCurve3(inkCurvePts);
     const inkRidgeTube = new THREE.Mesh(
-      new THREE.TubeGeometry(ridgeCurve, 44, 0.026, 6, false),
+      new THREE.TubeGeometry(ridgeCurve, 44, 0.024, 6, false),
       contourInkMat
     );
-    inkRidgeTube.position.set(0, 0.075, -0.04);
     layerGroup.add(inkRidgeTube);
   }
-
-  // Dark Seussian ink outline rim tucked just behind the hill profile (staggered at z = -0.045m)
-  const outlineMesh = new THREE.Mesh(hillGeo, contourInkMat);
-  outlineMesh.scale.set(1.012, 1.024, 0.55);
-  outlineMesh.position.set(0, 0.022, -0.045);
-  layerGroup.add(outlineMesh);
 
   return layerGroup;
 }
@@ -1777,7 +1898,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     map: mountainCliffTex,
     normalMap: papierMacheNormalTex,
     normalScale: new THREE.Vector2(0.25, 0.25),
-    color: 0xc4d2d8,
+    color: 0xc8d2da,
     roughness: 0.56,
     metalness: 0.03,
   });
@@ -1792,16 +1913,17 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     map: glacierWaveTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.3, 0.3),
-    color: 0x6c96c8,
-    roughness: 0.58,
-    metalness: 0.05,
+    color: 0x7ca8d4,
+    roughness: 0.54,
+    metalness: 0.06,
   });
   const jaggedRockTex = createJaggedRockCliffFaceTexture();
+  // Warm light-brown / golden-tan dolomite stone for Mt. Crumpit (matching reference cliff images!)
   const crumpitBodyMat = new THREE.MeshStandardMaterial({
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.4, 0.4),
-    color: 0x8e867c,
+    color: 0xc6b49c,
     roughness: 0.72,
     metalness: 0.05,
     flatShading: true,
@@ -1810,13 +1932,13 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     map: jaggedRockTex,
     normalMap: seussianRockNormalTex,
     normalScale: new THREE.Vector2(0.36, 0.36),
-    color: 0x74706a,
-    roughness: 0.76,
+    color: 0xb09c84,
+    roughness: 0.74,
     metalness: 0.05,
     flatShading: true,
   });
   const contourInkMat = new THREE.MeshStandardMaterial({
-    color: 0x24344c,
+    color: 0x2c241e,
     roughness: 0.72,
     metalness: 0.02,
   });
@@ -1865,22 +1987,21 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       new RoundedBoxGeometry(0.19, archHeight, 0.09, 3, 0.06),
       iceArcadeMat
     );
-    archMesh.position.set(archX, 0.56 + Math.sin(i * 0.65) * 0.05, 0.21);
+    archMesh.position.set(archX, 0.56 + Math.sin(i * 0.65) * 0.05, 0.14);
     fgLayer.add(archMesh);
   }
 
-  // Winding snowy path ribbon across the foreground hill (staggered at local z = +0.23m)
+  // Winding snowy path ribbon across the foreground hill (seated cleanly on front face at z = +0.148m, zero scale distortion!)
   const fgPathCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-2.6, 0.18, 0.23),
-    new THREE.Vector3(-1.4, 0.54, 0.23),
-    new THREE.Vector3(-0.1, 0.85, 0.23),
-    new THREE.Vector3(1.15, 1.1, 0.23),
+    new THREE.Vector3(-2.6, 0.22, 0.148),
+    new THREE.Vector3(-1.4, 0.54, 0.148),
+    new THREE.Vector3(-0.1, 0.84, 0.148),
+    new THREE.Vector3(1.15, 1.08, 0.148),
   ]);
   const fgPathMesh = new THREE.Mesh(
-    new THREE.TubeGeometry(fgPathCurve, 28, 0.08, 6, false),
+    new THREE.TubeGeometry(fgPathCurve, 28, 0.038, 6, false),
     pathRibbonMat
   );
-  fgPathMesh.scale.set(1, 0.45, 0.35);
   fgLayer.add(fgPathMesh);
 
   // Miniature crooked lamp-posts and forced-perspective pines on the foreground ridge
@@ -1897,7 +2018,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       trunkMat,
       lean
     );
-    pine.position.set(px, py, 0.12);
+    pine.position.set(px, py + 0.08, 0.02);
     fgLayer.add(pine);
 
     const lamp = createMiniatureCrookedLampPost(
@@ -1906,7 +2027,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       contourInkMat,
       lanternGlowMat
     );
-    lamp.position.set(px + 0.22 * lean, py - 0.03, 0.16);
+    lamp.position.set(px + 0.22 * lean, py + 0.04, 0.06);
     fgLayer.add(lamp);
   }
 
@@ -1933,18 +2054,17 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     2
   );
 
-  // Winding snowy path ribbon climbing the midground hill (staggered at local z = +0.23m)
+  // Winding snowy path ribbon climbing the midground hill (seated on front face at z = +0.148m, zero scale distortion!)
   const midPathCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.3, 0.96, 0.23),
-    new THREE.Vector3(1.25, 1.4, 0.23),
-    new THREE.Vector3(2.15, 1.8, 0.23),
-    new THREE.Vector3(2.85, 2.02, 0.23),
+    new THREE.Vector3(0.3, 0.98, 0.148),
+    new THREE.Vector3(1.25, 1.38, 0.148),
+    new THREE.Vector3(2.15, 1.76, 0.148),
+    new THREE.Vector3(2.85, 1.96, 0.148),
   ]);
   const midPathMesh = new THREE.Mesh(
-    new THREE.TubeGeometry(midPathCurve, 24, 0.068, 6, false),
+    new THREE.TubeGeometry(midPathCurve, 24, 0.034, 6, false),
     pathRibbonMat
   );
-  midPathMesh.scale.set(1, 0.45, 0.35);
   midLayer.add(midPathMesh);
 
   for (const [px, py, scale, lean] of [
@@ -1960,7 +2080,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       trunkMat,
       lean
     );
-    pine.position.set(px, py, 0.11);
+    pine.position.set(px, py + 0.08, 0.02);
     midLayer.add(pine);
 
     const lamp = createMiniatureCrookedLampPost(
@@ -1969,7 +2089,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       contourInkMat,
       lanternGlowMat
     );
-    lamp.position.set(px - 0.19 * lean, py - 0.02, 0.15);
+    lamp.position.set(px - 0.19 * lean, py + 0.04, 0.06);
     midLayer.add(lamp);
   }
 
@@ -2008,19 +2128,21 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       trunkMat,
       lean
     );
-    pine.position.set(px, py, 0.11);
+    pine.position.set(px, py + 0.08, 0.02);
     bgLayer.add(pine);
   }
 
   hillsGroup.add(bgLayer);
 
   // --------------------------------------------------------------------------
-  // D. Towering Jagged Faceted Rock Horn of Mt. Crumpit with Snowpack Spine (z = -7.25m)
+  // D. Towering Jagged Faceted Warm-Brown Stone Horn of Mt. Crumpit with
+  //    3D Topology-Conforming Snow Mantles & Ice/Snow Strata Ledges (z = -7.25m)
   // --------------------------------------------------------------------------
   const crumpitGroup = new THREE.Group();
   crumpitGroup.name = 'MtCrumpit_PeakUnit';
   crumpitGroup.position.set(0, 0, -7.25);
 
+  const crumpitDepth = 0.3;
   const crumpitShape = new THREE.Shape();
   crumpitShape.moveTo(-3.75, 0);
   crumpitShape.lineTo(-3.12, 1.58);
@@ -2041,25 +2163,33 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   crumpitShape.closePath();
 
   const crumpitGeo = new THREE.ExtrudeGeometry(crumpitShape, {
-    depth: 0.3,
+    depth: crumpitDepth,
     bevelEnabled: true,
     bevelSegments: 1,
     steps: 1,
     bevelSize: 0.02,
     bevelThickness: 0.02,
   });
+  // Center `crumpitGeo` around z = 0 so its coordinate system matches `createIntegratedRidgeSnowMantle`!
+  crumpitGeo.translate(0, 0, -crumpitDepth * 0.5);
 
-  // Pull central arrête ridge forward in Z for sharp planar rock facets
+  // Shared 3D arrête ridge + planar rock facet displacement function for BOTH Mt. Crumpit and its snow mantles!
+  const crumpitSurfaceZOffset = (x: number, y: number): number => {
+    const ridgeX = -1.6 + (y / 5.14) * 2.1;
+    const dist = Math.abs(x - ridgeX);
+    const arrete = Math.max(0, 1.0 - dist / 1.4) * 0.1;
+    const cragFacet =
+      Math.sin(x * 3.2 + 1.1) * 0.018 + Math.cos(y * 4.1 - 0.7) * 0.014;
+    return arrete + cragFacet;
+  };
+
   const cPos = crumpitGeo.attributes.position;
   for (let i = 0; i < cPos.count; i++) {
     const vx = cPos.getX(i);
     const vy = cPos.getY(i);
     const vz = cPos.getZ(i);
-    if (vz > 0.14) {
-      const ridgeX = -1.6 + (vy / 5.14) * 2.1;
-      const dist = Math.abs(vx - ridgeX);
-      const arrete = Math.max(0, 1.0 - dist / 1.4) * 0.12;
-      cPos.setZ(i, vz + arrete);
+    if (vz > 0 && vy > 0.05) {
+      cPos.setZ(i, vz + crumpitSurfaceZOffset(vx, vy));
     }
   }
   normalizeExtrudeUVs(crumpitGeo, 'fit');
@@ -2070,73 +2200,66 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   crumpitMesh.receiveShadow = true;
   crumpitGroup.add(crumpitMesh);
 
-  // Wind-swept white snowpack slope along Mt. Crumpit's left windward ridge
-  const snowSpineShape = new THREE.Shape();
-  snowSpineShape.moveTo(-2.95, 1.72);
-  snowSpineShape.lineTo(-2.34, 2.46);
-  snowSpineShape.lineTo(-1.54, 2.98);
-  snowSpineShape.lineTo(-0.84, 3.56);
-  snowSpineShape.lineTo(-0.3, 4.42);
-  snowSpineShape.lineTo(0.2, 5.08);
-  snowSpineShape.lineTo(0.45, 4.78);
-  snowSpineShape.lineTo(-0.12, 4.12);
-  snowSpineShape.lineTo(-0.68, 3.28);
-  snowSpineShape.lineTo(-1.42, 2.68);
-  snowSpineShape.lineTo(-2.22, 2.18);
-  snowSpineShape.closePath();
-
-  const snowSpineGeo = new THREE.ExtrudeGeometry(snowSpineShape, {
-    depth: 0.16,
-    bevelEnabled: true,
-    bevelSegments: 1,
-    steps: 1,
-    bevelSize: 0.014,
-    bevelThickness: 0.014,
-  });
-  normalizeExtrudeUVs(snowSpineGeo, 'fit');
-  snowSpineGeo.computeVertexNormals();
-
-  const snowSpineMesh = new THREE.Mesh(snowSpineGeo, snowCrestMat);
-  snowSpineMesh.position.set(0, 0, 0.22);
-  snowSpineMesh.castShadow = true;
-  crumpitGroup.add(snowSpineMesh);
-
-  // Flush-integrated summit snow mantle along Mt. Crumpit's upper ridge
+  // 1. Continuous 3D Topology-Conforming Snow Mantle along Mt. Crumpit's entire windward slope & overhanging summit horn!
+  //    Preserves every vertex of `crumpitShape` and applies `crumpitSurfaceZOffset` so the mountain NEVER clips through!
+  const crumpitWindwardAndSummitPts: ReadonlyArray<readonly [number, number]> = [
+    [-3.12, 1.58],
+    [-2.38, 2.42],
+    [-1.58, 2.94],
+    [-0.88, 3.52],
+    [-0.34, 4.38],
+    [0.18, 5.06],
+    [0.74, 5.14],
+    [0.98, 4.86],
+  ];
   const summitSnowCap = createIntegratedRidgeSnowMantle(
-    [
-      [-0.34, 4.38],
-      [0.18, 5.06],
-      [0.74, 5.14],
-      [0.98, 4.86],
-    ],
-    0.3,
+    crumpitWindwardAndSummitPts,
+    crumpitDepth,
     0.34,
     snowCrestMat,
-    9
+    9,
+    crumpitSurfaceZOffset
   );
   crumpitGroup.add(summitSnowCap);
 
-  // Secondary flush-integrated snow mantle along the right cliff shelf of Mt. Crumpit
+  // 2. Secondary topology-conforming snow mantles along the stepped leeward cliff shelves of Mt. Crumpit
   const crumpitOverhangSnow = createIntegratedRidgeSnowMantle(
     [
       [0.56, 3.68],
       [0.68, 4.18],
       [0.84, 4.18],
     ],
-    0.3,
-    0.26,
+    crumpitDepth,
+    0.22,
     snowCrestMat,
-    17
+    17,
+    crumpitSurfaceZOffset
   );
   crumpitGroup.add(crumpitOverhangSnow);
 
-  // Angular faceted rock strata ledges jutting from Mt. Crumpit's cliff face
+  const crumpitLowerShelfSnow = createIntegratedRidgeSnowMantle(
+    [
+      [0.46, 2.88],
+      [0.72, 3.48],
+    ],
+    crumpitDepth,
+    0.16,
+    snowCrestMat,
+    29,
+    crumpitSurfaceZOffset
+  );
+  crumpitGroup.add(crumpitLowerShelfSnow);
+
+  // 3. Angular warm-brown stone strata ledges jutting from Mt. Crumpit's exposed rock face,
+  //    each crowned with a fitted snow/ice cap following the ledge's exact 3-point top ridge!
   for (const [lx, ly, wx, hy, dz, lean, seedOff] of [
-    [-1.48, 2.62, 0.84, 0.24, 0.18, 0.12, 91],
-    [-0.58, 3.35, 0.72, 0.22, 0.18, 0.16, 92],
-    [-0.06, 4.18, 0.62, 0.2, 0.16, 0.14, 93],
-    [0.24, 3.52, 0.56, 0.18, 0.16, -0.1, 94],
+    [-2.05, 1.52, 0.78, 0.24, 0.16, 0.1, 91],
+    [-1.12, 2.08, 0.72, 0.22, 0.16, 0.12, 92],
+    [-0.22, 2.72, 0.64, 0.2, 0.16, 0.1, 93],
+    [0.18, 1.92, 0.58, 0.18, 0.15, -0.08, 94],
   ] as const) {
+    const ledgeZ =
+      crumpitDepth * 0.5 + crumpitSurfaceZOffset(lx, ly) - dz * 0.22;
     const cragLedge = createJaggedRockShardBlock(
       wx,
       hy,
@@ -2145,30 +2268,69 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       seedOff,
       lean
     );
-    cragLedge.position.set(lx, ly, 0.26);
+    cragLedge.position.set(lx, ly, ledgeZ);
     crumpitGroup.add(cragLedge);
+
+    const hw = wx * 0.5;
+    const hh = hy * 0.5;
+    const j1 = ((seedOff * 7) % 5) * 0.025;
+    const j2 = ((seedOff * 11) % 5) * 0.025;
+    const ledgeTopPts: Array<readonly [number, number]> = [
+      [-hw * 0.58 + lean, hh * (0.94 + j2)],
+      [hw * 0.12 + lean, hh * (1.04 - j1)],
+      [hw * 0.76 + lean * 0.6, hh * (0.86 + j1)],
+    ];
+    const ledgeSurfZ = (bx: number, by: number): number => {
+      const ridgeFacet =
+        (1.0 - Math.min(1.0, Math.abs(bx - lean * 0.3) / (hw + 0.05))) *
+        dz *
+        0.24;
+      const stepFacet =
+        Math.floor(((by + hh) / Math.max(0.1, hy)) * 4) * 0.015;
+      return ridgeFacet - stepFacet;
+    };
+
+    const ledgeSnowCap = createIntegratedRidgeSnowMantle(
+      ledgeTopPts,
+      dz,
+      0.085,
+      snowCrestMat,
+      seedOff + 7,
+      ledgeSurfZ
+    );
+    ledgeSnowCap.position.set(lx, ly, ledgeZ);
+    crumpitGroup.add(ledgeSnowCap);
   }
 
-  // Winding "Dump-It-To-Crumpit" sleigh trail ribbon spiraling up toward the summit (z = +0.34m)
-  const crumpitTrailCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-2.18, 2.25, 0.34),
-    new THREE.Vector3(-1.18, 2.78, 0.35),
-    new THREE.Vector3(-0.36, 3.48, 0.36),
-    new THREE.Vector3(0.18, 4.28, 0.35),
-    new THREE.Vector3(0.42, 4.7, 0.34),
-  ]);
+  // 4. Winding "Dump-It-To-Crumpit" sleigh trail ribbon conforming to Mt. Crumpit's 3D arrête surface (zero scale distortion!)
+  const trailWaypoints: ReadonlyArray<readonly [number, number]> = [
+    [-2.18, 1.82],
+    [-1.24, 2.38],
+    [-0.42, 3.12],
+    [0.14, 3.92],
+    [0.42, 4.52],
+  ];
+  const crumpitTrailCurve = new THREE.CatmullRomCurve3(
+    trailWaypoints.map(
+      ([tx, ty]) =>
+        new THREE.Vector3(
+          tx,
+          ty,
+          crumpitDepth * 0.5 + 0.022 + crumpitSurfaceZOffset(tx, ty) + 0.032
+        )
+    )
+  );
   const crumpitTrail = new THREE.Mesh(
-    new THREE.TubeGeometry(crumpitTrailCurve, 32, 0.056, 6, false),
+    new THREE.TubeGeometry(crumpitTrailCurve, 32, 0.032, 6, false),
     pathRibbonMat
   );
-  crumpitTrail.scale.set(1, 0.55, 0.4);
   crumpitGroup.add(crumpitTrail);
 
-  // Miniature glowing trail lanterns & crooked pines along the Mt. Crumpit ascent
+  // Miniature glowing trail lanterns along the Mt. Crumpit ascent
   for (const [tx, ty, tScale, tLean] of [
-    [-1.85, 2.48, 0.54, 1],
-    [-0.92, 3.04, 0.48, -1],
-    [-0.18, 3.78, 0.42, 1],
+    [-1.85, 2.02, 0.54, 1],
+    [-0.92, 2.68, 0.48, -1],
+    [-0.18, 3.48, 0.42, 1],
   ] as const) {
     const trailLamp = createMiniatureCrookedLampPost(
       tScale,
@@ -2176,21 +2338,29 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       contourInkMat,
       lanternGlowMat
     );
-    trailLamp.position.set(tx, ty, 0.32);
+    trailLamp.position.set(
+      tx,
+      ty,
+      crumpitDepth * 0.5 + 0.022 + crumpitSurfaceZOffset(tx, ty) + 0.024
+    );
     crumpitGroup.add(trailLamp);
   }
 
   // Miniature glowing Grinch cave mouth tucked near the upper cliff of Mt. Crumpit
+  const caveX = 0.28;
+  const caveY = 4.22;
+  const caveBaseZ =
+    crumpitDepth * 0.5 + 0.022 + crumpitSurfaceZOffset(caveX, caveY);
   const caveFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(0.36, 0.4, 0.1, 2, 0.04),
+    new RoundedBoxGeometry(0.36, 0.4, 0.08, 2, 0.04),
     contourInkMat
   );
-  caveFrame.position.set(0.32, 4.38, 0.32);
+  caveFrame.position.set(caveX, caveY, caveBaseZ + 0.02);
   caveFrame.rotation.z = -0.18;
   crumpitGroup.add(caveFrame);
 
   const caveGlow = new THREE.Mesh(
-    new RoundedBoxGeometry(0.24, 0.28, 0.06, 1, 0.03),
+    new RoundedBoxGeometry(0.24, 0.28, 0.05, 1, 0.03),
     new THREE.MeshStandardMaterial({
       color: 0x8cc864,
       emissive: 0x52a432,
@@ -2198,7 +2368,7 @@ export function buildGrinchWhovilleHillsAndCrumpit(
       roughness: 0.55,
     })
   );
-  caveGlow.position.set(0.33, 4.36, 0.37);
+  caveGlow.position.set(caveX + 0.01, caveY - 0.02, caveBaseZ + 0.05);
   caveGlow.rotation.z = -0.18;
   crumpitGroup.add(caveGlow);
 
