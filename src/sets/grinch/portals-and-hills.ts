@@ -5,10 +5,6 @@ import {
   createSeussianRockNormalTexture,
   normalizeExtrudeUVs,
 } from '../../engine/procedural-textures.ts';
-import {
-  createSculptedIcicleDrip,
-  createSeussianIcicleValance,
-} from '../shared-scenic-helpers.ts';
 
 let cachedSnowMountainCliffTex: THREE.CanvasTexture | null = null;
 let cachedGlacierWavePortalTex: THREE.CanvasTexture | null = null;
@@ -418,36 +414,6 @@ function createJaggedRockShardBlock(
   return mesh;
 }
 
-
-let cachedCrystallineIceFrontMat: THREE.MeshStandardMaterial | null = null;
-let cachedCrystallineIceBackMat: THREE.MeshStandardMaterial | null = null;
-
-function getCrystallineIceMaterials(): {
-  readonly front: THREE.MeshStandardMaterial;
-  readonly back: THREE.MeshStandardMaterial;
-} {
-  if (!cachedCrystallineIceFrontMat) {
-    cachedCrystallineIceFrontMat = new THREE.MeshStandardMaterial({
-      color: 0xa4c4d8,
-      roughness: 0.45,
-      metalness: 0.16,
-      flatShading: true,
-    });
-  }
-  if (!cachedCrystallineIceBackMat) {
-    cachedCrystallineIceBackMat = new THREE.MeshStandardMaterial({
-      color: 0x6290c8,
-      roughness: 0.48,
-      metalness: 0.14,
-      flatShading: true,
-    });
-  }
-  return {
-    front: cachedCrystallineIceFrontMat,
-    back: cachedCrystallineIceBackMat,
-  };
-}
-
 /**
  * Deterministic seeded PRNG (`mulberry32`) so every cliff layer and side
  * generates a genuinely distinct, non-repeating geological silhouette.
@@ -462,9 +428,10 @@ function createCliffRng(seed: number): () => number {
 }
 
 /**
- * Builds a sleek, wind-planed cliff-top snowpack blanket & overhanging icicle rim
- * (`createCliffTopSnowPackCornice`) that sits cleanly on top of a flat or angled
- * rock cliff plateau with a single crisp jagged icicle valance.
+ * Builds a thick, heavy, "wet" dripping snow-pack blanket (`createCliffTopSnowPackCornice`)
+ * that sits cleanly on top of a snow cliff and melts/drips down the front cliff face
+ * in plump, rounded, uneven snow-drip fingers with a deep Seussian shadow contour
+ * directly underneath (matching `model_1B_whoville.jpg` — no spiky icicle triangles!).
  */
 function createCliffTopSnowPackCornice(
   width: number,
@@ -475,57 +442,112 @@ function createCliffTopSnowPackCornice(
   underShadowMat: THREE.Material,
   _icicleMat: THREE.Material,
   _glazeBackMat: THREE.Material,
-  _contourInkMat: THREE.Material,
+  contourInkMat: THREE.Material,
   seed = 1,
   slopeRiseLeftToRight = 0.0
 ): THREE.Group {
   const group = new THREE.Group();
   const rng = createCliffRng(seed * 97 + 13);
   const halfW = width * 0.5;
-  const h = Math.min(0.42, Math.max(0.22, snowThickness));
+  const h = Math.min(0.68, Math.max(0.32, snowThickness));
 
-  // 1. Sleek, wind-swept sloping snowpack slab resting on the cliff plateau
   const leftTopY = h - slopeRiseLeftToRight * 0.5;
   const rightTopY = h + slopeRiseLeftToRight * 0.5;
 
-  const capShape = new THREE.Shape();
-  capShape.moveTo(-halfW, 0.02);
-  capShape.lineTo(-halfW - (0.02 + rng() * 0.03), leftTopY * (0.58 + rng() * 0.14));
-  capShape.lineTo(-halfW * (0.82 + rng() * 0.1), leftTopY);
-  capShape.lineTo(
-    -halfW * (0.15 + rng() * 0.2),
-    (leftTopY + rightTopY) * 0.5 + (rng() - 0.3) * 0.06
-  );
-  capShape.lineTo(
-    halfW * (0.28 + rng() * 0.2),
-    rightTopY + (rng() - 0.4) * 0.05
-  );
-  capShape.lineTo(halfW * (0.86 + rng() * 0.08), rightTopY * 0.9);
-  capShape.lineTo(halfW + (0.02 + rng() * 0.03), rightTopY * 0.46);
-  capShape.lineTo(halfW, 0.02);
+  const buildWetSnowDripShape = (yOffset: number, radiusExpand: number): THREE.Shape => {
+    const sRng = createCliffRng(seed * 97 + 13);
+    const shape = new THREE.Shape();
+    shape.moveTo(-halfW - radiusExpand, 0.04 + yOffset);
+    shape.quadraticCurveTo(
+      -halfW - 0.04 - radiusExpand,
+      leftTopY * 0.55 + yOffset,
+      -halfW * 0.86,
+      leftTopY + yOffset + radiusExpand * 0.4
+    );
+    shape.bezierCurveTo(
+      -halfW * 0.28,
+      (leftTopY + rightTopY) * 0.5 + 0.08 + yOffset,
+      halfW * 0.28,
+      rightTopY + 0.06 + yOffset,
+      halfW * 0.86,
+      rightTopY * 0.92 + yOffset + radiusExpand * 0.4
+    );
+    shape.quadraticCurveTo(
+      halfW + 0.04 + radiusExpand,
+      rightTopY * 0.48 + yOffset,
+      halfW + radiusExpand,
+      0.02 + yOffset
+    );
 
-  // Crisp stepped/undercut bottom snow lip where the snowpack meets the sheer rock cliff face
-  const stepW = width / scallopCount;
-  for (let i = 0; i < scallopCount; i++) {
-    const xRight = halfW - i * stepW;
-    const xLeft = xRight - stepW;
-    const xMid = (xRight + xLeft) * 0.5 + (rng() - 0.5) * stepW * 0.22;
-    const dipY = -0.035 - rng() * 0.045;
-    const crestY = 0.015 + rng() * 0.03;
-    capShape.lineTo(xMid, dipY);
-    capShape.lineTo(xLeft, crestY);
-  }
-  capShape.closePath();
+    // Bottom edge: heavy, rounded "wet" snow-melt drips & wavy lobes hanging down the cliff face
+    const dripCount = Math.max(4, scallopCount + 2);
+    const stepW = (width + radiusExpand * 2) / dripCount;
+    for (let i = 0; i < dripCount; i++) {
+      const xRight = halfW + radiusExpand - i * stepW;
+      const xLeft = xRight - stepW;
+      const xMid = (xRight + xLeft) * 0.5 + (sRng() - 0.5) * stepW * 0.16;
+      // Alternating long heavy wet snow-melt fingers and shorter plump snow scallops
+      const isLongDrip = (i + (seed % 2)) % 2 === 0;
+      const dripLen = isLongDrip
+        ? h * (0.68 + sRng() * 0.42)
+        : h * (0.24 + sRng() * 0.22);
+      const dipY = -dripLen + yOffset - radiusExpand * 0.8;
+      const notchY = -h * (0.06 + sRng() * 0.1) + yOffset;
 
+      // Smooth bezier curve down to rounded wet drip tip and back up to the next snow fold
+      shape.bezierCurveTo(
+        xRight - stepW * 0.22,
+        dipY * 0.65,
+        xMid + stepW * 0.16,
+        dipY,
+        xMid,
+        dipY
+      );
+      shape.bezierCurveTo(
+        xMid - stepW * 0.16,
+        dipY,
+        xLeft + stepW * 0.22,
+        dipY * 0.65,
+        xLeft,
+        notchY
+      );
+    }
+    shape.closePath();
+    return shape;
+  };
+
+  // 1. Deep cobalt-charcoal undercut shadow contour directly beneath the wet dripping snow
+  const shadowShape = buildWetSnowDripShape(-0.055, 0.015);
+  const shadowGeo = new THREE.ExtrudeGeometry(shadowShape, {
+    depth: depth * 0.92,
+    bevelEnabled: false,
+  });
+  shadowGeo.translate(0, -h * 0.28, -depth * 0.44);
+  normalizeExtrudeUVs(shadowGeo, 'fit');
+  const shadowMesh = new THREE.Mesh(shadowGeo, underShadowMat);
+  group.add(shadowMesh);
+
+  // Thin dark Seussian ink shadow lip just behind the wet snow drips
+  const inkShape = buildWetSnowDripShape(-0.028, 0.008);
+  const inkGeo = new THREE.ExtrudeGeometry(inkShape, {
+    depth: depth * 0.96,
+    bevelEnabled: false,
+  });
+  inkGeo.translate(0, -h * 0.28, -depth * 0.46);
+  const inkMesh = new THREE.Mesh(inkGeo, contourInkMat);
+  group.add(inkMesh);
+
+  // 2. Plump, rounded, wet-looking snowpack blanket & dripping snow fingers in front
+  const capShape = buildWetSnowDripShape(0, 0);
   const capGeo = new THREE.ExtrudeGeometry(capShape, {
     depth,
     bevelEnabled: true,
-    bevelSegments: 1,
+    bevelSegments: 3,
     steps: 1,
-    bevelSize: 0.02,
-    bevelThickness: 0.02,
+    bevelSize: 0.036,
+    bevelThickness: 0.036,
   });
-  capGeo.translate(0, -h * 0.35, -depth * 0.5);
+  capGeo.translate(0, -h * 0.28, -depth * 0.5);
   normalizeExtrudeUVs(capGeo, 'fit');
   capGeo.computeVertexNormals();
 
@@ -534,38 +556,57 @@ function createCliffTopSnowPackCornice(
   capMesh.receiveShadow = true;
   group.add(capMesh);
 
-  // 2. Dark rock overhang shadow ledge directly under the snow cornice lip
-  const underLipGeo = new THREE.BoxGeometry(
-    width * 0.92,
-    0.1,
-    depth * 0.74
-  );
-  const underLip = new THREE.Mesh(underLipGeo, underShadowMat);
-  underLip.position.set(0, -h * 0.38, -0.02);
-  group.add(underLip);
-
-  // 3. Single crisp jagged cavemouth-style crystalline icicle valance tucked under the snow lip
-  const { front: crystallineIceFrontMat, back: crystallineIceBackMat } =
-    getCrystallineIceMaterials();
-
-  const valance = createSeussianIcicleValance(
-    width * (0.86 + rng() * 0.08),
-    Math.min(0.46, snowThickness * 0.42 + 0.12 + rng() * 0.08),
-    scallopCount * 2 + 1 + Math.floor(rng() * 3),
-    crystallineIceFrontMat,
-    crystallineIceBackMat,
-    0.038,
-    seed
-  );
-  valance.position.set(0, -h * 0.28, depth * 0.22);
-  group.add(valance);
+  // Keep rng referenced so deterministic seed signature is preserved
+  void rng;
 
   return group;
 }
 
+let cachedPineFlutedTierGeo: THREE.LatheGeometry | null = null;
+let cachedPineSnowSkirtGeo: THREE.LatheGeometry | null = null;
+let cachedPineBranchLobeGeo: THREE.ConeGeometry | null = null;
+
+function getSharedShowpiecePineGeometries(): {
+  readonly flutedTierGeo: THREE.LatheGeometry;
+  readonly snowSkirtGeo: THREE.LatheGeometry;
+  readonly branchLobeGeo: THREE.ConeGeometry;
+} {
+  if (!cachedPineFlutedTierGeo) {
+    // Unit-radius, unit-height fluted concave-skirt LatheGeometry matching the Showpiece Tree
+    const conePts: THREE.Vector2[] = [];
+    for (let s = 0; s <= 10; s++) {
+      const u = s / 10;
+      const flare = Math.pow(1 - u, 1.18);
+      const py = u - 0.35;
+      conePts.push(new THREE.Vector2(Math.max(0.02, flare), py));
+    }
+    cachedPineFlutedTierGeo = new THREE.LatheGeometry(conePts, 14);
+  }
+  if (!cachedPineSnowSkirtGeo) {
+    const snowPts: THREE.Vector2[] = [];
+    for (let s = 0; s <= 8; s++) {
+      const u = s / 8;
+      const flare = Math.pow(1 - u, 1.12) * 0.92;
+      const py = u * 0.58 - 0.02;
+      snowPts.push(new THREE.Vector2(Math.max(0.02, flare), py));
+    }
+    cachedPineSnowSkirtGeo = new THREE.LatheGeometry(snowPts, 12);
+  }
+  if (!cachedPineBranchLobeGeo) {
+    cachedPineBranchLobeGeo = new THREE.ConeGeometry(1, 1, 6);
+  }
+  return {
+    flutedTierGeo: cachedPineFlutedTierGeo,
+    snowSkirtGeo: cachedPineSnowSkirtGeo,
+    branchLobeGeo: cachedPineBranchLobeGeo,
+  };
+}
+
 /**
  * Helper to create a miniature crooked Seussian spruce/pine tree clinging to a
- * mountain cliff ledge or distant Whoville hill ridge.
+ * mountain cliff ledge or distant Whoville hill ridge, using the exact same
+ * S-curved spine, fluted concave-skirt `LatheGeometry` tiers, and ring of
+ * drooping `ConeGeometry` branch-tip lobes as the Center Showpiece Tree.
  */
 function createForcedPerspectiveWhovillePine(
   scale: number,
@@ -575,44 +616,81 @@ function createForcedPerspectiveWhovillePine(
   leanDir: -1 | 1 = 1
 ): THREE.Group {
   const tree = new THREE.Group();
+  const { flutedTierGeo, snowSkirtGeo, branchLobeGeo } =
+    getSharedShowpiecePineGeometries();
+
+  const getSpineOffset = (
+    tierFrac: number
+  ): { x: number; z: number; tiltZ: number } => {
+    const sx =
+      leanDir *
+      Math.sin(tierFrac * Math.PI * 1.65) *
+      0.045 *
+      (0.4 + tierFrac * 0.85) *
+      scale;
+    const sz = Math.cos(tierFrac * Math.PI * 1.3) * 0.015 * scale;
+    const tiltZ = -leanDir * Math.cos(tierFrac * Math.PI * 1.65) * 0.14;
+    return { x: sx, z: sz, tiltZ };
+  };
 
   const trunkCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(leanDir * 0.03 * scale, 0.1 * scale, 0),
-    new THREE.Vector3(leanDir * -0.02 * scale, 0.2 * scale, 0),
+    new THREE.Vector3(leanDir * 0.028 * scale, 0.22 * scale, 0.008 * scale),
+    new THREE.Vector3(leanDir * -0.022 * scale, 0.48 * scale, -0.008 * scale),
+    new THREE.Vector3(leanDir * 0.032 * scale, 0.72 * scale, 0.005 * scale),
   ]);
   const trunk = new THREE.Mesh(
-    new THREE.TubeGeometry(trunkCurve, 6, 0.032 * scale, 6, false),
+    new THREE.TubeGeometry(trunkCurve, 10, 0.032 * scale, 7, false),
     trunkMat
   );
   tree.add(trunk);
 
-  for (let tier = 0; tier < 4; tier++) {
-    const tierRadius = (0.2 - tier * 0.036) * scale;
-    const tierHeight = (0.28 - tier * 0.032) * scale;
-    const tierY = (0.18 + tier * 0.14) * scale;
-    const offsetX =
-      leanDir * (tier % 2 === 0 ? 0.025 : -0.02) * (tier + 1) * 0.6 * scale;
+  const tierCount = 5;
+  for (let tier = 0; tier < tierCount; tier++) {
+    const tierFrac = tier / (tierCount - 1);
+    const baseRadius = (0.23 - tier * 0.035) * scale;
+    const tierHeight = (0.24 - tier * 0.022) * scale;
+    const tierY = (0.18 + tier * 0.135) * scale;
+    const spine = getSpineOffset(tierFrac);
 
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(tierRadius, tierHeight, 8),
-      pineMat
-    );
-    cone.position.set(offsetX, tierY, 0);
-    cone.rotation.z = leanDir * (tier % 2 === 0 ? -0.16 : 0.18);
-    tree.add(cone);
+    const tierGroup = new THREE.Group();
+    tierGroup.position.set(spine.x, tierY, spine.z);
+    tierGroup.rotation.z =
+      spine.tiltZ +
+      leanDir * (tier % 2 === 0 ? 1 : -1) * (0.05 + tierFrac * 0.04);
 
-    const snowCap = new THREE.Mesh(
-      new THREE.ConeGeometry(tierRadius * 0.88, tierHeight * 0.46, 8),
-      snowMat
-    );
-    snowCap.position.set(
-      offsetX,
-      tierY + tierHeight * 0.23,
-      0.014 * scale
-    );
-    snowCap.rotation.z = cone.rotation.z;
-    tree.add(snowCap);
+    // Fluted concave-skirt LatheGeometry foliage tier
+    const tierCone = new THREE.Mesh(flutedTierGeo, pineMat);
+    tierCone.scale.set(baseRadius, tierHeight, baseRadius);
+    tierCone.castShadow = true;
+    tierGroup.add(tierCone);
+
+    // Ring of sculpted drooping branch-tip lobes around the lower hem of each tier
+    const lobeCount = Math.max(6, 9 - tier);
+    const lobeRadius = (0.042 - tier * 0.004) * scale;
+    const lobeHeight = (0.095 - tier * 0.008) * scale;
+    for (let l = 0; l < lobeCount; l++) {
+      const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.4;
+      const radialDist = baseRadius * 0.92;
+      const branchLobe = new THREE.Mesh(branchLobeGeo, pineMat);
+      branchLobe.scale.set(lobeRadius, lobeHeight, lobeRadius);
+      branchLobe.position.set(
+        Math.cos(lAngle) * radialDist,
+        -tierHeight * 0.28,
+        Math.sin(lAngle) * radialDist
+      );
+      branchLobe.rotation.z = -Math.cos(lAngle) * 0.65;
+      branchLobe.rotation.x = Math.sin(lAngle) * 0.65;
+      tierGroup.add(branchLobe);
+    }
+
+    // Fluted snow mantle sitting cleanly on top of the tier (+0.015m above foliage)
+    const snowCap = new THREE.Mesh(snowSkirtGeo, snowMat);
+    snowCap.scale.set(baseRadius * 0.96, tierHeight * 0.85, baseRadius * 0.96);
+    snowCap.position.set(0, tierHeight * 0.14, 0.008 * scale);
+    tierGroup.add(snowCap);
+
+    tree.add(tierGroup);
   }
 
   return tree;
@@ -644,19 +722,12 @@ interface ProceduralCliffLayerSpec {
   readonly trunkMat: THREE.Material;
   readonly includePine?: boolean;
   readonly includeBaseSnow?: boolean;
+  readonly includeMidSnowDripBand?: boolean;
 }
 
 /**
- * Generates a single clean, non-OTT, procedurally varied stratified rock & snow
- * cliff wing flat (`createProceduralStratifiedCliffWing`) directly in world X
- * coordinates (never simply mirroring Stage Left and Stage Right).
- *
- * Every call uses its own deterministic `seed` and `archetype` to vary:
- * - Number of inner cliff steps (`3` to `5` steps)
- * - Individual step heights, horizontal terrace widths, and rock overhang angles
- * - Summit plateau slope and natural crag ridge humps
- * - 3D planar rock facet vertex displacement
- * - Snowpack cornice width, slope, and icicle tooth rhythm
+ * Generates a clean, non-clipping Seussian snow-cliff wing flat (`createProceduralStratifiedCliffWing`)
+ * with heavy, wet dripping snow caps matching `model_1B_whoville.jpg`.
  */
 function createProceduralStratifiedCliffWing(
   spec: ProceduralCliffLayerSpec
@@ -672,7 +743,6 @@ function createProceduralStratifiedCliffWing(
     extrudeDepth,
     yawRad,
     primaryRockMat,
-    secondaryRockMat,
     underShadowMat,
     snowCapMat,
     contourInkMat,
@@ -681,6 +751,7 @@ function createProceduralStratifiedCliffWing(
     trunkMat,
     includePine = false,
     includeBaseSnow = false,
+    includeMidSnowDripBand = false,
   } = spec;
 
   const rng = createCliffRng(seed);
@@ -688,130 +759,37 @@ function createProceduralStratifiedCliffWing(
   group.position.set(side * outerEdgeAbsX, 0, zPos);
   group.rotation.y = yawRad;
 
-  // Local X grows from 0 (offstage outer edge) toward center stage in direction `inwardSign = -side`
   const inwardSign: -1 | 1 = side === -1 ? 1 : -1;
-  const totalSpanW = Math.max(1.2, outerEdgeAbsX - innerEdgeAbsX);
+  const totalSpanW = Math.max(0.85, outerEdgeAbsX - innerEdgeAbsX);
 
-  // 1. Construct a unique 2D rock cliff silhouette in local coordinates
-  const outerTopY = height * (0.93 + rng() * 0.09);
+  const outerTopY = height * (0.95 + rng() * 0.05);
   const innerShoulderY =
     archetype === 'overhanging-bluff'
-      ? height * (0.82 + rng() * 0.08)
+      ? height * (0.84 + rng() * 0.05)
       : archetype === 'canyon-ridge'
-        ? height * (0.76 + rng() * 0.1)
-        : height * (0.72 + rng() * 0.12);
+        ? height * (0.76 + rng() * 0.06)
+        : height * (0.78 + rng() * 0.06);
 
   const topReachW =
     archetype === 'overhanging-bluff'
-      ? totalSpanW * (0.92 + rng() * 0.08)
+      ? totalSpanW * (0.94 + rng() * 0.04)
       : archetype === 'stepped-terrace'
-        ? totalSpanW * (0.64 + rng() * 0.12)
-        : totalSpanW * (0.74 + rng() * 0.14);
+        ? totalSpanW * (0.88 + rng() * 0.06)
+        : totalSpanW * (0.9 + rng() * 0.06);
 
-  // Trace points in stage-right-canonical space (u >= 0 means inward toward center stage),
-  // then multiply X by `inwardSign` so SL and SR are built natively with their own RNG stream!
   const pts: Array<readonly [number, number]> = [];
-  pts.push([-0.14 * (0.8 + rng() * 0.4), 0]);
-  pts.push([-0.22 * (0.7 + rng() * 0.5), height * (0.36 + rng() * 0.14)]);
-  pts.push([-0.12 * (0.6 + rng() * 0.6), height * (0.72 + rng() * 0.12)]);
-  pts.push([0.04 + rng() * 0.12, outerTopY]);
-
-  // Upper summit ridge with 1 or 2 natural crag undulations (no OTT spiky Dolomite horns!)
-  const midRidgeU1 = topReachW * (0.32 + rng() * 0.16);
-  const midRidgeY1 =
-    THREE.MathUtils.lerp(outerTopY, innerShoulderY, 0.36) +
-    (rng() - 0.32) * 0.28;
-  pts.push([midRidgeU1, midRidgeY1]);
-
-  if (rng() > 0.35) {
-    const midRidgeU2 = topReachW * (0.66 + rng() * 0.14);
-    const midRidgeY2 =
-      THREE.MathUtils.lerp(outerTopY, innerShoulderY, 0.7) +
-      (rng() - 0.4) * 0.22;
-    pts.push([midRidgeU2, midRidgeY2]);
-  }
-
+  pts.push([-0.1 * (0.8 + rng() * 0.3), 0]);
+  pts.push([-0.14 * (0.75 + rng() * 0.3), height * 0.45]);
+  pts.push([-0.08 * (0.7 + rng() * 0.3), height * 0.78]);
+  pts.push([0.04, outerTopY]);
   pts.push([topReachW, innerShoulderY]);
 
-  // Inner onstage cliff profile descending from (topReachW, innerShoulderY) to (baseReachW, 0)
-  // with randomized step count, terrace ledges, and undercut rock angles
-  const stepCount =
-    archetype === 'stepped-terrace'
-      ? 3
-      : archetype === 'fractured-buttress'
-        ? 4
-        : 3 + Math.floor(rng() * 2);
-
-  let curU = topReachW;
-  let curY = innerShoulderY;
-  let midLedgeU = totalSpanW * 0.55;
-  let midLedgeY = height * 0.48;
-  let midLedgeW = 0.75;
-
-  for (let s = 0; s < stepCount; s++) {
-    const tNext = (s + 1) / stepCount;
-    const nextY =
-      s === stepCount - 1
-        ? 0
-        : innerShoulderY *
-          Math.max(0.08, 1 - tNext + (rng() - 0.5) * (0.14 / stepCount));
-
-    // Rock face segment descending to nextY
-    let faceBottomU = curU;
-    if (archetype === 'overhanging-bluff' && s === 0) {
-      // Upper prow juts slightly inward, then undercuts back
-      const prowU = Math.min(totalSpanW * 1.03, curU + 0.14 + rng() * 0.16);
-      const prowY = curY - (curY - nextY) * (0.32 + rng() * 0.18);
-      pts.push([prowU, prowY]);
-      faceBottomU = prowU - (0.22 + rng() * 0.18);
-    } else if (archetype === 'stepped-terrace' && s === 0) {
-      // Steep drop to a wide mid-height terrace that steps inward toward stage
-      faceBottomU = curU + (0.04 + rng() * 0.08);
-    } else {
-      // Natural craggy rock face slant (either slight undercut or outward batter)
-      faceBottomU = curU + (rng() - 0.52) * 0.26;
-    }
-
-    faceBottomU = THREE.MathUtils.clamp(
-      faceBottomU,
-      totalSpanW * 0.48,
-      totalSpanW * 1.02
-    );
-    pts.push([faceBottomU, nextY]);
-
-    // Horizontal/slanted rock stratum step between vertical drops
-    if (s < stepCount - 1) {
-      let stepOutU = faceBottomU;
-      if (archetype === 'stepped-terrace' && s === 0) {
-        stepOutU = Math.min(
-          totalSpanW,
-          faceBottomU + totalSpanW * (0.22 + rng() * 0.14)
-        );
-      } else if (archetype === 'overhanging-bluff') {
-        stepOutU = Math.max(
-          totalSpanW * 0.54,
-          faceBottomU - (0.08 + rng() * 0.16)
-        );
-      } else {
-        stepOutU = THREE.MathUtils.clamp(
-          faceBottomU + (rng() - 0.38) * 0.34,
-          totalSpanW * 0.56,
-          totalSpanW * 1.0
-        );
-      }
-
-      const stepLedgeY = nextY - (0.04 + rng() * 0.08);
-      pts.push([stepOutU, Math.max(0.12, stepLedgeY)]);
-
-      if (s === 0) {
-        midLedgeU = (faceBottomU + stepOutU) * 0.5;
-        midLedgeY = nextY;
-        midLedgeW = Math.max(0.55, Math.abs(stepOutU - faceBottomU) + 0.45);
-      }
-      curU = stepOutU;
-      curY = Math.max(0.12, stepLedgeY);
-    }
-  }
+  // Smoothly tapered/stepped inner snow-cliff profile descending to the stage floor
+  const midY = innerShoulderY * 0.56;
+  const midU = Math.min(totalSpanW, topReachW + 0.08 + rng() * 0.08);
+  const baseU = Math.min(totalSpanW, midU + 0.06 + rng() * 0.06);
+  pts.push([midU, midY]);
+  pts.push([baseU, 0]);
 
   const shape = new THREE.Shape();
   for (let i = 0; i < pts.length; i++) {
@@ -825,40 +803,12 @@ function createProceduralStratifiedCliffWing(
   const cliffGeo = new THREE.ExtrudeGeometry(shape, {
     depth: extrudeDepth,
     bevelEnabled: true,
-    bevelSegments: 1,
+    bevelSegments: 2,
     steps: 1,
-    bevelSize: 0.016,
-    bevelThickness: 0.016,
+    bevelSize: 0.022,
+    bevelThickness: 0.022,
   });
   cliffGeo.translate(0, 0, -extrudeDepth * 0.5);
-
-  // Chisel seed-randomized planar rock facets onto the front wall
-  const freqX = 3.2 + rng() * 2.8;
-  const freqY = 2.6 + rng() * 2.4;
-  const phaseX = rng() * Math.PI * 2;
-  const phaseY = rng() * Math.PI * 2;
-  const ridgeCenterU = totalSpanW * (0.28 + rng() * 0.38);
-
-  const pos = cliffGeo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const vx = pos.getX(i);
-    const vy = pos.getY(i);
-    const vz = pos.getZ(i);
-    if (vz > 0) {
-      const u = vx * inwardSign;
-      const ridgeDist = Math.abs(u - ridgeCenterU);
-      const ridgeRelief =
-        Math.max(0, 1 - ridgeDist / (totalSpanW * 0.65)) *
-        extrudeDepth *
-        0.22;
-      const stratumStep =
-        Math.floor((vy / Math.max(1, height)) * (4 + (seed % 3))) * 0.014;
-      const waveFacet =
-        Math.sin(vy * freqY + phaseY) * 0.028 +
-        Math.cos(vx * freqX + phaseX) * 0.024;
-      pos.setZ(i, vz + ridgeRelief + waveFacet - stratumStep);
-    }
-  }
   normalizeExtrudeUVs(cliffGeo, 'fit');
   cliffGeo.computeVertexNormals();
 
@@ -867,81 +817,58 @@ function createProceduralStratifiedCliffWing(
   cliffMesh.receiveShadow = true;
   group.add(cliffMesh);
 
-  // 2. Single secondary lower rock buttress facet for clean 3D relief (varied per seed)
-  const subSpanW = totalSpanW * (0.48 + rng() * 0.22);
-  const subHeight = height * (0.36 + rng() * 0.18);
-  const subShard = createJaggedRockShardBlock(
-    subSpanW,
-    subHeight,
-    extrudeDepth * 0.68,
-    secondaryRockMat,
-    seed + 31,
-    inwardSign * (0.06 + rng() * 0.08)
-  );
-  subShard.position.set(
-    inwardSign * (subSpanW * 0.46 + rng() * 0.18),
-    subHeight * 0.48,
-    extrudeDepth * 0.34
-  );
-  group.add(subShard);
-
-  // 3. Clean wind-swept snowpack cap along the top plateau of the cliff
-  const topCorniceWidth = Math.max(1.05, topReachW * (0.94 + rng() * 0.08));
-  const topSlopeDelta = (innerShoulderY - outerTopY) * inwardSign * 0.55;
+  // 2. Heavy, wet dripping snowpack blanket along the top plateau of the cliff
+  const plateauWidth = Math.max(0.85, topReachW - 0.02);
+  const topSlopeDelta = (innerShoulderY - outerTopY) * inwardSign;
   const topCornice = createCliffTopSnowPackCornice(
-    topCorniceWidth,
-    0.28 + rng() * 0.1,
-    extrudeDepth * 1.06,
-    4 + (seed % 2),
+    plateauWidth * 1.03,
+    0.52 + rng() * 0.12,
+    extrudeDepth + 0.09,
+    5 + (seed % 2),
     snowCapMat,
     underShadowMat,
     icicleMat,
     underShadowMat,
     contourInkMat,
     seed + 10,
-    topSlopeDelta
+    topSlopeDelta * 0.48
   );
-  const topCenterU = topReachW * 0.48;
-  const topCenterY = (outerTopY + innerShoulderY) * 0.5;
-  topCornice.position.set(
-    inwardSign * topCenterU,
-    topCenterY,
-    extrudeDepth * 0.12
-  );
+  const topCenterU = (0.04 + topReachW) * 0.5;
+  const topCenterY = (outerTopY + innerShoulderY) * 0.5 + 0.06;
+  topCornice.position.set(inwardSign * topCenterU, topCenterY, 0.025);
   topCornice.rotation.z =
-    Math.atan2(innerShoulderY - outerTopY, topReachW) * inwardSign * 0.65;
+    Math.atan2(innerShoulderY - outerTopY, plateauWidth) * inwardSign * 0.52;
   group.add(topCornice);
 
-  // 4. Optional smaller mid-terrace snow shelf on stepped-terrace / fractured-buttress layers
-  if (
-    archetype === 'stepped-terrace' ||
-    (archetype === 'fractured-buttress' && rng() > 0.3)
-  ) {
-    const ledgeSnow = createCliffTopSnowPackCornice(
-      Math.min(1.15, midLedgeW * 0.95),
-      0.24,
-      extrudeDepth * 0.88,
-      3 + (seed % 2),
+  // 3. Optional second lower wet snow-drip band across the mid-upper cliff face (matching the double-drip front cliffs in `model_1B_whoville.jpg`!)
+  if (includeMidSnowDripBand) {
+    const midBandW = plateauWidth * 0.96;
+    const midBand = createCliffTopSnowPackCornice(
+      midBandW,
+      0.56,
+      extrudeDepth + 0.14,
+      6,
       snowCapMat,
       underShadowMat,
       icicleMat,
       underShadowMat,
       contourInkMat,
-      seed + 47,
-      inwardSign * -0.08
+      seed + 41,
+      topSlopeDelta * 0.35
     );
-    ledgeSnow.position.set(
-      inwardSign * midLedgeU,
-      midLedgeY,
-      extrudeDepth * 0.24
+    midBand.position.set(
+      inwardSign * (topCenterU * 1.02),
+      topCenterY - 0.86,
+      0.045
     );
-    ledgeSnow.rotation.z = inwardSign * -0.08;
-    group.add(ledgeSnow);
+    midBand.rotation.z =
+      Math.atan2(innerShoulderY - outerTopY, plateauWidth) * inwardSign * 0.4;
+    group.add(midBand);
   }
 
-  // 5. Optional crooked alpine spruce tree perched on the cliff shoulder
+  // 4. Optional crooked alpine spruce tree perched cleanly atop the snowpack shoulder
   if (includePine) {
-    const pineScale = 0.82 + rng() * 0.26;
+    const pineScale = 0.84 + rng() * 0.2;
     const pine = createForcedPerspectiveWhovillePine(
       pineScale,
       pineGreenMat,
@@ -950,29 +877,33 @@ function createProceduralStratifiedCliffWing(
       inwardSign
     );
     pine.position.set(
-      inwardSign * (topReachW * (0.28 + rng() * 0.24)),
-      topCenterY + 0.08,
-      extrudeDepth * 0.16
+      inwardSign * (topReachW * (0.32 + rng() * 0.2)),
+      topCenterY + 0.28,
+      0.04
     );
-    pine.rotation.z = inwardSign * (-0.06 - rng() * 0.08);
+    pine.rotation.z = inwardSign * (-0.05 - rng() * 0.06);
     group.add(pine);
   }
 
-  // 6. Optional low stage-floor snowbank at the downstage base
+  // 5. Optional low stage-floor snowbank placed cleanly in front of the downstage cliff base
   if (includeBaseSnow) {
-    const bankW = totalSpanW * (0.88 + rng() * 0.12);
+    const bankW = totalSpanW * (0.88 + rng() * 0.08);
     const bankShape = new THREE.Shape();
     bankShape.moveTo(0, 0);
-    bankShape.lineTo(0, 0.42 + rng() * 0.14);
-    bankShape.lineTo(inwardSign * bankW * 0.52, 0.32 + rng() * 0.12);
-    bankShape.lineTo(inwardSign * bankW, 0.14 + rng() * 0.08);
-    bankShape.lineTo(inwardSign * (bankW + 0.08), 0);
+    bankShape.lineTo(0, 0.36 + rng() * 0.08);
+    bankShape.quadraticCurveTo(
+      inwardSign * bankW * 0.5,
+      0.32,
+      inwardSign * bankW,
+      0.12
+    );
+    bankShape.lineTo(inwardSign * (bankW + 0.06), 0);
     bankShape.closePath();
 
     const bankGeo = new THREE.ExtrudeGeometry(bankShape, {
-      depth: 0.32,
+      depth: 0.2,
       bevelEnabled: true,
-      bevelSegments: 1,
+      bevelSegments: 2,
       steps: 1,
       bevelSize: 0.02,
       bevelThickness: 0.02,
@@ -981,7 +912,7 @@ function createProceduralStratifiedCliffWing(
     bankGeo.computeVertexNormals();
 
     const bankMesh = new THREE.Mesh(bankGeo, snowCapMat);
-    bankMesh.position.set(0, 0, extrudeDepth * 0.42);
+    bankMesh.position.set(0, 0, extrudeDepth * 0.5 + 0.03);
     bankMesh.receiveShadow = true;
     group.add(bankMesh);
   }
@@ -990,13 +921,212 @@ function createProceduralStratifiedCliffWing(
 }
 
 /**
- * 1. DOWNSTAGE LEFT & RIGHT STRATIFIED ROCK & SNOW CLIFF PORTALS
- *    (`'grinch-snow-portals'`)
- *    Features 4 clean, non-OTT, procedurally varied Z-depth cliff layers per side
- *    (`z ≈ +0.24m`, `-0.66m`, `-1.72m`, `-2.80m`) where every single layer on Stage
- *    Right and Stage Left has its own seeded rock silhouette, step count, terrace
- *    heights, and snowpack profile, framing the stage (`|x| ≈ 3.60m–4.12m`) with
- *    natural depth and parallax without overwhelming the scene.
+ * Builds the iconic tall, inward-arching Overhanging Snow-Cliff Prows at the back
+ * of the wings (`z = -3.38m` SR / `-3.42m` SL, directly behind the DSR & MSL Whoville
+ * Houses, matching `model_1B_whoville.jpg`), complete with a rounded snowy hood,
+ * wet dripping snow rim under the overhang, and striated glacier-blue shadow ribs.
+ */
+function createBackOverhangingSnowCliffProw(spec: {
+  readonly side: -1 | 1;
+  readonly seed: number;
+  readonly outerEdgeAbsX: number;
+  readonly baseInnerAbsX: number;
+  readonly prowInnerAbsX: number;
+  readonly height: number;
+  readonly zPos: number;
+  readonly extrudeDepth: number;
+  readonly snowCliffMat: THREE.Material;
+  readonly glacierUnderMat: THREE.Material;
+  readonly snowCapMat: THREE.Material;
+  readonly contourInkMat: THREE.Material;
+}): THREE.Group {
+  const {
+    side,
+    seed,
+    outerEdgeAbsX,
+    baseInnerAbsX,
+    prowInnerAbsX,
+    height,
+    zPos,
+    extrudeDepth,
+    snowCliffMat,
+    glacierUnderMat,
+    snowCapMat,
+    contourInkMat,
+  } = spec;
+
+  const rng = createCliffRng(seed);
+  const group = new THREE.Group();
+  group.position.set(side * outerEdgeAbsX, 0, zPos);
+
+  const inwardSign: -1 | 1 = side === -1 ? 1 : -1;
+  const baseSpanW = outerEdgeAbsX - baseInnerAbsX; // ~1.45m at floor
+  const prowReachW = outerEdgeAbsX - prowInnerAbsX; // ~2.75m at overhanging top hood!
+
+  // 1. Main sweeping cantilevered snow-cliff hood body (`snowCliffMat`)
+  const hoodShape = new THREE.Shape();
+  hoodShape.moveTo(0, 0);
+  hoodShape.lineTo(0, height * (0.94 + rng() * 0.04));
+  // Rounded upper snow-cliff crown sweeping inward to the overhanging prow tip
+  hoodShape.bezierCurveTo(
+    inwardSign * (prowReachW * 0.38),
+    height * 1.02,
+    inwardSign * (prowReachW * 0.82),
+    height * 0.98,
+    inwardSign * prowReachW,
+    height * 0.87
+  );
+  // Rounded overhanging prow nose
+  hoodShape.bezierCurveTo(
+    inwardSign * (prowReachW * 1.04),
+    height * 0.8,
+    inwardSign * (prowReachW * 0.94),
+    height * 0.72,
+    inwardSign * (prowReachW * 0.76),
+    height * 0.66
+  );
+  // Sweeping concave undercut curving back down to the offstage base behind the houses
+  hoodShape.bezierCurveTo(
+    inwardSign * (baseSpanW * 1.18),
+    height * 0.52,
+    inwardSign * (baseSpanW * 0.92),
+    height * 0.28,
+    inwardSign * baseSpanW,
+    0
+  );
+  hoodShape.closePath();
+
+  const hoodGeo = new THREE.ExtrudeGeometry(hoodShape, {
+    depth: extrudeDepth,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.024,
+    bevelThickness: 0.024,
+  });
+  hoodGeo.translate(0, 0, -extrudeDepth * 0.5);
+  normalizeExtrudeUVs(hoodGeo, 'fit');
+  hoodGeo.computeVertexNormals();
+
+  const hoodMesh = new THREE.Mesh(hoodGeo, snowCliffMat);
+  hoodMesh.castShadow = true;
+  hoodMesh.receiveShadow = true;
+  group.add(hoodMesh);
+
+  // 2. Recessed glacier-blue striated shadow belly underneath the overhanging prow
+  //    (matching the blue cross-hatched under-arch in `model_1B_whoville.jpg`!)
+  const underBellShape = new THREE.Shape();
+  underBellShape.moveTo(inwardSign * (prowReachW * 0.95), height * 0.79);
+  underBellShape.bezierCurveTo(
+    inwardSign * (prowReachW * 0.78),
+    height * 0.72,
+    inwardSign * (baseSpanW * 1.14),
+    height * 0.54,
+    inwardSign * (baseSpanW * 0.94),
+    height * 0.24
+  );
+  underBellShape.lineTo(inwardSign * (baseSpanW * 0.74), height * 0.28);
+  underBellShape.bezierCurveTo(
+    inwardSign * (baseSpanW * 0.98),
+    height * 0.56,
+    inwardSign * (prowReachW * 0.62),
+    height * 0.76,
+    inwardSign * (prowReachW * 0.86),
+    height * 0.83
+  );
+  underBellShape.closePath();
+
+  const underBellGeo = new THREE.ExtrudeGeometry(underBellShape, {
+    depth: extrudeDepth + 0.04,
+    bevelEnabled: true,
+    bevelSegments: 1,
+    steps: 1,
+    bevelSize: 0.014,
+    bevelThickness: 0.014,
+  });
+  underBellGeo.translate(0, 0, -extrudeDepth * 0.5 + 0.015);
+  normalizeExtrudeUVs(underBellGeo, 'fit');
+  underBellGeo.computeVertexNormals();
+
+  const underBellMesh = new THREE.Mesh(underBellGeo, glacierUnderMat);
+  group.add(underBellMesh);
+
+  // 3. Wet scalloped dripping snow rim curving along the overhanging lip of the prow
+  const dripRimPts: THREE.Vector3[] = [
+    new THREE.Vector3(
+      inwardSign * (prowReachW * 0.96),
+      height * 0.82,
+      extrudeDepth * 0.5 + 0.035
+    ),
+    new THREE.Vector3(
+      inwardSign * (prowReachW * 0.72),
+      height * 0.73,
+      extrudeDepth * 0.5 + 0.035
+    ),
+    new THREE.Vector3(
+      inwardSign * (baseSpanW * 1.15),
+      height * 0.56,
+      extrudeDepth * 0.5 + 0.035
+    ),
+    new THREE.Vector3(
+      inwardSign * (baseSpanW * 0.96),
+      height * 0.34,
+      extrudeDepth * 0.5 + 0.035
+    ),
+  ];
+  const dripRimCurve = new THREE.CatmullRomCurve3(dripRimPts);
+  const dripRimTube = new THREE.Mesh(
+    new THREE.TubeGeometry(dripRimCurve, 24, 0.068, 8, false),
+    snowCapMat
+  );
+  dripRimTube.scale.set(1.0, 1.15, 0.55);
+  group.add(dripRimTube);
+
+  // Rounded wet snow-melt drops & Seussian ink striation ribs along the underside of the overhang
+  const dripLobeCount = 9;
+  for (let i = 0; i < dripLobeCount; i++) {
+    const t = (i + 0.5) / dripLobeCount;
+    const pt = dripRimCurve.getPoint(t);
+    const dripH = 0.16 + ((i * 3 + seed) % 3) * 0.07;
+
+    const wetDrop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.065, 10, 8),
+      snowCapMat
+    );
+    wetDrop.scale.set(0.85, dripH / 0.065, 0.45);
+    wetDrop.position.set(pt.x, pt.y - dripH * 0.45, pt.z);
+    wetDrop.rotation.z = inwardSign * 0.22;
+    group.add(wetDrop);
+
+    const hatchRib = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.01, 0.26, 6),
+      contourInkMat
+    );
+    hatchRib.position.set(
+      pt.x + inwardSign * 0.08,
+      pt.y - 0.14,
+      extrudeDepth * 0.5 + 0.045
+    );
+    hatchRib.rotation.z = inwardSign * -0.58;
+    group.add(hatchRib);
+  }
+
+  return group;
+}
+
+/**
+ * 1. DOWNSTAGE LEFT & RIGHT SNOW CLIFF PORTALS & BACK OVERHANGING CLIFF PROWS
+ *    (`'grinch-snow-portals'`, matching `model_1B_whoville.jpg`):
+ *    - **Layer 1 (Front Proscenium Snow Cliffs at `z = +0.26m` SR / `+0.21m` SL)**:
+ *      Tall snow cliffs framing the front of the stage with heavy, rounded "wet"
+ *      snow-melt drips cascading down the cliff face.
+ *    - **Layer 2 (Stepped-Down Mid-Downstage Snow-Cliff Shoulder at `z = -0.92m` / `-0.98m`)**:
+ *      Steps down lower (`height ≈ 3.15m–3.25m`) and stays wide (`|x| >= 4.28m`) so
+ *      when the stage opens it never crowds the scene or clips any wagons.
+ *    - **Layer 3 (Back Overhanging Cantilevered Snow-Cliff Prows at `z = -3.38m` / `-3.42m`)**:
+ *      Seated cleanly behind the DSR & MSL Whoville Houses, sweeping upward and
+ *      curving inward at the top (`height ≈ 4.65m`) with a rounded snowy hood and
+ *      wet dripping snow underside just like `model_1B_whoville.jpg`!
  */
 export function buildGrinchSnowPortals(
   _rockTex: THREE.CanvasTexture
@@ -1007,72 +1137,77 @@ export function buildGrinchSnowPortals(
   const papierMacheNormalTex = createPapierMacheNormalTexture();
   const seussianRockNormalTex = createSeussianRockNormalTexture();
   const mountainCliffTex = createSnowMountainCliffTexture();
-  const jaggedRockTex = createJaggedRockCliffFaceTexture();
+  const glacierWaveTex = createGlacierWavePortalTexture();
 
-  // Foreground exposed stratified dark slate & granite rock cliff face material
+  // Snowy pale blue-lavender cliff wall material matching `model_1B_whoville.jpg`
   const rockCliffMat = new THREE.MeshStandardMaterial({
-    map: jaggedRockTex,
-    normalMap: seussianRockNormalTex,
-    normalScale: new THREE.Vector2(0.42, 0.42),
-    color: 0x6e7888,
-    roughness: 0.76,
-    metalness: 0.05,
-    flatShading: true,
-  });
-
-  // Secondary weathered limestone-ochre / slate-grey rock facet material
-  const rockOchreFacetMat = new THREE.MeshStandardMaterial({
-    map: jaggedRockTex,
-    normalMap: seussianRockNormalTex,
-    normalScale: new THREE.Vector2(0.4, 0.4),
-    color: 0x847c72,
-    roughness: 0.74,
-    metalness: 0.05,
-    flatShading: true,
-  });
-
-  // Upstage atmospheric cool canyon slate-blue rock material (aerial perspective)
-  const rockDeepCanyonMat = new THREE.MeshStandardMaterial({
-    map: jaggedRockTex,
-    normalMap: seussianRockNormalTex,
-    normalScale: new THREE.Vector2(0.36, 0.36),
-    color: 0x52647c,
-    roughness: 0.78,
-    metalness: 0.05,
-    flatShading: true,
-  });
-
-  // Clean white-frost snowpack material for the snow blankets sitting ON TOP of the cliffs
-  const snowCapMat = new THREE.MeshStandardMaterial({
     map: mountainCliffTex,
     normalMap: papierMacheNormalTex,
     normalScale: new THREE.Vector2(0.24, 0.24),
-    color: 0xcad4dc,
-    roughness: 0.56,
+    color: 0xb6c6d8,
+    roughness: 0.62,
     metalness: 0.03,
   });
 
-  // Deep slate-cobalt rock crevice & undercut overhang shadow material
-  const rockShadowCreviceMat = new THREE.MeshStandardMaterial({
-    map: jaggedRockTex,
+  // Midstage cool periwinkle-snow cliff material
+  const rockOchreFacetMat = new THREE.MeshStandardMaterial({
+    map: mountainCliffTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.22, 0.22),
+    color: 0xa6bbd4,
+    roughness: 0.64,
+    metalness: 0.03,
+  });
+
+  // Back overhanging snow-cliff hood material
+  const rockDeepCanyonMat = new THREE.MeshStandardMaterial({
+    map: mountainCliffTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.22, 0.22),
+    color: 0x9cb4d0,
+    roughness: 0.64,
+    metalness: 0.03,
+  });
+
+  // Recessed glacier-blue striated underside material for the back overhanging cliff prows
+  const glacierUnderMat = new THREE.MeshStandardMaterial({
+    map: glacierWaveTex,
     normalMap: seussianRockNormalTex,
-    normalScale: new THREE.Vector2(0.35, 0.35),
-    color: 0x3a485e,
-    roughness: 0.78,
-    metalness: 0.05,
-    flatShading: true,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    color: 0x6894c8,
+    roughness: 0.62,
+    metalness: 0.04,
+  });
+
+  // Clean frost-white snowpack material for the wet dripping snow caps (channel <= 0xd8)
+  const snowCapMat = new THREE.MeshStandardMaterial({
+    map: mountainCliffTex,
+    normalMap: papierMacheNormalTex,
+    normalScale: new THREE.Vector2(0.2, 0.2),
+    color: 0xcfd6dc,
+    roughness: 0.54,
+    metalness: 0.03,
+  });
+
+  const rockShadowCreviceMat = new THREE.MeshStandardMaterial({
+    map: glacierWaveTex,
+    normalMap: seussianRockNormalTex,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    color: 0x4c6e9c,
+    roughness: 0.7,
+    metalness: 0.04,
   });
 
   const underShadowMat = new THREE.MeshStandardMaterial({
     normalMap: seussianRockNormalTex,
-    normalScale: new THREE.Vector2(0.28, 0.28),
-    color: 0x243042,
-    roughness: 0.8,
+    normalScale: new THREE.Vector2(0.24, 0.24),
+    color: 0x283a56,
+    roughness: 0.76,
     metalness: 0.04,
   });
 
   const contourInkMat = new THREE.MeshStandardMaterial({
-    color: 0x1a2434,
+    color: 0x182232,
     roughness: 0.78,
     metalness: 0.02,
   });
@@ -1081,8 +1216,6 @@ export function buildGrinchSnowPortals(
     color: 0xc0d2dc,
     roughness: 0.52,
     metalness: 0.08,
-    transparent: true,
-    opacity: 0.95,
   });
 
   const pineGreenMat = new THREE.MeshStandardMaterial({
@@ -1097,8 +1230,8 @@ export function buildGrinchSnowPortals(
   });
 
   // ==========================================================================
-  // FOREGROUND CLIFF COMPLEXES (Layers 1 & 2 on DSR and DSL)
-  // Every layer has its own unique seed, archetype, height, and stage reach!
+  // 1. FRONT PROSCENIUM SNOW CLIFFS WITH DOUBLE-TIERED WET DRIPPING SNOW
+  //    (Layer 1 on DSR & DSL, in front of Pre-Show Scrim at z = +0.26m / +0.21m)
   // ==========================================================================
   for (const side of [-1, 1] as const) {
     const cliffComplex = new THREE.Group();
@@ -1106,17 +1239,16 @@ export function buildGrinchSnowPortals(
     cliffComplex.userData.subUnitId =
       side === -1 ? 'grinch-portal-dsr-cliff' : 'grinch-portal-dsl-cliff';
 
-    // Layer 1: Downstage Proscenium Cliff Frame (in front of Pre-Show Scrim)
     const layer1 = createProceduralStratifiedCliffWing({
       side,
       archetype: side === -1 ? 'stepped-terrace' : 'fractured-buttress',
       seed: side === -1 ? 109 : 227,
       outerEdgeAbsX: side === -1 ? 5.82 : 5.76,
-      innerEdgeAbsX: side === -1 ? 3.86 : 3.94,
-      height: side === -1 ? 4.22 : 4.38,
+      innerEdgeAbsX: side === -1 ? 3.88 : 3.94,
+      height: side === -1 ? 3.98 : 4.08,
       zPos: side === -1 ? 0.26 : 0.21,
-      extrudeDepth: 0.42,
-      yawRad: side * -0.11,
+      extrudeDepth: 0.34,
+      yawRad: side * -0.05,
       primaryRockMat: rockCliffMat,
       secondaryRockMat: rockOchreFacetMat,
       underShadowMat,
@@ -1125,22 +1257,36 @@ export function buildGrinchSnowPortals(
       icicleMat,
       pineGreenMat,
       trunkMat,
-      includePine: side === -1,
+      includePine: false,
       includeBaseSnow: true,
+      includeMidSnowDripBand: true,
     });
     cliffComplex.add(layer1);
 
-    // Layer 2: Downstage-Mid Bluff (just upstage of the Pre-Show Scrim at z = -0.35m)
+    portalsGroup.add(cliffComplex);
+  }
+
+  // ==========================================================================
+  // 2. STEPPED-DOWN MIDSTAGE SNOW SHOULDER (Layer 2) & BACK OVERHANGING
+  //    SNOW-CLIFF PROWS (Layer 3 at z = -3.38m / -3.42m behind the Whoville Houses)
+  // ==========================================================================
+  const wingWavesGroup = new THREE.Group();
+  wingWavesGroup.name = 'SnowPortal_WingWaves';
+  wingWavesGroup.userData.subUnitId = 'grinch-portal-wing-waves';
+
+  for (const side of [-1, 1] as const) {
+    // Layer 2: Shorter, stepped-down snow-cliff shoulder (z = -0.92m SR / -0.98m SL)
+    // Steps down from Layer 1 (`height ≈ 3.16m / 3.24m`) and stays wide (`|x| >= 4.28m`)
     const layer2 = createProceduralStratifiedCliffWing({
       side,
-      archetype: side === -1 ? 'overhanging-bluff' : 'stepped-terrace',
+      archetype: 'canyon-ridge',
       seed: side === -1 ? 347 : 463,
-      outerEdgeAbsX: side === -1 ? 5.66 : 5.72,
-      innerEdgeAbsX: side === -1 ? 3.62 : 3.56,
-      height: side === -1 ? 4.58 : 4.46,
-      zPos: side === -1 ? -0.64 : -0.71,
-      extrudeDepth: 0.36,
-      yawRad: side * -0.08,
+      outerEdgeAbsX: side === -1 ? 5.84 : 5.86,
+      innerEdgeAbsX: side === -1 ? 4.28 : 4.34,
+      height: side === -1 ? 3.16 : 3.24,
+      zPos: side === -1 ? -0.92 : -0.98,
+      extrudeDepth: 0.26,
+      yawRad: side * -0.03,
       primaryRockMat: rockOchreFacetMat,
       secondaryRockMat: rockShadowCreviceMat,
       underShadowMat,
@@ -1149,69 +1295,29 @@ export function buildGrinchSnowPortals(
       icicleMat,
       pineGreenMat,
       trunkMat,
-      includePine: side === 1,
+      includePine: false,
       includeBaseSnow: false,
+      includeMidSnowDripBand: false,
     });
-    cliffComplex.add(layer2);
+    wingWavesGroup.add(layer2);
 
-    portalsGroup.add(cliffComplex);
-  }
-
-  // ==========================================================================
-  // MIDSTAGE & UPSTAGE CANYON WING LAYERS (Layers 3 & 4 on DSR and DSL)
-  // ==========================================================================
-  const wingWavesGroup = new THREE.Group();
-  wingWavesGroup.name = 'SnowPortal_WingWaves';
-  wingWavesGroup.userData.subUnitId = 'grinch-portal-wing-waves';
-
-  for (const side of [-1, 1] as const) {
-    // Layer 3: Midstage Crag Wing (z = -1.68m SR / -1.76m SL)
-    const layer3 = createProceduralStratifiedCliffWing({
+    // Layer 3: Iconic Back Overhanging Cantilevered Snow-Cliff Prows (z = -3.38m SR / -3.42m SL)
+    // Seated cleanly behind the DSR & MSL Whoville Houses just like `model_1B_whoville.jpg`!
+    const layer3BackProw = createBackOverhangingSnowCliffProw({
       side,
-      archetype: side === -1 ? 'fractured-buttress' : 'overhanging-bluff',
       seed: side === -1 ? 587 : 691,
-      outerEdgeAbsX: side === -1 ? 5.84 : 5.88,
-      innerEdgeAbsX: side === -1 ? 3.76 : 3.84,
-      height: side === -1 ? 4.88 : 5.04,
-      zPos: side === -1 ? -1.68 : -1.76,
-      extrudeDepth: 0.34,
-      yawRad: side * -0.06,
-      primaryRockMat: side === -1 ? rockCliffMat : rockOchreFacetMat,
-      secondaryRockMat: rockDeepCanyonMat,
-      underShadowMat,
+      outerEdgeAbsX: side === -1 ? 5.88 : 5.9,
+      baseInnerAbsX: side === -1 ? 4.38 : 4.42,
+      prowInnerAbsX: side === -1 ? 3.08 : 3.14,
+      height: side === -1 ? 4.62 : 4.72,
+      zPos: side === -1 ? -3.38 : -3.42,
+      extrudeDepth: 0.22,
+      snowCliffMat: rockDeepCanyonMat,
+      glacierUnderMat,
       snowCapMat,
       contourInkMat,
-      icicleMat,
-      pineGreenMat,
-      trunkMat,
-      includePine: false,
-      includeBaseSnow: false,
     });
-    wingWavesGroup.add(layer3);
-
-    // Layer 4: Upstage Canyon Sentinel Wing (z = -2.74m SR / -2.84m SL)
-    const layer4 = createProceduralStratifiedCliffWing({
-      side,
-      archetype: 'canyon-ridge',
-      seed: side === -1 ? 811 : 937,
-      outerEdgeAbsX: side === -1 ? 5.96 : 6.02,
-      innerEdgeAbsX: side === -1 ? 3.98 : 4.08,
-      height: side === -1 ? 5.26 : 5.14,
-      zPos: side === -1 ? -2.74 : -2.84,
-      extrudeDepth: 0.32,
-      yawRad: side * -0.04,
-      primaryRockMat: rockDeepCanyonMat,
-      secondaryRockMat: rockShadowCreviceMat,
-      underShadowMat,
-      snowCapMat,
-      contourInkMat,
-      icicleMat,
-      pineGreenMat,
-      trunkMat,
-      includePine: false,
-      includeBaseSnow: false,
-    });
-    wingWavesGroup.add(layer4);
+    wingWavesGroup.add(layer3BackProw);
   }
 
   portalsGroup.add(wingWavesGroup);
@@ -1862,53 +1968,23 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   summitSnowCap.rotation.z = -0.22;
   crumpitGroup.add(summitSnowCap);
 
-  // Iconic jagged crystalline icicle fangs along the right cliff overhang
-  // of Mt. Crumpit (`model_1B_whoville.jpg` & `model_1F_mt_crumpit_sleigh.jpg`)
-  const crumpitIceFrontMat = new THREE.MeshStandardMaterial({
-    color: 0xa4c4d8,
-    roughness: 0.45,
-    metalness: 0.16,
-    flatShading: true,
-  });
-  const crumpitIceBackMat = new THREE.MeshStandardMaterial({
-    color: 0x6290c8,
-    roughness: 0.48,
-    metalness: 0.14,
-    flatShading: true,
-  });
-
-  const cliffValance = createSeussianIcicleValance(
-    0.76,
-    0.54,
-    7,
-    crumpitIceFrontMat,
-    crumpitIceBackMat,
-    0.044,
-    11
+  // Secondary wet dripping snow ledge along the right cliff overhang of Mt. Crumpit
+  const crumpitOverhangSnow = createCliffTopSnowPackCornice(
+    0.84,
+    0.32,
+    0.24,
+    4,
+    snowCrestMat,
+    crumpitShadowCliffMat,
+    snowCrestMat,
+    crumpitShadowCliffMat,
+    contourInkMat,
+    17,
+    0.16
   );
-  cliffValance.position.set(0.68, 4.22, 0.14);
-  cliffValance.rotation.z = 0.34;
-  crumpitGroup.add(cliffValance);
-
-  for (const [ix, iy, len, rad, bend] of [
-    [0.32, 3.38, 0.62, 0.048, -0.024],
-    [0.46, 3.62, 0.72, 0.052, 0.022],
-    [0.58, 3.84, 0.64, 0.046, -0.025],
-    [0.7, 4.02, 0.88, 0.056, 0.028],
-    [0.82, 4.2, 0.72, 0.048, -0.022],
-    [0.9, 4.42, 0.52, 0.04, 0.018],
-  ] as const) {
-    const cliffIcicle = createSculptedIcicleDrip(
-      len,
-      rad,
-      crumpitIceFrontMat,
-      bend
-    );
-    cliffIcicle.position.set(ix, iy, 0.18);
-    cliffIcicle.rotation.z = -0.05;
-    cliffIcicle.scale.set(1.0, 1.0, 0.65);
-    crumpitGroup.add(cliffIcicle);
-  }
+  crumpitOverhangSnow.position.set(0.68, 4.22, 0.22);
+  crumpitOverhangSnow.rotation.z = 0.28;
+  crumpitGroup.add(crumpitOverhangSnow);
 
   // Angular faceted rock strata ledges jutting from Mt. Crumpit's cliff face
   for (const [lx, ly, wx, hy, dz, lean, seedOff] of [

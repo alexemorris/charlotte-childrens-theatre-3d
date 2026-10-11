@@ -311,103 +311,117 @@ function createMiniatureWhoCottage(
     roughness: 0.65,
   });
 
-  // Plump barrel-like Seussian cottage body
-  const bodyH = height * 0.58;
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(width * 0.52, width * 0.44, bodyH, 16),
-    wallMat
-  );
-  body.scale.set(1.0, 1.0, 0.58);
-  body.position.y = bodyH * 0.5;
+  // Upside-down exaggerated trapezoid Seussian cottage body (narrow bottom base, wide upper eaves)
+  const bodyH = height * 0.72;
+  const baseHalfW = width * 0.25;
+  const topHalfW = width * 0.56;
+  const cottageDepth = width * 0.44;
+
+  const trapShape = new THREE.Shape();
+  trapShape.moveTo(-baseHalfW, 0);
+  trapShape.quadraticCurveTo(-baseHalfW * 0.85, bodyH * 0.45, -topHalfW, bodyH * 0.92);
+  trapShape.quadraticCurveTo(0, bodyH * 1.02, topHalfW, bodyH * 0.88);
+  trapShape.quadraticCurveTo(baseHalfW * 0.85, bodyH * 0.45, baseHalfW, 0);
+  trapShape.closePath();
+
+  const bodyGeo = new THREE.ExtrudeGeometry(trapShape, {
+    depth: cottageDepth,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.012,
+    bevelThickness: 0.012,
+  });
+  bodyGeo.translate(0, 0, -cottageDepth * 0.5);
+  normalizeExtrudeUVs(bodyGeo, 'fit');
+  bodyGeo.computeVertexNormals();
+
+  const body = new THREE.Mesh(bodyGeo, wallMat);
   body.castShadow = true;
   cottage.add(body);
 
-  // Scalloped snow-eave collar around top of pink wall
-  const eaveCount = 7;
-  for (let e = 0; e < eaveCount; e++) {
-    const t = e / (eaveCount - 1) - 0.5;
-    const lobe = new THREE.Mesh(
-      new THREE.SphereGeometry(width * 0.14, 10, 8),
-      snowRoofMat
-    );
-    lobe.scale.set(1.1, 0.85, 0.65);
-    lobe.position.set(
-      t * width * 0.92,
-      bodyH * 0.95 + Math.cos(t * Math.PI) * 0.03,
-      width * 0.22
-    );
-    cottage.add(lobe);
+  // Wide overhanging wet-snow roof cornice with rounded snow-drip lobes
+  const roofW = topHalfW * 1.18;
+  const roofShape = new THREE.Shape();
+  roofShape.moveTo(-roofW, bodyH * 0.9);
+  roofShape.quadraticCurveTo(0, bodyH * 1.16, roofW, bodyH * 0.86);
+  const drips = 5;
+  for (let d = 0; d < drips; d++) {
+    const u0 = d / drips;
+    const u1 = (d + 1) / drips;
+    const uM = (u0 + u1) * 0.5;
+    const xR = THREE.MathUtils.lerp(roofW, -roofW, u0);
+    const xM = THREE.MathUtils.lerp(roofW, -roofW, uM);
+    const xL = THREE.MathUtils.lerp(roofW, -roofW, u1);
+    const yBase = THREE.MathUtils.lerp(bodyH * 0.86, bodyH * 0.9, uM);
+    const dipY = yBase - (d % 2 === 0 ? bodyH * 0.14 : bodyH * 0.07);
+    roofShape.bezierCurveTo(xR, dipY, xM, dipY, xL, yBase - bodyH * 0.02);
   }
+  roofShape.closePath();
 
-  // Onion-dome snowy roof cap (seen clearly in `model_1C_cave_closeup.jpg`)
-  const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      width * 0.54,
-      16,
-      12,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI * 0.62
-    ),
-    snowRoofMat
-  );
-  dome.scale.set(1.02, 0.88, 0.6);
-  dome.position.set(0, bodyH * 0.88, 0);
-  cottage.add(dome);
+  const roofGeo = new THREE.ExtrudeGeometry(roofShape, {
+    depth: cottageDepth * 1.16,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.014,
+    bevelThickness: 0.014,
+  });
+  roofGeo.translate(0, 0, -cottageDepth * 0.58);
+  normalizeExtrudeUVs(roofGeo, 'fit');
+  roofGeo.computeVertexNormals();
 
-  // Sculpted Seussian roof spire finial & collar ring
+  const snowCap = new THREE.Mesh(roofGeo, snowRoofMat);
+  cottage.add(snowCap);
+
+  // Crooked S-curved chimney rising from the snow roof
+  const chimCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(width * 0.05, bodyH * 1.0, 0),
+    new THREE.Vector3(width * 0.12, bodyH * 1.16, 0),
+    new THREE.Vector3(width * 0.04, bodyH * 1.32, 0),
+  ]);
   const spire = new THREE.Mesh(
-    new THREE.CylinderGeometry(width * 0.025, width * 0.095, height * 0.24, 10),
+    new THREE.TubeGeometry(chimCurve, 10, width * 0.055, 8, false),
     snowRoofMat
   );
-  spire.position.set(width * 0.04, bodyH + height * 0.35, 0.02);
-  spire.rotation.z = -0.14;
   cottage.add(spire);
 
   const finialCollar = new THREE.Mesh(
-    new THREE.TorusGeometry(width * 0.075, width * 0.02, 8, 12),
+    new THREE.TorusGeometry(width * 0.068, width * 0.018, 8, 12),
     trimDarkMat
   );
-  finialCollar.position.set(width * 0.05, bodyH + height * 0.32, 0.02);
-  finialCollar.rotation.x = Math.PI * 0.45;
+  finialCollar.position.set(width * 0.04, bodyH * 1.32, 0);
+  finialCollar.rotation.x = Math.PI * 0.48;
   cottage.add(finialCollar);
 
-  const finialBall = new THREE.Mesh(
-    new THREE.SphereGeometry(width * 0.075, 10, 8),
-    snowRoofMat
-  );
-  finialBall.position.set(width * 0.06, bodyH + height * 0.48, 0.02);
-  cottage.add(finialBall);
+  const frontZ = cottageDepth * 0.5 + 0.016;
 
-  // Glowing warm amber circular/oval Who windows (staggered well in front of wall)
+  // Signature Round Bullseye Window + Secondary Round Porthole in the wide upper trapezoid
   for (const [wx, wy, wr] of [
-    [-width * 0.2, bodyH * 0.52, width * 0.095],
-    [width * 0.18, bodyH * 0.56, width * 0.09],
+    [-width * 0.14, bodyH * 0.62, width * 0.145],
+    [width * 0.2, bodyH * 0.66, width * 0.095],
   ] as const) {
-    const winFrame = new THREE.Mesh(
-      new THREE.CylinderGeometry(wr * 1.25, wr * 1.25, 0.025, 12),
+    const winCasing = new THREE.Mesh(
+      new THREE.TorusGeometry(wr * 1.08, wr * 0.18, 8, 18),
       trimDarkMat
     );
-    winFrame.rotation.x = Math.PI / 2;
-    winFrame.position.set(wx, wy, width * 0.31);
-    cottage.add(winFrame);
+    winCasing.position.set(wx, wy, frontZ + 0.01);
+    cottage.add(winCasing);
 
     const winPane = new THREE.Mesh(
-      new THREE.CylinderGeometry(wr, wr, 0.025, 12),
+      new THREE.CircleGeometry(wr, 16),
       warmWindowMat
     );
-    winPane.rotation.x = Math.PI / 2;
-    winPane.position.set(wx, wy, width * 0.34);
+    winPane.position.set(wx, wy, frontZ + 0.014);
     cottage.add(winPane);
   }
 
-  // Little arched glowing center Who doorway
+  // Little arched glowing Who doorway at the narrower bottom trapezoid base
   const doorArch = new THREE.Mesh(
-    new RoundedBoxGeometry(width * 0.16, bodyH * 0.36, 0.03, 2, 0.02),
+    new RoundedBoxGeometry(width * 0.16, bodyH * 0.34, 0.025, 2, 0.02),
     warmWindowMat
   );
-  doorArch.position.set(0, bodyH * 0.22, width * 0.33);
+  doorArch.position.set(width * 0.04, bodyH * 0.18, frontZ + 0.008);
   cottage.add(doorArch);
 
   return cottage;
@@ -699,7 +713,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   }
 
   // Glowing Miniature Town Square Christmas Tree (`x = -0.13m, y = 0.90m, z = -5.29m`)
-  // Built from sculpted Seussian bell-tiered pine whorls (`LatheGeometry`)
+  // Built using the Showpiece Tree's S-curved spine, fluted concave-skirt LatheGeometry tiers, and drooping branch lobes
   const miniTreeGroup = new THREE.Group();
   miniTreeGroup.position.set(-0.13, 0.90, -5.29);
 
@@ -709,25 +723,67 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     emissiveIntensity: 0.35,
     roughness: 0.55,
   });
+  const foliageBrightMat = new THREE.MeshStandardMaterial({
+    color: 0x369648,
+    emissive: 0x10421c,
+    emissiveIntensity: 0.35,
+    roughness: 0.52,
+  });
 
+  const getMiniSpine = (tierIdx: number): { x: number; tiltZ: number } => {
+    const t = tierIdx / 4;
+    return {
+      x: Math.sin(t * Math.PI * 1.85) * 0.035,
+      tiltZ: -Math.cos(t * Math.PI * 1.85) * 0.12,
+    };
+  };
+
+  const miniLobeGeo = new THREE.ConeGeometry(1, 1, 6);
   for (let tier = 0; tier < 5; tier++) {
-    const baseR = 0.21 - tier * 0.032;
-    const tierH = 0.25 - tier * 0.018;
-    const profilePts = [
-      new THREE.Vector2(0.005, tierH),
-      new THREE.Vector2(baseR * 0.42, tierH * 0.58),
-      new THREE.Vector2(baseR * 0.86, tierH * 0.22),
-      new THREE.Vector2(baseR, 0.04),
-      new THREE.Vector2(baseR * 0.72, 0.0),
-    ];
+    const baseR = 0.22 - tier * 0.032;
+    const tierH = 0.24 - tier * 0.016;
+    const spine = getMiniSpine(tier);
+
+    const tierGroup = new THREE.Group();
+    tierGroup.position.set(spine.x, 0.1 + tier * 0.15, 0);
+    tierGroup.rotation.z = spine.tiltZ + (tier % 2 === 0 ? 1 : -1) * 0.05;
+    tierGroup.scale.set(1.0, 1.0, 0.72);
+
+    const conePts: THREE.Vector2[] = [];
+    for (let s = 0; s <= 10; s++) {
+      const u = s / 10;
+      const flare = Math.pow(1 - u, 1.18) * baseR;
+      const py = (u - 0.35) * tierH;
+      conePts.push(new THREE.Vector2(Math.max(0.008, flare), py));
+    }
     const whorl = new THREE.Mesh(
-      new THREE.LatheGeometry(profilePts, 14),
-      foliageMat
+      new THREE.LatheGeometry(conePts, 14),
+      tier % 2 === 0 ? foliageMat : foliageBrightMat
     );
-    whorl.position.y = 0.02 + tier * 0.15;
-    whorl.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.08;
-    whorl.scale.set(1.0, 1.0, 0.65);
-    miniTreeGroup.add(whorl);
+    tierGroup.add(whorl);
+
+    const lobeCount = Math.max(6, 9 - tier);
+    const lobeR = 0.042 - tier * 0.004;
+    const lobeH = 0.095 - tier * 0.008;
+    for (let l = 0; l < lobeCount; l++) {
+      const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.35;
+      const lobeRad = baseR * 0.94;
+      const branchLobe = new THREE.Mesh(
+        miniLobeGeo,
+        tier % 2 === 0 ? foliageBrightMat : foliageMat
+      );
+      branchLobe.scale.set(lobeR, lobeH, lobeR);
+      branchLobe.position.set(
+        Math.cos(lAngle) * lobeRad,
+        -tierH * 0.28,
+        Math.sin(lAngle) * lobeRad
+      );
+      branchLobe.rotation.z = -Math.cos(lAngle) * 0.65;
+      branchLobe.rotation.x = Math.sin(lAngle) * 0.65;
+      tierGroup.add(branchLobe);
+    }
+
+    miniTreeGroup.add(tierGroup);
   }
 
   // Glowing Gold Star Topper on Miniature Tree
@@ -737,11 +793,16 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     emissiveIntensity: 1.4,
     roughness: 0.22,
   });
-  const miniStar = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.065, 0),
-    starMat
-  );
-  miniStar.position.y = 0.92;
+  const miniStar = new THREE.Group();
+  miniStar.position.set(0.02, 0.92, 0);
+  miniStar.rotation.z = -0.16;
+  for (let p = 0; p < 5; p++) {
+    const pAngle = (p / 5) * Math.PI * 2;
+    const ray = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.085, 5), starMat);
+    ray.position.set(Math.sin(pAngle) * 0.032, Math.cos(pAngle) * 0.032, 0);
+    ray.rotation.z = -pAngle;
+    miniStar.add(ray);
+  }
   miniTreeGroup.add(miniStar);
 
   // Tiny glowing Christmas baubles on the miniature tree
@@ -749,7 +810,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
   for (let b = 0; b < 10; b++) {
     const t = b / 10;
     const angle = b * 1.15 - 1.2;
-    const r = (0.16 - t * 0.1) * 0.85;
+    const r = (0.17 - t * 0.11) * 0.88;
     const bauble = new THREE.Mesh(
       new THREE.SphereGeometry(0.022, 8, 8),
       new THREE.MeshStandardMaterial({
@@ -762,7 +823,7 @@ function buildDistantWhovilleVista(rockTex: THREE.CanvasTexture): THREE.Group {
     bauble.position.set(
       Math.sin(angle) * r,
       0.14 + t * 0.62,
-      Math.cos(angle) * r * 0.65 + 0.03
+      Math.cos(angle) * r * 0.68 + 0.03
     );
     miniTreeGroup.add(bauble);
   }

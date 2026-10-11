@@ -2522,26 +2522,69 @@ export function buildGrinchMtCrumpitSleigh(
     sleighGroup.add(giftGrp);
   }
 
-  // Protruding stolen Whoville Christmas tree, bicycle wheel, candy cane & stocking
+  // Protruding stolen Whoville Christmas tree (using Showpiece Tree fluted LatheGeometry tiers + drooping branch lobes)
   const stolenTreeMat = new THREE.MeshStandardMaterial({
     color: 0x1e8a3e,
-    roughness: 0.58,
+    roughness: 0.56,
   });
-  for (let tier = 0; tier < 2; tier++) {
+  const stolenTreeBrightMat = new THREE.MeshStandardMaterial({
+    color: 0x369a4a,
+    roughness: 0.52,
+  });
+  const stolenTreeGroup = new THREE.Group();
+  stolenTreeGroup.position.set(0.16, 1.88, 0.04);
+  stolenTreeGroup.rotation.z = 0.24;
+  const stolenLobeGeo = new THREE.ConeGeometry(1, 1, 6);
+  for (let tier = 0; tier < 3; tier++) {
+    const baseR = 0.22 - tier * 0.052;
+    const tierH = 0.26 - tier * 0.03;
+    const tierGrp = new THREE.Group();
+    tierGrp.position.set((tier % 2 === 0 ? 1 : -1) * 0.02, tier * 0.16, 0);
+    tierGrp.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.06;
+
+    const conePts: THREE.Vector2[] = [];
+    for (let s = 0; s <= 10; s++) {
+      const u = s / 10;
+      const flare = Math.pow(1 - u, 1.18) * baseR;
+      const py = (u - 0.35) * tierH;
+      conePts.push(new THREE.Vector2(Math.max(0.01, flare), py));
+    }
     const foliageTier = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.22 - tier * 0.06, 0.32, 10),
-      stolenTreeMat
+      new THREE.LatheGeometry(conePts, 14),
+      tier % 2 === 0 ? stolenTreeMat : stolenTreeBrightMat
     );
-    foliageTier.position.set(0.14 - tier * 0.04, 2.04 + tier * 0.18, 0.04);
-    foliageTier.rotation.z = 0.24;
-    sleighGroup.add(foliageTier);
+    tierGrp.add(foliageTier);
+
+    const lobeCount = 7 - tier;
+    for (let l = 0; l < lobeCount; l++) {
+      const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.35;
+      const lobe = new THREE.Mesh(
+        stolenLobeGeo,
+        tier % 2 === 0 ? stolenTreeBrightMat : stolenTreeMat
+      );
+      lobe.scale.set(0.045 - tier * 0.006, 0.1 - tier * 0.012, 0.045 - tier * 0.006);
+      lobe.position.set(
+        Math.cos(lAngle) * baseR * 0.94,
+        -tierH * 0.28,
+        Math.sin(lAngle) * baseR * 0.94
+      );
+      lobe.rotation.z = -Math.cos(lAngle) * 0.65;
+      lobe.rotation.x = Math.sin(lAngle) * 0.65;
+      tierGrp.add(lobe);
+    }
+    stolenTreeGroup.add(tierGrp);
   }
-  const treeStar = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.065, 0),
-    goldTrimMat
-  );
-  treeStar.position.set(0.06, 2.38, 0.04);
-  sleighGroup.add(treeStar);
+  const treeStar = new THREE.Group();
+  treeStar.position.set(0, 0.52, 0);
+  for (let p = 0; p < 5; p++) {
+    const pAngle = (p / 5) * Math.PI * 2;
+    const ray = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.08, 5), goldTrimMat);
+    ray.position.set(Math.sin(pAngle) * 0.03, Math.cos(pAngle) * 0.03, 0);
+    ray.rotation.z = -pAngle;
+    treeStar.add(ray);
+  }
+  stolenTreeGroup.add(treeStar);
+  sleighGroup.add(stolenTreeGroup);
 
   // Protruding stolen bicycle wheel (rim + spokes)
   const wheelGroup = new THREE.Group();
@@ -3157,13 +3200,48 @@ export function buildGrinchOffstageStorage(
   ovalBase.position.y = 0.06;
   ovalTreeProp.add(ovalBase);
 
-  const spareTree = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.34, 1.45, 10),
-    new THREE.MeshStandardMaterial({ color: 0x1e843e, roughness: 0.6 })
-  );
-  spareTree.position.y = 0.84;
-  spareTree.rotation.z = -0.12;
-  ovalTreeProp.add(spareTree);
+  const spareTreeMat = new THREE.MeshStandardMaterial({ color: 0x1e843e, roughness: 0.58 });
+  const spareTreeBrightMat = new THREE.MeshStandardMaterial({ color: 0x369a4a, roughness: 0.54 });
+  const spareLobeGeo = new THREE.ConeGeometry(1, 1, 6);
+  for (let tier = 0; tier < 4; tier++) {
+    const baseR = 0.34 - tier * 0.065;
+    const tierH = 0.38 - tier * 0.035;
+    const tierGrp = new THREE.Group();
+    tierGrp.position.set((tier % 2 === 0 ? 1 : -1) * 0.03, 0.32 + tier * 0.28, 0);
+    tierGrp.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.07;
+
+    const conePts: THREE.Vector2[] = [];
+    for (let s = 0; s <= 10; s++) {
+      const u = s / 10;
+      const flare = Math.pow(1 - u, 1.18) * baseR;
+      const py = (u - 0.35) * tierH;
+      conePts.push(new THREE.Vector2(Math.max(0.012, flare), py));
+    }
+    const whorl = new THREE.Mesh(
+      new THREE.LatheGeometry(conePts, 14),
+      tier % 2 === 0 ? spareTreeMat : spareTreeBrightMat
+    );
+    tierGrp.add(whorl);
+
+    const lobeCount = 8 - tier;
+    for (let l = 0; l < lobeCount; l++) {
+      const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.35;
+      const lobe = new THREE.Mesh(
+        spareLobeGeo,
+        tier % 2 === 0 ? spareTreeBrightMat : spareTreeMat
+      );
+      lobe.scale.set(0.06 - tier * 0.007, 0.14 - tier * 0.015, 0.06 - tier * 0.007);
+      lobe.position.set(
+        Math.cos(lAngle) * baseR * 0.94,
+        -tierH * 0.28,
+        Math.sin(lAngle) * baseR * 0.94
+      );
+      lobe.rotation.z = -Math.cos(lAngle) * 0.65;
+      lobe.rotation.x = Math.sin(lAngle) * 0.65;
+      tierGrp.add(lobe);
+    }
+    ovalTreeProp.add(tierGrp);
+  }
   usrFridgeBay.add(ovalTreeProp);
 
   offstageStorageGroup.add(usrFridgeBay);

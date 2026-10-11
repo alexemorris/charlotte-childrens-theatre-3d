@@ -1885,7 +1885,7 @@ export function buildPapaWhosHouseUnit(
     treeGroup.scale.setScalar(scaleFactor);
 
     const potBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.21, 0.16, 0.32, 16),
+      new THREE.CylinderGeometry(0.22, 0.16, 0.32, 16),
       crimsonMat
     );
     potBody.position.y = 0.16;
@@ -1893,45 +1893,137 @@ export function buildPapaWhosHouseUnit(
     treeGroup.add(potBody);
 
     const potRim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.21, 0.034, 10, 20),
+      new THREE.TorusGeometry(0.22, 0.034, 10, 20),
       goldBowMat
     );
     potRim.rotation.x = Math.PI / 2;
     potRim.position.y = 0.32;
     treeGroup.add(potRim);
 
-    const sOffsets = [0.0, -0.04, -0.07, -0.03, 0.04, 0.09];
-    for (let tier = 0; tier < 6; tier++) {
-      const ox = sOffsets[tier] ?? 0;
-      const cone = new THREE.Mesh(
-        new THREE.ConeGeometry(0.42 - tier * 0.058, 0.52, 14),
-        wreathGreenMat
+    const foliageBrightMat = new THREE.MeshStandardMaterial({
+      color: 0x388e42,
+      roughness: 0.54,
+    });
+    const trunkBarkMat = new THREE.MeshStandardMaterial({
+      color: 0x543622,
+      roughness: 0.78,
+    });
+
+    // S-curve spine matching the Showpiece Tree
+    const getSpineOffset = (y: number): { x: number; z: number; tiltZ: number } => {
+      const t = Math.max(0, Math.min(1, (y - 0.32) / 1.88));
+      const sx = Math.sin(t * Math.PI * 1.85) * 0.075 * (0.4 + t * 0.8);
+      const sz = Math.cos(t * Math.PI * 1.4) * 0.025;
+      const tiltZ = -Math.cos(t * Math.PI * 1.85) * 0.12;
+      return { x: sx, z: sz, tiltZ };
+    };
+
+    const trunkCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.28, 0),
+      new THREE.Vector3(0.03, 0.78, 0.01),
+      new THREE.Vector3(-0.04, 1.38, -0.01),
+      new THREE.Vector3(0.03, 2.04, 0.01),
+    ]);
+    const trunkMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(trunkCurve, 16, 0.068, 8, false),
+      trunkBarkMat
+    );
+    treeGroup.add(trunkMesh);
+
+    const branchLobeGeo = new THREE.ConeGeometry(1, 1, 6);
+    const tierCount = 6;
+    for (let tier = 0; tier < tierCount; tier++) {
+      const tierFrac = tier / (tierCount - 1);
+      const tierY = 0.52 + tier * 0.28;
+      const baseRadius = 0.46 - tier * 0.056;
+      const tierHeight = 0.46 - tier * 0.024;
+      const spine = getSpineOffset(tierY);
+
+      const tierGroup = new THREE.Group();
+      tierGroup.position.set(spine.x, tierY, spine.z);
+      tierGroup.rotation.z =
+        spine.tiltZ + (tier % 2 === 0 ? 1 : -1) * (0.04 + tierFrac * 0.03);
+
+      // Fluted concave-skirt LatheGeometry matching the Showpiece Tree
+      const conePts: THREE.Vector2[] = [];
+      for (let s = 0; s <= 10; s++) {
+        const u = s / 10;
+        const flare = Math.pow(1 - u, 1.18) * baseRadius;
+        const py = (u - 0.35) * tierHeight;
+        conePts.push(new THREE.Vector2(Math.max(0.015, flare), py));
+      }
+      const tierCone = new THREE.Mesh(
+        new THREE.LatheGeometry(conePts, 14),
+        tier % 2 === 0 ? wreathGreenMat : foliageBrightMat
       );
-      cone.position.set(ox, 0.54 + tier * 0.31, 0);
-      cone.rotation.z = (tier % 2 === 0 ? 1 : -1) * 0.08;
-      cone.castShadow = true;
-      treeGroup.add(cone);
+      tierCone.castShadow = true;
+      tierCone.receiveShadow = true;
+      tierGroup.add(tierCone);
+
+      // Ring of sculpted drooping branch-tip lobes around the lower hem of each tier
+      const lobeCount = Math.max(6, 10 - tier);
+      const lobeR = 0.082 - tier * 0.007;
+      const lobeH = 0.18 - tier * 0.012;
+      for (let l = 0; l < lobeCount; l++) {
+        const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.35;
+        const lobeRad = baseRadius * 0.94;
+        const branchLobe = new THREE.Mesh(
+          branchLobeGeo,
+          tier % 2 === 0 ? foliageBrightMat : wreathGreenMat
+        );
+        branchLobe.scale.set(lobeR, lobeH, lobeR);
+        branchLobe.position.set(
+          Math.cos(lAngle) * lobeRad,
+          -tierHeight * 0.28,
+          Math.sin(lAngle) * lobeRad
+        );
+        branchLobe.rotation.z = -Math.cos(lAngle) * 0.65;
+        branchLobe.rotation.x = Math.sin(lAngle) * 0.65;
+        branchLobe.castShadow = true;
+        tierGroup.add(branchLobe);
+      }
+
+      treeGroup.add(tierGroup);
     }
 
-    const garlandPts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 36; i++) {
-      const t = i / 36;
-      const angle = t * Math.PI * 7;
-      const r = 0.39 * (1 - t * 0.78) + 0.025;
-      const y = 0.44 + t * 1.68;
-      garlandPts.push(
-        new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r)
+    const goldHelixPts: THREE.Vector3[] = [];
+    const redHelixPts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      const y = 0.48 + t * 1.66;
+      const spine = getSpineOffset(y);
+      const r = (0.45 - t * 0.35) + Math.sin(t * Math.PI * 10) * 0.015;
+      const angle = t * Math.PI * 2 * 4.5;
+      goldHelixPts.push(
+        new THREE.Vector3(
+          spine.x + Math.cos(angle) * r,
+          y,
+          spine.z + Math.sin(angle) * r
+        )
+      );
+      redHelixPts.push(
+        new THREE.Vector3(
+          spine.x + Math.cos(angle + Math.PI) * (r + 0.016),
+          y - 0.02,
+          spine.z + Math.sin(angle + Math.PI) * (r + 0.016)
+        )
       );
     }
     const spiralGarland = new THREE.Mesh(
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(garlandPts), 48, 0.016, 8, false),
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(goldHelixPts), 56, 0.016, 8, false),
       goldBowMat
     );
     treeGroup.add(spiralGarland);
 
+    const redSpiralGarland = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(redHelixPts), 56, 0.012, 6, false),
+      crimsonMat
+    );
+    treeGroup.add(redSpiralGarland);
+
     // Multi-colored emissive Who-land fairy lights spiraling up the interior potted tree
     treeGroup.add(
-      createWhoLandFairyLightStrand(garlandPts, {
+      createWhoLandFairyLightStrand(goldHelixPts, {
         bulbCount: 16,
         bulbRadiusM: 0.026,
         emissiveIntensity: 0.96,
@@ -1943,34 +2035,65 @@ export function buildPapaWhosHouseUnit(
     );
 
     const ornColors = [0xff2e44, 0xffd228, 0x28a8ff, 0xf258c8];
-    for (let o = 0; o < 14; o++) {
-      const t = (o + 1) / 15;
-      const a = o * 2.3;
-      const r = 0.36 * (1 - t * 0.72);
-      const orn = new THREE.Mesh(
-        new THREE.SphereGeometry(0.034, 10, 8),
+    const ornMats = ornColors.map(
+      (col) =>
         new THREE.MeshStandardMaterial({
-          color: ornColors[o % ornColors.length] ?? 0xff2e44,
-          roughness: 0.25,
-          metalness: 0.35,
+          color: col,
+          roughness: 0.22,
+          metalness: 0.42,
         })
+    );
+    for (let o = 0; o < 16; o++) {
+      const t = (o + 0.5) / 16;
+      const y = 0.52 + t * 1.56;
+      const spine = getSpineOffset(y);
+      const a = o * 2.39996;
+      const r = (0.44 - t * 0.34) + 0.02;
+      const bRad = 0.036 - t * 0.008;
+      const orn = new THREE.Mesh(
+        new THREE.SphereGeometry(bRad, 10, 8),
+        ornMats[o % ornMats.length] ?? ornMats[0]!
       );
-      orn.position.set(Math.cos(a) * r, 0.46 + t * 1.62, Math.sin(a) * r);
+      orn.position.set(
+        spine.x + Math.cos(a) * r,
+        y,
+        spine.z + Math.sin(a) * r
+      );
       treeGroup.add(orn);
     }
 
-    const starTopper = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.1, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0xffd838,
-        emissive: 0xffa818,
-        emissiveIntensity: 0.75,
-        roughness: 0.25,
-      })
+    // 3D Multi-Point Gold Star Topper with Seussian curled tip
+    const topSpine = getSpineOffset(2.18);
+    const starGroup = new THREE.Group();
+    starGroup.position.set(topSpine.x + 0.04, 2.24, topSpine.z);
+    starGroup.rotation.z = -0.18;
+    const starMat = new THREE.MeshStandardMaterial({
+      color: 0xffd838,
+      emissive: 0xffa818,
+      emissiveIntensity: 0.75,
+      roughness: 0.25,
+    });
+    const starCore = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 10), starMat);
+    starGroup.add(starCore);
+    for (let p = 0; p < 5; p++) {
+      const pAngle = (p / 5) * Math.PI * 2;
+      const ray = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 5), starMat);
+      ray.position.set(Math.sin(pAngle) * 0.06, Math.cos(pAngle) * 0.06, 0);
+      ray.rotation.z = -pAngle;
+      starGroup.add(ray);
+    }
+    const curlCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.11, 0),
+      new THREE.Vector3(0.03, 0.17, 0),
+      new THREE.Vector3(0.07, 0.16, 0),
+      new THREE.Vector3(0.06, 0.12, 0),
+    ]);
+    const starCurl = new THREE.Mesh(
+      new THREE.TubeGeometry(curlCurve, 10, 0.01, 6, false),
+      starMat
     );
-    starTopper.position.set(0.11, 2.32, 0);
-    starTopper.rotation.z = -0.22;
-    treeGroup.add(starTopper);
+    starGroup.add(starCurl);
+    treeGroup.add(starGroup);
 
     const giftColors = [0xd82238, 0x2488e8, 0xe8b824, 0x9838d8];
     for (let g = 0; g < 4; g++) {

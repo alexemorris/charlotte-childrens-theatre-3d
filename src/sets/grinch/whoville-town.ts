@@ -7,8 +7,6 @@ import {
   normalizeExtrudeUVs,
 } from '../../engine/procedural-textures.ts';
 import {
-  createSculptedIcicleDrip,
-  createSeussianIcicleValance,
   createWhoCharacter,
   createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
@@ -711,7 +709,9 @@ function createGiantWhovilleCandyCane(
 }
 
 /**
- * Builds an ultra-detailed Seussian Whoville Round House wagon matching Model Box 1B & CAD Plan 1B.
+ * Builds an ultra-detailed Seussian Whoville House wagon with an upside-down
+ * exaggerated trapezoid silhouette, flared concave side walls, overhanging snow
+ * roof cornice, and signature round bullseye windows.
  */
 function buildSingleWhovilleHouse(
   cfg: WhovilleHouseConfig,
@@ -741,25 +741,36 @@ function buildSingleWhovilleHouse(
   house.rotation.y = cfg.rotationY;
 
   const halfW = cfg.widthM * 0.5;
-  const frontSurfaceZ = halfW * cfg.depthScale;
+  // Narrow foundation at the bottom, wide exaggerated flare at the upper trapezoid eaves
+  const baseHalfW = halfW * 0.48;
+  const topLeftX = -halfW * (1.14 + (cfg.dormerSide < 0 ? 0.08 : 0.0));
+  const topRightX = halfW * (1.14 + (cfg.dormerSide > 0 ? 0.08 : 0.0));
+  const houseDepth = Math.max(0.7, cfg.widthM * cfg.depthScale * 0.88);
+  const frontSurfaceZ = houseDepth * 0.5 + 0.025;
 
   // ==========================================================================
-  // 1. ROLLING SNOW-DRIFT WAGON PLINTH & CASTER SKIRT (CAD Plan 1B Footprint)
+  // 1. ROLLING SNOW-DRIFT WAGON PLINTH & CASTER SKIRT (Fitted to Narrower Trapezoid Base)
   // ==========================================================================
   const wagonDeck = new THREE.Mesh(
-    new RoundedBoxGeometry(cfg.widthM + 0.32, 0.11, frontSurfaceZ * 2 + 0.28, 2, 0.03),
+    new RoundedBoxGeometry(
+      baseHalfW * 2 + 0.36,
+      0.11,
+      houseDepth + 0.24,
+      2,
+      0.03
+    ),
     sharedMats.wagonSteelMat
   );
   wagonDeck.position.set(0, 0.055, 0);
   wagonDeck.receiveShadow = true;
   house.add(wagonDeck);
 
-  // 4 Recessed Swivel Caster Wheels (drawn as circles at corners of CAD wagon boxes)
+  // 4 Recessed Swivel Caster Wheels
   const casterOffsets: ReadonlyArray<[number, number]> = [
-    [-halfW * 0.78, -frontSurfaceZ * 0.72],
-    [halfW * 0.78, -frontSurfaceZ * 0.72],
-    [-halfW * 0.78, frontSurfaceZ * 0.72],
-    [halfW * 0.78, frontSurfaceZ * 0.72],
+    [-baseHalfW * 0.82, -houseDepth * 0.38],
+    [baseHalfW * 0.82, -houseDepth * 0.38],
+    [-baseHalfW * 0.82, houseDepth * 0.38],
+    [baseHalfW * 0.82, houseDepth * 0.38],
   ];
   for (const [cx, cz] of casterOffsets) {
     const casterWheel = new THREE.Mesh(
@@ -771,25 +782,23 @@ function buildSingleWhovilleHouse(
     house.add(casterWheel);
   }
 
-  // Sculpted Snow-Drift Wagon Skirt around the base (offset >= 0.04m outside body base)
-  const snowPlinthProfile: THREE.Vector2[] = [
-    new THREE.Vector2(0.01, 0.08),
-    new THREE.Vector2(halfW * 1.02, 0.08),
-    new THREE.Vector2(halfW * 1.06, 0.14),
-    new THREE.Vector2(halfW * 0.99, 0.24),
-    new THREE.Vector2(halfW * 0.88, 0.28),
-    new THREE.Vector2(0.01, 0.28),
-  ];
+  // Sculpted Snow-Drift Wagon Skirt hugging the narrower bottom base
   const snowPlinth = new THREE.Mesh(
-    new THREE.LatheGeometry(snowPlinthProfile, 28),
+    new RoundedBoxGeometry(
+      baseHalfW * 2 + 0.44,
+      0.18,
+      houseDepth + 0.3,
+      3,
+      0.06
+    ),
     sharedMats.snowShadeMat
   );
-  snowPlinth.scale.set(1.0, 1.0, cfg.depthScale + 0.08);
+  snowPlinth.position.set(0, 0.14, 0);
   snowPlinth.receiveShadow = true;
   house.add(snowPlinth);
 
   // ==========================================================================
-  // 2. BULBOUS PEAR-SHAPED / ONION-DOMED STUCCO BODY (LatheGeometry + Dormer)
+  // 2. UPSIDE-DOWN EXAGGERATED TRAPEZOID STUCCO BODY (ExtrudeGeometry + Flared Walls)
   // ==========================================================================
   const stuccoTex = createWhovilleStuccoTexture(
     cfg.basePinkHex,
@@ -800,7 +809,7 @@ function buildSingleWhovilleHouse(
   const stuccoMat = new THREE.MeshStandardMaterial({
     map: stuccoTex,
     normalMap: createStuccoPlasterNormalTexture(),
-    normalScale: new THREE.Vector2(0.55, 0.55),
+    normalScale: new THREE.Vector2(0.32, 0.32),
     roughness: 0.56,
     metalness: 0.03,
   });
@@ -809,198 +818,285 @@ function buildSingleWhovilleHouse(
     roughness: 0.52,
   });
 
-  const bodyH = cfg.heightM * 0.78;
-  const lathePoints: THREE.Vector2[] = [];
-  const profileSteps = 18;
-  for (let i = 0; i <= profileSteps; i++) {
-    const t = i / profileSteps;
-    const y = 0.12 + t * bodyH;
-    // Bulbous Seussian pear/onion silhouette: narrow waist at bottom, wide belly at t=0.46, rounded dome top
-    const bellyCurve =
-      Math.sin(t * Math.PI * 0.88) * 0.24 +
-      Math.sin(t * Math.PI * 1.85) * 0.06;
-    const baseTaper = 0.82 - t * 0.18;
-    const r = Math.max(0.04, halfW * (baseTaper + bellyCurve));
-    lathePoints.push(new THREE.Vector2(r, y));
-  }
-  lathePoints.push(new THREE.Vector2(0.01, 0.12 + bodyH));
+  const bodyH = cfg.heightM * 0.82;
+  const baseY = 0.12;
+  const leftEaveY = baseY + bodyH * (cfg.dormerSide < 0 ? 0.93 : 0.84);
+  const rightEaveY = baseY + bodyH * (cfg.dormerSide > 0 ? 0.93 : 0.84);
+  const eaveY = (leftEaveY + rightEaveY) * 0.5;
+  const gablePeakX = -cfg.dormerSide * halfW * 0.08;
+  const gablePeakY = baseY + bodyH * 0.96;
 
-  const bodyMesh = new THREE.Mesh(
-    new THREE.LatheGeometry(lathePoints, 36),
-    stuccoMat
-  );
-  bodyMesh.scale.set(1.0, 1.0, cfg.depthScale);
+  // Helper to get the left and right wall X at any normalized height t ∈ [0, 1]
+  const getLeftWallX = (t: number): number => {
+    const u = Math.max(0, Math.min(1, t));
+    // Concave Seussian flare: narrow at bottom, flaring dramatically out to topLeftX at upper eaves
+    const flareU = Math.pow(u, 1.28);
+    const pinch = Math.sin(u * Math.PI) * 0.075 * halfW;
+    return THREE.MathUtils.lerp(-baseHalfW, topLeftX, flareU) + pinch;
+  };
+  const getRightWallX = (t: number): number => {
+    const u = Math.max(0, Math.min(1, t));
+    const flareU = Math.pow(u, 1.28);
+    const pinch = Math.sin(u * Math.PI) * 0.075 * halfW;
+    return THREE.MathUtils.lerp(baseHalfW, topRightX, flareU) - pinch;
+  };
+
+  const bodyShape = new THREE.Shape();
+  bodyShape.moveTo(-baseHalfW, baseY);
+  const wallSteps = 14;
+  for (let i = 1; i <= wallSteps; i++) {
+    const t = i / wallSteps;
+    const wy = THREE.MathUtils.lerp(baseY, leftEaveY, t);
+    bodyShape.lineTo(getLeftWallX(t), wy);
+  }
+  // Slightly cambered upper trapezoid roof line between the wide flared top-left and top-right corners
+  bodyShape.quadraticCurveTo(gablePeakX, gablePeakY + 0.05, topRightX, rightEaveY);
+  for (let i = wallSteps - 1; i >= 0; i--) {
+    const t = i / wallSteps;
+    const wy = THREE.MathUtils.lerp(baseY, rightEaveY, t);
+    bodyShape.lineTo(getRightWallX(t), wy);
+  }
+  bodyShape.closePath();
+
+  const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
+    depth: houseDepth,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.025,
+    bevelThickness: 0.025,
+  });
+  bodyGeo.translate(0, 0, -houseDepth * 0.5);
+
+  // Subtle cambered front-face relief so lighting sculpts the inverted trapezoid
+  const bodyPos = bodyGeo.attributes.position;
+  for (let i = 0; i < bodyPos.count; i++) {
+    const vx = bodyPos.getX(i);
+    const vz = bodyPos.getZ(i);
+    if (vz > 0) {
+      const camber = Math.max(0, 1 - Math.pow(vx / (halfW * 1.2), 2)) * 0.032;
+      bodyPos.setZ(i, vz + camber);
+    }
+  }
+  normalizeExtrudeUVs(bodyGeo, 'fit');
+  bodyGeo.computeVertexNormals();
+
+  const bodyMesh = new THREE.Mesh(bodyGeo, stuccoMat);
   bodyMesh.castShadow = true;
   bodyMesh.receiveShadow = true;
   house.add(bodyMesh);
 
-  // Painted Seussian Contour Stripes / 3D Trim Ribs hugging the bulbous body (offset +0.035m)
-  const ribAngles = [-0.85, -0.32, 0.28, 0.85];
-  for (const ang of ribAngles) {
+  // 3D Flared Trapezoid Corner & Panel Trim Ribs hugging the outward-leaning walls
+  for (const ribFrac of [-1.0, -0.46, 0.46, 1.0]) {
     const ribPts: THREE.Vector3[] = [];
-    for (let i = 1; i <= profileSteps - 2; i++) {
-      const pt = lathePoints[i];
-      if (!pt) continue;
-      const rad = pt.x + 0.035;
-      ribPts.push(
-        new THREE.Vector3(
-          Math.sin(ang) * rad,
-          pt.y,
-          Math.cos(ang) * rad * cfg.depthScale
-        )
-      );
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      const lx = getLeftWallX(t);
+      const rx = getRightWallX(t);
+      const u = (ribFrac + 1) * 0.5;
+      const x = THREE.MathUtils.lerp(lx, rx, u);
+      const topYAtU = THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
+        Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.72;
+      const y = THREE.MathUtils.lerp(baseY + 0.04, topYAtU - 0.04, t);
+      const camber = Math.max(0, 1 - Math.pow(x / (halfW * 1.2), 2)) * 0.032;
+      ribPts.push(new THREE.Vector3(x, y, frontSurfaceZ + camber + 0.012));
     }
-    const ribCurve = new THREE.CatmullRomCurve3(ribPts);
     const ribTube = new THREE.Mesh(
-      new THREE.TubeGeometry(ribCurve, 18, 0.022, 8, false),
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(ribPts),
+        18,
+        Math.abs(ribFrac) === 1.0 ? 0.026 : 0.018,
+        8,
+        false
+      ),
       ribMat
     );
     house.add(ribTube);
   }
 
-  // Sculpted Side Dormer / Alcove bulging out from the outer flank
+  // Canted Inverted-Trapezoid Side Wing Bay jutting from the outer flank
   const dormerGroup = new THREE.Group();
+  const dormerWallX = cfg.dormerSide < 0 ? getLeftWallX(0.55) : getRightWallX(0.55);
   dormerGroup.position.set(
-    cfg.dormerSide * (halfW * 0.88),
-    bodyH * 0.48,
+    dormerWallX + cfg.dormerSide * 0.18,
+    baseY + bodyH * 0.44,
     -0.04
   );
-  dormerGroup.rotation.z = cfg.dormerSide * -0.22;
+  dormerGroup.rotation.z = cfg.dormerSide * -0.2;
 
-  const dormerBody = new THREE.Mesh(
-    new THREE.SphereGeometry(0.36, 18, 14),
-    stuccoMat
-  );
-  dormerBody.scale.set(0.95, 1.25, 0.72);
+  const wingShape = new THREE.Shape();
+  wingShape.moveTo(-0.2, -0.34);
+  wingShape.lineTo(-0.38, 0.34);
+  wingShape.quadraticCurveTo(0, 0.42, 0.38, 0.34);
+  wingShape.lineTo(0.2, -0.34);
+  wingShape.closePath();
+
+  const wingGeo = new THREE.ExtrudeGeometry(wingShape, {
+    depth: houseDepth * 0.68,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.018,
+    bevelThickness: 0.018,
+  });
+  wingGeo.translate(0, 0, -houseDepth * 0.34);
+  normalizeExtrudeUVs(wingGeo, 'fit');
+  wingGeo.computeVertexNormals();
+
+  const dormerBody = new THREE.Mesh(wingGeo, stuccoMat);
   dormerBody.castShadow = true;
   dormerGroup.add(dormerBody);
 
-  const dormerSnowCap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.4, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    sharedMats.snowCapMat
-  );
-  dormerSnowCap.scale.set(1.02, 0.85, 0.78);
-  dormerSnowCap.position.y = 0.16;
+  // Wet dripping snow cap on the side wing bay
+  const wingSnowShape = new THREE.Shape();
+  wingSnowShape.moveTo(-0.46, 0.28);
+  wingSnowShape.quadraticCurveTo(0, 0.56, 0.46, 0.28);
+  const wingDrips = 4;
+  for (let d = 0; d < wingDrips; d++) {
+    const xR = 0.46 - (d / wingDrips) * 0.92;
+    const xL = 0.46 - ((d + 1) / wingDrips) * 0.92;
+    const xM = (xR + xL) * 0.5;
+    const dipY = 0.12 - (d % 2) * 0.07;
+    wingSnowShape.bezierCurveTo(xR - 0.05, dipY + 0.06, xM + 0.04, dipY, xM, dipY);
+    wingSnowShape.bezierCurveTo(xM - 0.04, dipY, xL + 0.05, dipY + 0.06, xL, 0.22);
+  }
+  wingSnowShape.closePath();
+
+  const wingSnowGeo = new THREE.ExtrudeGeometry(wingSnowShape, {
+    depth: houseDepth * 0.8,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.022,
+    bevelThickness: 0.022,
+  });
+  wingSnowGeo.translate(0, 0, -houseDepth * 0.4);
+  normalizeExtrudeUVs(wingSnowGeo, 'fit');
+  wingSnowGeo.computeVertexNormals();
+
+  const dormerSnowCap = new THREE.Mesh(wingSnowGeo, sharedMats.snowCapMat);
   dormerGroup.add(dormerSnowCap);
 
-  // Sculpted Seussian icicle valance tucked beneath the dormer snow eave
-  const dormerValance = createSeussianIcicleValance(
-    0.46,
-    0.16,
-    5,
-    sharedMats.snowCapMat,
-    sharedMats.snowShadeMat,
-    0.04,
-    cfg.dormerSide > 0 ? 3 : 7
-  );
-  dormerValance.position.set(0, 0.14, 0.25);
-  dormerGroup.add(dormerValance);
-
-  // Small glowing porthole window on the side dormer (offset +0.04m proud of dormer surface)
+  // Glowing Round Porthole Window on the side wing
   const dormerPortholeFrame = new THREE.Mesh(
-    new THREE.TorusGeometry(0.12, 0.024, 10, 18),
+    new THREE.TorusGeometry(0.13, 0.024, 10, 20),
     sharedMats.oliveFrameMat
   );
-  dormerPortholeFrame.position.set(cfg.dormerSide * 0.12, -0.02, 0.28);
-  dormerPortholeFrame.rotation.y = cfg.dormerSide * 0.35;
+  dormerPortholeFrame.position.set(cfg.dormerSide * 0.05, 0.02, houseDepth * 0.37);
   dormerGroup.add(dormerPortholeFrame);
 
   const dormerPortholeGlass = new THREE.Mesh(
-    new THREE.CircleGeometry(0.105, 16),
+    new THREE.CircleGeometry(0.115, 18),
     sharedMats.windowGlowMat
   );
-  dormerPortholeGlass.position.set(cfg.dormerSide * 0.13, -0.02, 0.31);
-  dormerPortholeGlass.rotation.y = cfg.dormerSide * 0.35;
+  dormerPortholeGlass.position.set(cfg.dormerSide * 0.05, 0.02, houseDepth * 0.385);
   dormerGroup.add(dormerPortholeGlass);
 
   house.add(dormerGroup);
 
   // ==========================================================================
-  // 3. THICK SCALLOPED BLUE-WHITE SNOW ROOF CAP, EAVE DRIP LOBES & ICICLES
+  // 3. WIDE OVERHANGING WET DRIPPING SNOW ROOF CORNICE (No Spiky Icicles)
   // ==========================================================================
-  const eaveY = 0.12 + bodyH * 0.73;
-  const roofPeakY = cfg.heightM * 0.95;
-  const roofProfile: THREE.Vector2[] = [];
-  const roofSteps = 14;
-  for (let i = 0; i <= roofSteps; i++) {
-    const t = i / roofSteps;
-    const y = eaveY + t * (roofPeakY - eaveY);
-    // Thick, puffy dome overhang that swells slightly above the eaves then rounds smoothly to the peak
-    const domeFactor = Math.cos(t * Math.PI * 0.5);
-    const puffBell = Math.sin(t * Math.PI) * 0.12;
-    const r = Math.max(0.02, (halfW * 1.07) * domeFactor + halfW * puffBell);
-    roofProfile.push(new THREE.Vector2(r, y));
-  }
-  roofProfile.push(new THREE.Vector2(0.0, roofPeakY));
+  const roofPeakY = cfg.heightM * 0.94;
+  const roofLeftX = topLeftX - 0.18;
+  const roofRightX = topRightX + 0.18;
+  const roofDepth = houseDepth + 0.16;
 
-  const snowRoofCap = new THREE.Mesh(
-    new THREE.LatheGeometry(roofProfile, 36),
-    sharedMats.snowCapMat
-  );
-  snowRoofCap.scale.set(1.0, 1.0, cfg.depthScale + 0.07);
+  const getEavePoint = (u: number): { x: number; y: number; slopeRad: number } => {
+    const x = THREE.MathUtils.lerp(roofLeftX + 0.08, roofRightX - 0.08, u);
+    const y =
+      THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
+      Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.52 -
+      0.03;
+    const slopeRad = Math.atan2(rightEaveY - leftEaveY, roofRightX - roofLeftX);
+    return { x, y, slopeRad };
+  };
+
+  const buildWetSnowRoofShape = (yOffset: number): THREE.Shape => {
+    const shape = new THREE.Shape();
+    shape.moveTo(roofLeftX, leftEaveY - 0.04 + yOffset);
+    shape.quadraticCurveTo(
+      roofLeftX * 0.82,
+      leftEaveY + 0.24 + yOffset,
+      gablePeakX,
+      roofPeakY + yOffset
+    );
+    shape.quadraticCurveTo(
+      roofRightX * 0.82,
+      rightEaveY + 0.24 + yOffset,
+      roofRightX,
+      rightEaveY - 0.04 + yOffset
+    );
+
+    // Plump, rounded "wet" snow-melt drips & wavy lobes along the wide trapezoid eaves
+    const roofScallops = 8;
+    for (let s = 0; s < roofScallops; s++) {
+      const u0 = s / roofScallops;
+      const u1 = (s + 1) / roofScallops;
+      const uMid = (u0 + u1) * 0.5;
+      const xRight = THREE.MathUtils.lerp(roofRightX, roofLeftX, u0);
+      const xMid = THREE.MathUtils.lerp(roofRightX, roofLeftX, uMid);
+      const xLeft = THREE.MathUtils.lerp(roofRightX, roofLeftX, u1);
+      const stepW = xRight - xLeft;
+
+      const yBaseMid =
+        THREE.MathUtils.lerp(rightEaveY, leftEaveY, uMid) +
+        Math.sin(uMid * Math.PI) * (gablePeakY - eaveY) * 0.5;
+      const yBaseNext =
+        THREE.MathUtils.lerp(rightEaveY, leftEaveY, u1) +
+        Math.sin(u1 * Math.PI) * (gablePeakY - eaveY) * 0.5;
+
+      const dripDepth = s % 2 === 0 ? 0.24 : 0.12;
+      const dipY = yBaseMid - dripDepth + yOffset;
+      const notchY = yBaseNext - 0.03 + yOffset;
+
+      shape.bezierCurveTo(
+        xRight - stepW * 0.22,
+        yBaseMid - dripDepth * 0.6 + yOffset,
+        xMid + stepW * 0.16,
+        dipY,
+        xMid,
+        dipY
+      );
+      shape.bezierCurveTo(
+        xMid - stepW * 0.16,
+        dipY,
+        xLeft + stepW * 0.22,
+        yBaseMid - dripDepth * 0.6 + yOffset,
+        xLeft,
+        notchY
+      );
+    }
+    shape.closePath();
+    return shape;
+  };
+
+  // Dark Seussian undercut shadow contour directly beneath the wet dripping snow eaves
+  const roofShadowGeo = new THREE.ExtrudeGeometry(buildWetSnowRoofShape(-0.042), {
+    depth: roofDepth * 0.94,
+    bevelEnabled: false,
+  });
+  roofShadowGeo.translate(0, 0, -roofDepth * 0.46);
+  const roofShadowMesh = new THREE.Mesh(roofShadowGeo, sharedMats.inkMat);
+  house.add(roofShadowMesh);
+
+  // Plump, rounded wet snow roof blanket in front
+  const snowRoofGeo = new THREE.ExtrudeGeometry(buildWetSnowRoofShape(0), {
+    depth: roofDepth,
+    bevelEnabled: true,
+    bevelSegments: 3,
+    steps: 1,
+    bevelSize: 0.034,
+    bevelThickness: 0.034,
+  });
+  snowRoofGeo.translate(0, 0, -roofDepth * 0.5);
+  normalizeExtrudeUVs(snowRoofGeo, 'fit');
+  snowRoofGeo.computeVertexNormals();
+
+  const snowRoofCap = new THREE.Mesh(snowRoofGeo, sharedMats.snowCapMat);
   snowRoofCap.castShadow = true;
   snowRoofCap.receiveShadow = true;
   house.add(snowRoofCap);
-
-  // Jagged Cavemouth-Style Crystalline Icicle Valance Segments & Sharp Icicle Fangs
-  // Tucked cleanly underneath the overhanging snow roof cap eaves (replaces sphere bulbs!)
-  const houseIceGlazeMat = new THREE.MeshStandardMaterial({
-    color: 0x6290c8,
-    roughness: 0.48,
-    metalness: 0.14,
-    flatShading: true,
-  });
-  const houseCrystallineIcicleMat = new THREE.MeshStandardMaterial({
-    color: 0xa4c4d8,
-    roughness: 0.45,
-    metalness: 0.16,
-    flatShading: true,
-  });
-
-  const eaveValanceSegments = 5;
-  for (let s = 0; s < eaveValanceSegments; s++) {
-    const u = (s + 0.5) / eaveValanceSegments;
-    const angle = (u - 0.5) * Math.PI * 1.06;
-    const vx = Math.sin(angle) * (halfW * 0.97);
-    const vz = Math.cos(angle) * (halfW * 0.97) * (cfg.depthScale + 0.04);
-    const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.08 + 0.02;
-    const segWidth = (cfg.widthM * 0.58) / eaveValanceSegments;
-
-    const eaveValance = createSeussianIcicleValance(
-      segWidth,
-      0.30 + (s % 2) * 0.06,
-      5,
-      houseCrystallineIcicleMat,
-      houseIceGlazeMat,
-      0.036,
-      s * 7 + 3
-    );
-    eaveValance.position.set(vx, archFollowY, vz);
-    eaveValance.rotation.y = angle * 0.72;
-    house.add(eaveValance);
-  }
-
-  const fangCount = 15;
-  for (let i = 0; i < fangCount; i++) {
-    const u = i / (fangCount - 1);
-    const angle = (u - 0.5) * Math.PI * 1.14;
-    const lx = Math.sin(angle) * (halfW * 0.99);
-    const lz = Math.cos(angle) * (halfW * 0.99) * (cfg.depthScale + 0.05);
-    const dripLen = 0.24 + ((i * 5 + 3) % 4) * 0.085 + (i === 4 || i === 10 ? 0.1 : 0);
-    const dripRad = 0.038 + (i % 3) * 0.008;
-    const archFollowY = eaveY + Math.cos((u - 0.5) * Math.PI) * 0.09 + 0.03;
-    const bendSign = i % 2 === 0 ? 1 : -1;
-
-    const icicleFang = createSculptedIcicleDrip(
-      dripLen,
-      dripRad,
-      i % 3 === 1 ? houseIceGlazeMat : houseCrystallineIcicleMat,
-      bendSign * 0.018
-    );
-    icicleFang.position.set(lx, archFollowY, lz);
-    icicleFang.rotation.y = angle * 0.65;
-    house.add(icicleFang);
-  }
 
   // ==========================================================================
   // 4. S-CURVED CROOKED CHIMNEY (TubeGeometry + Tilted Chimney Pot & Snow Puffs)
@@ -1008,10 +1104,10 @@ function buildSingleWhovilleHouse(
   const chimBaseY = roofPeakY - 0.08;
   const lean = cfg.chimneyLeanX;
   const chimCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, chimBaseY - 0.1, 0),
-    new THREE.Vector3(lean * 0.45, chimBaseY + 0.18, 0.02),
-    new THREE.Vector3(-lean * 0.28, chimBaseY + 0.38, -0.02),
-    new THREE.Vector3(lean * 0.85, chimBaseY + 0.62, 0.0),
+    new THREE.Vector3(gablePeakX, chimBaseY - 0.1, 0),
+    new THREE.Vector3(gablePeakX + lean * 0.45, chimBaseY + 0.18, 0.02),
+    new THREE.Vector3(gablePeakX - lean * 0.28, chimBaseY + 0.38, -0.02),
+    new THREE.Vector3(gablePeakX + lean * 0.85, chimBaseY + 0.62, 0.0),
   ]);
 
   const chimneyPipe = new THREE.Mesh(
@@ -1021,22 +1117,24 @@ function buildSingleWhovilleHouse(
   chimneyPipe.castShadow = true;
   house.add(chimneyPipe);
 
-  // Dark Seussian vertical hatch stripes on the chimney neck (matching Model 1B)
   const chimCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.145, 0.042, 10, 18),
     sharedMats.snowShadeMat
   );
   chimCollar.rotation.x = Math.PI * 0.5;
-  chimCollar.position.set(0, chimBaseY + 0.03, 0);
+  chimCollar.position.set(gablePeakX, chimBaseY + 0.03, 0);
   house.add(chimCollar);
 
-  const chimTopPos = new THREE.Vector3(lean * 0.85, chimBaseY + 0.62, 0.0);
+  const chimTopPos = new THREE.Vector3(
+    gablePeakX + lean * 0.85,
+    chimBaseY + 0.62,
+    0.0
+  );
   const chimTopGroup = new THREE.Group();
   chimTopGroup.position.copy(chimTopPos);
   chimTopGroup.rotation.z = -lean * 0.95;
 
   if (cfg.chimneyStyle === 't-cap') {
-    // Horizontal T-cap snow-topped chimney pot (exact match for DSR house in Model 1B)
     const tBar = new THREE.Mesh(
       new RoundedBoxGeometry(0.46, 0.18, 0.24, 3, 0.06),
       sharedMats.snowCapMat
@@ -1052,7 +1150,6 @@ function buildSingleWhovilleHouse(
     snowPuffTop.position.set(0, 0.1, 0.03);
     chimTopGroup.add(snowPuffTop);
   } else if (cfg.chimneyStyle === 'bulb-pot') {
-    // Bulbous Seussian pot with snow puff (exact match for USR house in Model 1B)
     const potBulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 14, 12),
       sharedMats.snowCapMat
@@ -1067,7 +1164,6 @@ function buildSingleWhovilleHouse(
     potRim.position.set(0, 0.08, 0.04);
     chimTopGroup.add(potRim);
   } else {
-    // Keyhole ring chimney finial with snow puff (exact match for MSL house in Model 1B)
     const ringPot = new THREE.Mesh(
       new THREE.TorusGeometry(0.14, 0.055, 12, 20),
       sharedMats.snowCapMat
@@ -1092,17 +1188,15 @@ function buildSingleWhovilleHouse(
   house.add(chimTopGroup);
 
   // ==========================================================================
-  // 5. RECESSED ARCHED DOORWAY, CURVED STONE STEPS, CANDY/OLIVE FRAME & WREATH
+  // 5. RECESSED ARCHED DOORWAY AT THE NARROWER BASE, STONE STEPS & WREATH
   // ==========================================================================
-  const doorLocalZ =
-    Math.sqrt(Math.max(0.05, 1 - Math.pow(cfg.doorX / halfW, 2))) *
-    frontSurfaceZ;
+  const doorCamberZ =
+    Math.max(0, 1 - Math.pow(cfg.doorX / (halfW * 1.15), 2)) * 0.032;
+  const doorLocalZ = frontSurfaceZ + doorCamberZ;
 
   const doorGroup = new THREE.Group();
   doorGroup.position.set(cfg.doorX, 0, doorLocalZ);
-  doorGroup.rotation.y = (cfg.doorX / halfW) * 0.22;
 
-  // Curved Stone Front Steps protruding out onto the stage floor (non-coplanar y=0.05 & y=0.13)
   const stepBottom = new THREE.Mesh(
     new THREE.CylinderGeometry(
       cfg.doorWidth * 0.76,
@@ -1139,12 +1233,10 @@ function buildSingleWhovilleHouse(
   stepTop.receiveShadow = true;
   doorGroup.add(stepTop);
 
-  // Arched Doorway Assembly (tilted slightly for Seussian whimsy)
   const doorArchGroup = new THREE.Group();
   doorArchGroup.position.set(0, 0.16, 0);
   doorArchGroup.rotation.z = cfg.doorTiltZ;
 
-  // Helper to create an extrude arch shape
   const makeArchShape = (w: number, h: number): THREE.Shape => {
     const hw = w * 0.5;
     const straightH = Math.max(0.2, h - hw);
@@ -1157,18 +1249,16 @@ function buildSingleWhovilleHouse(
     return shape;
   };
 
-  // Layer 1: Dark Seussian ink outline backing (z = 0.00 to 0.04)
   const doorInkMesh = new THREE.Mesh(
     new THREE.ExtrudeGeometry(
       makeArchShape(cfg.doorWidth + 0.14, cfg.doorHeight + 0.08),
-      { depth: 0.04, bevelEnabled: false, curveSegments: 20 }
+      { depth: 0.03, bevelEnabled: false, curveSegments: 20 }
     ),
     sharedMats.inkMat
   );
   doorInkMesh.position.z = 0.0;
   doorArchGroup.add(doorInkMesh);
 
-  // Layer 2: Sculpted White/Cream & Candy/Olive Arch Surround (z = 0.04 to 0.085, +4cm offset)
   const frameMat =
     cfg.doorFrameStyle === 'candy'
       ? sharedMats.candyFrameMat
@@ -1178,46 +1268,44 @@ function buildSingleWhovilleHouse(
 
   const doorSurroundGeo = new THREE.ExtrudeGeometry(
     makeArchShape(cfg.doorWidth + 0.08, cfg.doorHeight + 0.04),
-    { depth: 0.045, bevelEnabled: false, curveSegments: 20 }
+    { depth: 0.035, bevelEnabled: false, curveSegments: 20 }
   );
   normalizeExtrudeUVs(doorSurroundGeo, 'fit');
   const doorSurroundMesh = new THREE.Mesh(
     doorSurroundGeo,
     sharedMats.creamFrameMat
   );
-  doorSurroundMesh.position.z = 0.04;
+  doorSurroundMesh.position.z = 0.03;
   doorArchGroup.add(doorSurroundMesh);
 
-  // Layer 3: Recessed Pink/Coral Arched Door Leaf with Hand-Painted Planks & Swirl Trim (z = 0.085 to 0.125)
   const doorLeafGeo = new THREE.ExtrudeGeometry(
     makeArchShape(cfg.doorWidth - 0.04, cfg.doorHeight - 0.04),
-    { depth: 0.04, bevelEnabled: false, curveSegments: 20 }
+    { depth: 0.035, bevelEnabled: false, curveSegments: 20 }
   );
   normalizeExtrudeUVs(doorLeafGeo, 'fit');
   const doorLeafMesh = new THREE.Mesh(doorLeafGeo, sharedMats.doorPanelMat);
-  doorLeafMesh.position.z = 0.085;
+  doorLeafMesh.position.z = 0.065;
   doorArchGroup.add(doorLeafMesh);
 
-  // Layer 4: 3D Curved Arch Molding Tube around the doorway perimeter (z = 0.135)
   const archFramePts: THREE.Vector3[] = [];
   const dhw = cfg.doorWidth * 0.5 + 0.02;
   const dStraightH = cfg.doorHeight - dhw;
   for (let i = 0; i <= 16; i++) {
     const t = i / 16;
     if (t < 0.25) {
-      archFramePts.push(new THREE.Vector3(-dhw, (t / 0.25) * dStraightH, 0.135));
+      archFramePts.push(new THREE.Vector3(-dhw, (t / 0.25) * dStraightH, 0.11));
     } else if (t <= 0.75) {
       const a = Math.PI - ((t - 0.25) / 0.5) * Math.PI;
       archFramePts.push(
         new THREE.Vector3(
           Math.cos(a) * dhw,
           dStraightH + Math.sin(a) * dhw,
-          0.135
+          0.11
         )
       );
     } else {
       archFramePts.push(
-        new THREE.Vector3(dhw, (1 - (t - 0.75) / 0.25) * dStraightH, 0.135)
+        new THREE.Vector3(dhw, (1 - (t - 0.75) / 0.25) * dStraightH, 0.11)
       );
     }
   }
@@ -1225,7 +1313,7 @@ function buildSingleWhovilleHouse(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(archFramePts),
       28,
-      0.028,
+      0.026,
       10,
       false
     ),
@@ -1233,7 +1321,6 @@ function buildSingleWhovilleHouse(
   );
   doorArchGroup.add(archMoldingTube);
 
-  // Brass Door Knocker, Escutcheon & Doorknob (z = 0.16, >= 0.035m proud of door leaf)
   const handleSide = cfg.doorX >= 0 ? -1 : 1;
   const doorknob = new THREE.Mesh(
     new THREE.SphereGeometry(0.032, 10, 10),
@@ -1242,7 +1329,7 @@ function buildSingleWhovilleHouse(
   doorknob.position.set(
     handleSide * (cfg.doorWidth * 0.32),
     cfg.doorHeight * 0.44,
-    0.16
+    0.135
   );
   doorArchGroup.add(doorknob);
 
@@ -1250,227 +1337,216 @@ function buildSingleWhovilleHouse(
     new THREE.TorusGeometry(0.042, 0.011, 8, 14),
     sharedMats.brassMat
   );
-  knockerRing.position.set(0, cfg.doorHeight * 0.36, 0.16);
+  knockerRing.position.set(0, cfg.doorHeight * 0.36, 0.135);
   doorArchGroup.add(knockerRing);
 
-  // Lush Pine Christmas Wreath with Gold & Crimson Bow on the Door (z = 0.185)
   const doorWreath = createHolidayWreath(
-    0.185,
-    0.055,
+    0.175,
+    0.05,
     sharedMats.wreathGreenMat,
     sharedMats.crimsonBowMat,
     sharedMats.goldBowMat
   );
-  doorWreath.position.set(0, cfg.doorHeight * 0.64, 0.185);
+  doorWreath.position.set(0, cfg.doorHeight * 0.64, 0.155);
   doorArchGroup.add(doorWreath);
 
   doorGroup.add(doorArchGroup);
   house.add(doorGroup);
 
   // ==========================================================================
-  // 6. MULTI-PANE ARCHED GLOWING AMBER WINDOWS, SHUTTERS, SNOW SILLS & SWAGS
+  // 6. SIGNATURE ROUND BULLSEYE WINDOWS IN THE FLARED UPPER TRAPEZOID FACADE
   // ==========================================================================
   for (const winSpec of cfg.windows) {
-    const winLocalZ =
-      Math.sqrt(Math.max(0.08, 1 - Math.pow(winSpec.x / halfW, 2))) *
-      frontSurfaceZ;
+    const winCamberZ =
+      Math.max(0, 1 - Math.pow(winSpec.x / (halfW * 1.15), 2)) * 0.032;
+    const winLocalZ = frontSurfaceZ + winCamberZ;
+    const winRadius = Math.max(winSpec.width, winSpec.height) * 0.56;
 
     const winGroup = new THREE.Group();
     winGroup.position.set(winSpec.x, winSpec.y, winLocalZ);
-    winGroup.rotation.y = (winSpec.x / halfW) * 0.25;
     winGroup.rotation.z = winSpec.tiltZ;
 
-    // Layer 1: Dark Ink Surround (z = 0.0 to 0.035)
+    // Layer 1: Dark Seussian Ink Circular Backing Ring
     const winInk = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(
-        makeArchShape(winSpec.width + 0.09, winSpec.height + 0.09),
-        { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
+      new THREE.CylinderGeometry(
+        winRadius + 0.055,
+        winRadius + 0.055,
+        0.025,
+        24
       ),
       sharedMats.inkMat
     );
-    winInk.position.set(0, -winSpec.height * 0.5 - 0.045, 0.0);
+    winInk.rotation.x = Math.PI * 0.5;
+    winInk.position.z = 0.012;
     winGroup.add(winInk);
 
-    // Layer 2: Cream Window Casing (z = 0.035 to 0.07)
-    const winCasingGeo = new THREE.ExtrudeGeometry(
-      makeArchShape(winSpec.width + 0.04, winSpec.height + 0.04),
-      { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
+    // Layer 2: Sculpted Cream & Olive Circular Bullseye Window Casings
+    const outerCasingTorus = new THREE.Mesh(
+      new THREE.TorusGeometry(winRadius + 0.018, 0.032, 12, 28),
+      sharedMats.creamFrameMat
     );
-    normalizeExtrudeUVs(winCasingGeo, 'fit');
-    const winCasing = new THREE.Mesh(winCasingGeo, sharedMats.creamFrameMat);
-    winCasing.position.set(0, -winSpec.height * 0.5 - 0.02, 0.035);
-    winGroup.add(winCasing);
+    outerCasingTorus.position.z = 0.036;
+    winGroup.add(outerCasingTorus);
 
-    // Layer 3: Glowing Amber Glass Pane (z = 0.07 to 0.105)
-    const winGlassGeo = new THREE.ExtrudeGeometry(
-      makeArchShape(winSpec.width - 0.03, winSpec.height - 0.03),
-      { depth: 0.035, bevelEnabled: false, curveSegments: 16 }
+    const innerBeadTorus = new THREE.Mesh(
+      new THREE.TorusGeometry(winRadius - 0.014, 0.016, 10, 24),
+      sharedMats.oliveFrameMat
     );
-    normalizeExtrudeUVs(winGlassGeo, 'fit');
-    const winGlass = new THREE.Mesh(winGlassGeo, sharedMats.windowGlowMat);
-    winGlass.position.set(0, -winSpec.height * 0.5 + 0.015, 0.07);
+    innerBeadTorus.position.z = 0.048;
+    winGroup.add(innerBeadTorus);
+
+    // Layer 3: Glowing Warm Amber Circular Glass Pane
+    const winGlass = new THREE.Mesh(
+      new THREE.CircleGeometry(winRadius - 0.01, 24),
+      sharedMats.windowGlowMat
+    );
+    winGlass.position.z = 0.038;
     winGroup.add(winGlass);
 
-    // Layer 4: Curved Seussian Muntin Bars (z = 0.14, +3.5cm in front of glass)
+    // Layer 4: Curved Seussian Cross-Muntins & Central Bullseye Ring inside the Round Window
     const vMuntinCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -winSpec.height * 0.46, 0.14),
-      new THREE.Vector3(0.018, 0, 0.14),
-      new THREE.Vector3(0, winSpec.height * 0.46, 0.14),
+      new THREE.Vector3(0, -(winRadius - 0.02), 0.054),
+      new THREE.Vector3(0.02, 0, 0.058),
+      new THREE.Vector3(0, winRadius - 0.02, 0.054),
     ]);
     const vMuntin = new THREE.Mesh(
-      new THREE.TubeGeometry(vMuntinCurve, 10, 0.012, 6, false),
+      new THREE.TubeGeometry(vMuntinCurve, 12, 0.011, 6, false),
       sharedMats.oliveFrameMat
     );
     winGroup.add(vMuntin);
 
     const hMuntinCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-winSpec.width * 0.44, -0.02, 0.14),
-      new THREE.Vector3(0, 0.02, 0.14),
-      new THREE.Vector3(winSpec.width * 0.44, -0.02, 0.14),
+      new THREE.Vector3(-(winRadius - 0.02), -0.015, 0.054),
+      new THREE.Vector3(0, 0.018, 0.058),
+      new THREE.Vector3(winRadius - 0.02, -0.015, 0.054),
     ]);
     const hMuntin = new THREE.Mesh(
-      new THREE.TubeGeometry(hMuntinCurve, 10, 0.012, 6, false),
+      new THREE.TubeGeometry(hMuntinCurve, 12, 0.011, 6, false),
       sharedMats.oliveFrameMat
     );
     winGroup.add(hMuntin);
 
-    // Crooked Side Shutters (z = 0.11, offset beside window casing)
+    const centerBullseye = new THREE.Mesh(
+      new THREE.TorusGeometry(winRadius * 0.32, 0.01, 8, 18),
+      sharedMats.oliveFrameMat
+    );
+    centerBullseye.position.z = 0.058;
+    winGroup.add(centerBullseye);
+
+    // Crooked Side Shutters angled to match the flared trapezoid wall
     if (winSpec.hasShutters) {
       for (const sSide of [-1, 1]) {
         const shutter = new THREE.Mesh(
           new RoundedBoxGeometry(
-            0.095,
-            winSpec.height * 0.86,
-            0.032,
+            0.09,
+            winRadius * 1.48,
+            0.028,
             2,
             0.012
           ),
           sharedMats.shutterMat
         );
         shutter.position.set(
-          sSide * (winSpec.width * 0.5 + 0.085),
-          -0.02,
-          0.11
+          sSide * (winRadius + 0.088),
+          0,
+          0.036
         );
-        shutter.rotation.y = sSide * -0.24;
-        shutter.rotation.z = sSide * 0.09;
+        shutter.rotation.y = sSide * -0.18;
+        shutter.rotation.z = sSide * -0.14;
         winGroup.add(shutter);
       }
     }
 
-    // Window-Box Snowdrift Sill with Black Hatch Marks (z = 0.145)
+    // Curved Snow-Drift Window Sill hugging the bottom arc of the round window
+    const sillCurvePts: THREE.Vector3[] = [];
+    for (let s = 0; s <= 10; s++) {
+      const a = Math.PI * 1.15 + (s / 10) * Math.PI * 0.7;
+      sillCurvePts.push(
+        new THREE.Vector3(
+          Math.cos(a) * (winRadius + 0.025),
+          Math.sin(a) * (winRadius + 0.025) - 0.01,
+          0.065
+        )
+      );
+    }
     const sillSnow = new THREE.Mesh(
-      new RoundedBoxGeometry(winSpec.width + 0.14, 0.095, 0.11, 3, 0.04),
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(sillCurvePts),
+        16,
+        0.036,
+        8,
+        false
+      ),
       sharedMats.snowCapMat
     );
-    sillSnow.position.set(0, -winSpec.height * 0.5 - 0.04, 0.145);
     winGroup.add(sillSnow);
 
-    // Window Holiday Wreath (z = 0.175, matching the wreaths in every window of Model 1B)
+    // Holiday Wreath on Round Window
     if (winSpec.hasWreath) {
       const winWreath = createHolidayWreath(
-        Math.min(0.115, winSpec.width * 0.34),
-        0.036,
+        Math.min(0.115, winRadius * 0.52),
+        0.032,
         sharedMats.wreathGreenMat,
         sharedMats.crimsonBowMat,
         sharedMats.goldBowMat
       );
-      winWreath.position.set(0, 0.03, 0.175);
+      winWreath.position.set(0, 0, 0.078);
       winGroup.add(winWreath);
     }
 
     house.add(winGroup);
   }
 
-  // Festive Pine Garland Swag + Emissive Who-Land Fairy Lights draped between the eaves
+  // Festive Pine Garland Swag + Emissive Who-Land Fairy Lights draped across the wide upper eaves
   const swagPts: THREE.Vector3[] = [];
   const swagCount = 14;
   for (let i = 0; i <= swagCount; i++) {
     const u = i / swagCount;
-    const ang = (u - 0.5) * Math.PI * 0.82;
-    const sx = Math.sin(ang) * (halfW * 0.96);
-    const sz = Math.cos(ang) * frontSurfaceZ + 0.055;
-    const catenarySag = Math.sin(u * Math.PI * 2) * 0.08 - 0.12;
-    swagPts.push(new THREE.Vector3(sx, eaveY - 0.18 + catenarySag, sz));
+    const pt = getEavePoint(u);
+    const camber = Math.max(0, 1 - Math.pow(pt.x / (halfW * 1.15), 2)) * 0.032;
+    const catenarySag = Math.sin(u * Math.PI * 2) * 0.07 - 0.1;
+    swagPts.push(
+      new THREE.Vector3(
+        pt.x * 0.9,
+        pt.y - 0.12 + catenarySag,
+        frontSurfaceZ + camber + 0.042
+      )
+    );
   }
   const swagCurve = new THREE.CatmullRomCurve3(swagPts);
   const garlandSwag = new THREE.Mesh(
-    new THREE.TubeGeometry(swagCurve, 24, 0.032, 8, false),
+    new THREE.TubeGeometry(swagCurve, 24, 0.03, 8, false),
     sharedMats.wreathGreenMat
   );
   house.add(garlandSwag);
 
-  // Emissive Who-Land Fairy Lights woven along the house eave garland + warm doorway light
   const eaveFairyLights = createWhoLandFairyLightStrand(swagPts, {
     bulbCount: 16,
-    bulbRadiusM: 0.032,
+    bulbRadiusM: 0.03,
     emissiveIntensity: 3.0,
     pointLightCount: 1,
     pointLightIntensity: 0.65,
     pointLightDistance: 2.8,
   });
-  eaveFairyLights.position.z = 0.028;
+  eaveFairyLights.position.z = 0.025;
   house.add(eaveFairyLights);
 
   const doorFairyPts = archFramePts.map(
-    (p) => new THREE.Vector3(p.x, p.y, p.z + 0.032)
+    (p) => new THREE.Vector3(p.x, p.y, p.z + 0.028)
   );
   doorArchGroup.add(
     createWhoLandFairyLightStrand(doorFairyPts, {
       bulbCount: 11,
-      bulbRadiusM: 0.025,
+      bulbRadiusM: 0.024,
       emissiveIntensity: 2.8,
     })
   );
-
-  // ==========================================================================
-  // 7. GIANT ROOFTOP CANDY CANE & PORCH-SIDE CANDY CANE (`media_1791675333699_107601fe.jpg`)
-  // ==========================================================================
-  const caneSide: -1 | 1 = cfg.dormerSide === -1 ? 1 : -1;
-
-  // 7A. Oversized Rooftop Candy Cane sprouting from the snowy roof shoulder & curving over the street
-  const rooftopCandyCane = createGiantWhovilleCandyCane(
-    1.32,
-    0.115,
-    0.38,
-    caneSide,
-    sharedMats.giantCandyCaneMat,
-    sharedMats.snowCapMat,
-    false
-  );
-  rooftopCandyCane.position.set(
-    caneSide * (halfW * 0.48),
-    eaveY + 0.12,
-    0.04
-  );
-  rooftopCandyCane.rotation.z = caneSide * -0.24;
-  rooftopCandyCane.rotation.y = caneSide * -0.18;
-  house.add(rooftopCandyCane);
-
-  // 7B. Tall Street-Side Candy Cane planted in the snowdrift beside the house facade
-  const houseStreetCane = createGiantWhovilleCandyCane(
-    2.28,
-    0.092,
-    0.34,
-    caneSide,
-    sharedMats.giantCandyCaneMat,
-    sharedMats.snowCapMat,
-    true
-  );
-  houseStreetCane.position.set(
-    caneSide * (halfW + 0.24),
-    0.08,
-    frontSurfaceZ * 0.42
-  );
-  houseStreetCane.rotation.z = caneSide * -0.09;
-  houseStreetCane.rotation.y = caneSide * -0.22;
-  house.add(houseStreetCane);
 
   return house;
 }
 
 /**
- * 1. Builds the 3 Pink Whoville Round Houses (DSR, USR & MSL Wagons)
+ * 1. Builds the 3 Pink Whoville Upside-Down Trapezoid Houses (DSR, USR & MSL Wagons)
  *    for element `'grinch-whoville-houses'`.
  */
 export function buildGrinchWhovilleHouses(
@@ -1485,7 +1561,7 @@ export function buildGrinchWhovilleHouses(
   const snowCapMat = new THREE.MeshStandardMaterial({
     map: snowRoofTex,
     normalMap: papierMacheNormalTex,
-    normalScale: new THREE.Vector2(0.65, 0.65),
+    normalScale: new THREE.Vector2(0.28, 0.28),
     color: 0xbcd0d8,
     roughness: 0.62,
     metalness: 0.02,
@@ -1493,7 +1569,7 @@ export function buildGrinchWhovilleHouses(
   const snowShadeMat = new THREE.MeshStandardMaterial({
     map: rockTex,
     normalMap: papierMacheNormalTex,
-    normalScale: new THREE.Vector2(0.68, 0.68),
+    normalScale: new THREE.Vector2(0.28, 0.28),
     color: 0x9ab4cc,
     roughness: 0.66,
     metalness: 0.02,
@@ -1586,64 +1662,63 @@ export function buildGrinchWhovilleHouses(
     doorPanelMat,
   };
 
-  // DSR House (-3.35, 0, -3.05): Front steps end at z <= -2.46m (behind Papa Who's House at z = -1.98m)
-  // and right edge x ≈ -2.05m leaves 0.90m open walking lane from Center Tree Turntable (x = -1.15m)
+  // DSR House (-3.32, 0, -2.82): Upside-down exaggerated trapezoid with signature round windows
   const dsrConfig: WhovilleHouseConfig = {
     label: 'DSR',
-    position: new THREE.Vector3(-3.35, 0, -3.05),
+    position: new THREE.Vector3(-3.32, 0, -2.82),
     rotationY: 0.14,
-    widthM: 2.34,
-    heightM: 2.76,
-    depthScale: 0.38,
+    widthM: 2.26,
+    heightM: 2.84,
+    depthScale: 0.36,
     basePinkHex: '#d83e82',
     bellyPinkHex: '#f26aa8',
     stripePinkHex: '#b42464',
     ribColor: 0xc42e72,
-    doorX: 0.48,
-    doorWidth: 0.62,
-    doorHeight: 1.36,
-    doorTiltZ: -0.04,
+    doorX: 0.22,
+    doorWidth: 0.56,
+    doorHeight: 1.24,
+    doorTiltZ: -0.05,
     doorFrameStyle: 'candy',
     dormerSide: -1,
     chimneyLeanX: -0.14,
     chimneyStyle: 't-cap',
     windows: [
       {
-        x: -0.7,
-        y: 0.94,
-        width: 0.34,
-        height: 0.48,
-        tiltZ: 0.07,
+        x: -0.48,
+        y: 1.54,
+        width: 0.62,
+        height: 0.62,
+        tiltZ: 0.08,
         hasShutters: true,
         hasWreath: true,
       },
       {
-        x: -0.14,
-        y: 1.08,
-        width: 0.38,
-        height: 0.56,
-        tiltZ: -0.05,
-        hasShutters: true,
-        hasWreath: true,
+        x: 0.48,
+        y: 1.74,
+        width: 0.4,
+        height: 0.4,
+        tiltZ: -0.07,
+        hasShutters: false,
+        hasWreath: false,
       },
     ],
   };
 
-  // USR House (-2.12, 0, -5.02): Cleanly between the Center Tree Turntable (z = -3.55m) and Upstage Hills (z = -5.69m)
+  // USR House (-2.12, 0, -5.02): Upside-down exaggerated trapezoid with prominent center-left round window
   const usrConfig: WhovilleHouseConfig = {
     label: 'USR',
     position: new THREE.Vector3(-2.12, 0, -5.02),
     rotationY: 0.06,
-    widthM: 2.04,
-    heightM: 2.5,
-    depthScale: 0.36,
+    widthM: 1.98,
+    heightM: 2.58,
+    depthScale: 0.35,
     basePinkHex: '#ce468c',
     bellyPinkHex: '#ec72b2',
     stripePinkHex: '#a62868',
     ribColor: 0xb83276,
-    doorX: 0.22,
-    doorWidth: 0.56,
-    doorHeight: 1.24,
+    doorX: 0.18,
+    doorWidth: 0.5,
+    doorHeight: 1.16,
     doorTiltZ: 0.05,
     doorFrameStyle: 'olive',
     dormerSide: -1,
@@ -1651,55 +1726,64 @@ export function buildGrinchWhovilleHouses(
     chimneyStyle: 'bulb-pot',
     windows: [
       {
-        x: -0.5,
-        y: 0.98,
-        width: 0.36,
-        height: 0.5,
-        tiltZ: 0.06,
+        x: -0.4,
+        y: 1.44,
+        width: 0.56,
+        height: 0.56,
+        tiltZ: 0.07,
         hasShutters: true,
         hasWreath: true,
+      },
+      {
+        x: 0.38,
+        y: 1.62,
+        width: 0.36,
+        height: 0.36,
+        tiltZ: -0.06,
+        hasShutters: false,
+        hasWreath: false,
       },
     ],
   };
 
-  // MSL House (+3.25, 0, -3.15): Left edge x ≈ +1.95m leaves 0.80m open walking lane from Center Tree Turntable (x = +1.15m)
+  // MSL House (+3.22, 0, -2.88): Upside-down exaggerated trapezoid with large upper round windows
   const mslConfig: WhovilleHouseConfig = {
     label: 'MSL',
-    position: new THREE.Vector3(3.25, 0, -3.15),
+    position: new THREE.Vector3(3.22, 0, -2.88),
     rotationY: -0.14,
-    widthM: 2.3,
-    heightM: 2.72,
-    depthScale: 0.38,
+    widthM: 2.22,
+    heightM: 2.8,
+    depthScale: 0.36,
     basePinkHex: '#dc4286',
     bellyPinkHex: '#f46ea8',
     stripePinkHex: '#b82666',
     ribColor: 0xc83074,
-    doorX: -0.46,
-    doorWidth: 0.62,
-    doorHeight: 1.34,
-    doorTiltZ: 0.04,
+    doorX: -0.22,
+    doorWidth: 0.56,
+    doorHeight: 1.22,
+    doorTiltZ: 0.05,
     doorFrameStyle: 'candy',
     dormerSide: 1,
     chimneyLeanX: -0.18,
     chimneyStyle: 'keyhole-pot',
     windows: [
       {
-        x: 0.16,
-        y: 0.78,
-        width: 0.22,
-        height: 0.32,
-        tiltZ: -0.06,
-        hasShutters: false,
-        hasWreath: false,
-      },
-      {
-        x: 0.66,
-        y: 1.02,
-        width: 0.36,
-        height: 0.52,
-        tiltZ: -0.07,
+        x: 0.46,
+        y: 1.52,
+        width: 0.62,
+        height: 0.62,
+        tiltZ: -0.08,
         hasShutters: true,
         hasWreath: true,
+      },
+      {
+        x: -0.46,
+        y: 1.7,
+        width: 0.4,
+        height: 0.4,
+        tiltZ: 0.06,
+        hasShutters: false,
+        hasWreath: false,
       },
     ],
   };
@@ -1708,8 +1792,7 @@ export function buildGrinchWhovilleHouses(
   housesGroup.add(buildSingleWhovilleHouse(usrConfig, sharedMats));
   housesGroup.add(buildSingleWhovilleHouse(mslConfig, sharedMats));
 
-  // Freestanding Oversized Whoville Street Candy Canes planted in snowdrifts along the town square
-  // (`media_1791675333699_107601fe.jpg`)
+  // Two subtle, well-proportioned street candy canes tucked along the upstage village lanes
   const townCandyCaneSpecs: ReadonlyArray<{
     x: number;
     z: number;
@@ -1720,60 +1803,27 @@ export function buildGrinchWhovilleHouses(
     rotY: number;
     tiltZ: number;
   }> = [
-    // Stage Right street lane between DSR & USR houses
+    // Upstage Right lane between DSR & USR houses
     {
-      x: -2.42,
+      x: -2.28,
       z: -3.95,
-      heightM: 2.58,
-      tubeR: 0.105,
-      hookR: 0.38,
+      heightM: 1.64,
+      tubeR: 0.072,
+      hookR: 0.24,
       hookDir: 1,
-      rotY: 0.22,
-      tiltZ: -0.08,
-    },
-    // Stage Left street lane just upstage of MSL house
-    {
-      x: 2.32,
-      z: -4.12,
-      heightM: 2.52,
-      tubeR: 0.102,
-      hookR: 0.37,
-      hookDir: -1,
-      rotY: -0.24,
-      tiltZ: 0.09,
-    },
-    // Upstage Left avenue candy cane arch
-    {
-      x: 1.54,
-      z: -4.88,
-      heightM: 2.24,
-      tubeR: 0.094,
-      hookR: 0.33,
-      hookDir: -1,
-      rotY: -0.15,
-      tiltZ: 0.07,
-    },
-    // Upstage Center-Right village lane candy cane
-    {
-      x: -0.88,
-      z: -4.92,
-      heightM: 2.18,
-      tubeR: 0.09,
-      hookR: 0.32,
-      hookDir: 1,
-      rotY: 0.18,
+      rotY: 0.2,
       tiltZ: -0.06,
     },
-    // Far Stage Right avenue candy cane beside DSR house
+    // Upstage Left lane behind MSL house
     {
-      x: -3.72,
-      z: -4.25,
-      heightM: 2.38,
-      tubeR: 0.096,
-      hookR: 0.35,
-      hookDir: 1,
-      rotY: 0.32,
-      tiltZ: -0.1,
+      x: 2.18,
+      z: -4.08,
+      heightM: 1.6,
+      tubeR: 0.07,
+      hookR: 0.23,
+      hookDir: -1,
+      rotY: -0.22,
+      tiltZ: 0.07,
     },
   ];
 
@@ -2229,11 +2279,11 @@ export function buildGrinchWhovilleTree(
   ]);
   const caneGeo = new THREE.TubeGeometry(caneHookCurve, 18, 0.02, 8, false);
 
-  for (let c = 0; c < 8; c++) {
-    const t = (c + 0.5) / 8.5;
-    const y = 0.8 + t * 2.42;
+  for (let c = 0; c < 4; c++) {
+    const t = (c + 0.5) / 4.5;
+    const y = 0.85 + t * 2.25;
     const spine = getSpineOffset(y);
-    const angle = c * 0.85 - 2.6;
+    const angle = c * 1.65 - 2.4;
     const rad = (1.02 - t * 0.76) + 0.065;
 
     const cane = new THREE.Mesh(caneGeo, candyCaneMat);
