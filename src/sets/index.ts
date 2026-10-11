@@ -30,7 +30,11 @@ import {
 } from './shared-scenic-helpers.ts';
 import type { ProductionSetModule, ScenicTexturesBundle } from './types.ts';
 
-export { DEFAULT_RIGGING_BATTENS, MCCOLL_52_LINESET_SCHEDULE } from './shared-scenic-helpers.ts';
+export {
+  DEFAULT_RIGGING_BATTENS,
+  MCCOLL_52_LINESET_SCHEDULE,
+  updateRegisteredFairyLights,
+} from './shared-scenic-helpers.ts';
 
 export const PRODUCTION_SET_MODULES: ReadonlyArray<ProductionSetModule> = [
   grinchSet,
@@ -76,16 +80,71 @@ export function buildProductionSetsController(): ProductionSetsController {
   const root = new THREE.Group();
   root.name = 'ProductionSetsRoot';
 
+  let cachedGrinchFloorTex: THREE.CanvasTexture | null = null;
+  let cachedAliceFloorTex: THREE.CanvasTexture | null = null;
+  let cachedSorFloorTex: THREE.CanvasTexture | null = null;
+  let cachedChalkboardTex: THREE.CanvasTexture | null = null;
+  let cachedRedVelourTex: THREE.CanvasTexture | null = null;
+  let cachedBlackVelourTex: THREE.CanvasTexture | null = null;
+  let cachedBarnWoodTex: THREE.CanvasTexture | null = null;
+  let cachedLibraryBooksTex: THREE.CanvasTexture | null = null;
+  let cachedYellowBrickTex: THREE.CanvasTexture | null = null;
+
   const textures: ScenicTexturesBundle = {
-    grinchSnowFloorTexture: createGrinchSnowFloorTexture(),
-    aliceFloorTexture: createAliceRayStageFloorTexture(),
-    schoolOfRockFloorTexture: createSchoolOfRockFloorTexture(),
-    chalkboardTex: createChalkboardTexture(),
-    redVelourTex: createVelourCurtainTexture([156, 20, 30], 14),
-    blackVelourTex: createVelourCurtainTexture([22, 24, 30], 12),
-    barnWoodTex: createBarnWoodTexture(),
-    libraryBooksTex: createLibraryBooksTexture(),
-    yellowBrickTex: createYellowBrickTexture(),
+    get grinchSnowFloorTexture() {
+      if (!cachedGrinchFloorTex) {
+        cachedGrinchFloorTex = createGrinchSnowFloorTexture();
+      }
+      return cachedGrinchFloorTex;
+    },
+    get aliceFloorTexture() {
+      if (!cachedAliceFloorTex) {
+        cachedAliceFloorTex = createAliceRayStageFloorTexture();
+      }
+      return cachedAliceFloorTex;
+    },
+    get schoolOfRockFloorTexture() {
+      if (!cachedSorFloorTex) {
+        cachedSorFloorTex = createSchoolOfRockFloorTexture();
+      }
+      return cachedSorFloorTex;
+    },
+    get chalkboardTex() {
+      if (!cachedChalkboardTex) {
+        cachedChalkboardTex = createChalkboardTexture();
+      }
+      return cachedChalkboardTex;
+    },
+    get redVelourTex() {
+      if (!cachedRedVelourTex) {
+        cachedRedVelourTex = createVelourCurtainTexture([156, 20, 30], 14);
+      }
+      return cachedRedVelourTex;
+    },
+    get blackVelourTex() {
+      if (!cachedBlackVelourTex) {
+        cachedBlackVelourTex = createVelourCurtainTexture([22, 24, 30], 12);
+      }
+      return cachedBlackVelourTex;
+    },
+    get barnWoodTex() {
+      if (!cachedBarnWoodTex) {
+        cachedBarnWoodTex = createBarnWoodTexture();
+      }
+      return cachedBarnWoodTex;
+    },
+    get libraryBooksTex() {
+      if (!cachedLibraryBooksTex) {
+        cachedLibraryBooksTex = createLibraryBooksTexture();
+      }
+      return cachedLibraryBooksTex;
+    },
+    get yellowBrickTex() {
+      if (!cachedYellowBrickTex) {
+        cachedYellowBrickTex = createYellowBrickTexture();
+      }
+      return cachedYellowBrickTex;
+    },
   };
 
   // Upstage Cyclorama Screen (z = -9.1m)
@@ -130,12 +189,26 @@ export function buildProductionSetsController(): ProductionSetsController {
   root.add(maskingGroup);
   registerElement('black-velour-masking', maskingGroup, 1);
 
-  // Build each modular production set from its dedicated file in src/sets/
-  for (const mod of PRODUCTION_SET_MODULES) {
+  const ensureProductionBuilt = (id: ProductionId): THREE.Group | null => {
+    const existing = productionGroups.get(id);
+    if (existing) {
+      return existing;
+    }
+    const mod = PRODUCTION_SET_MODULES.find((m) => m.spec.id === id);
+    if (!mod) {
+      return null;
+    }
     const group = mod.build({ registerElement, textures });
-    group.visible = mod.spec.id === 'grinch';
+    group.visible = false;
     root.add(group);
-    productionGroups.set(mod.spec.id, group);
+    productionGroups.set(id, group);
+    return group;
+  };
+
+  // Build only the initial active production ('grinch') at startup; other shows build lazily on demand
+  const initialGrinchGroup = ensureProductionBuilt('grinch');
+  if (initialGrinchGroup) {
+    initialGrinchGroup.visible = true;
   }
 
   // Custom Set Piece Authoring Layer
@@ -224,12 +297,19 @@ export function buildProductionSetsController(): ProductionSetsController {
     root,
     customPiecesGroup,
     cycMesh,
-    grinchSnowFloorTexture: textures.grinchSnowFloorTexture,
-    aliceFloorTexture: textures.aliceFloorTexture,
-    schoolOfRockFloorTexture: textures.schoolOfRockFloorTexture,
+    get grinchSnowFloorTexture() {
+      return textures.grinchSnowFloorTexture;
+    },
+    get aliceFloorTexture() {
+      return textures.aliceFloorTexture;
+    },
+    get schoolOfRockFloorTexture() {
+      return textures.schoolOfRockFloorTexture;
+    },
 
     setActiveProduction(id: ProductionId): ProductionSpec {
       activeProductionId = id;
+      ensureProductionBuilt(id);
       for (const [pid, grp] of productionGroups.entries()) {
         grp.visible = pid === id;
       }

@@ -68,23 +68,23 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
       }
     }
 
-    // 3. Horizontally periodic Seussian charcoal-black ink contour strata (integer harmonics of W)
+    // 3. Horizontally periodic Seussian contour strata (integer harmonics of W)
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let row = 0; row < 20; row++) {
-      const baseY = 26 + row * 50;
+    for (let row = 0; row < 10; row++) {
+      const baseY = 50 + row * 100;
       const waveAt = (x: number): number => {
         const u = (x / W) * Math.PI * 2;
         return (
           Math.sin(u * 2 + row * 0.85) * 14 +
-          Math.cos(u * 5 - row * 1.1) * 7
+          Math.cos(u * 4 - row * 1.1) * 6
         );
       };
 
       // Upper frost highlight lip above each rock seam (toned <= 0xd8)
-      ctx.strokeStyle = 'rgba(202, 214, 216, 0.44)';
-      ctx.lineWidth = row % 3 === 0 ? 3.4 : 2.2;
+      ctx.strokeStyle = 'rgba(202, 214, 216, 0.24)';
+      ctx.lineWidth = row % 2 === 0 ? 2.6 : 1.8;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
         const wy = baseY - 3 + waveAt(x);
@@ -94,8 +94,8 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
       ctx.stroke();
 
       // Deep cobalt shadow band immediately below the ink fissure
-      ctx.strokeStyle = 'rgba(32, 58, 108, 0.36)';
-      ctx.lineWidth = 7.0;
+      ctx.strokeStyle = 'rgba(32, 58, 108, 0.22)';
+      ctx.lineWidth = 6.0;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
         const wy = baseY + 4 + waveAt(x);
@@ -104,9 +104,9 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
       }
       ctx.stroke();
 
-      // Charcoal-black Seussian contour line
-      ctx.strokeStyle = 'rgba(14, 20, 36, 0.82)';
-      ctx.lineWidth = row % 3 === 0 ? 4.4 : 2.8;
+      // Subtle Seussian contour line
+      ctx.strokeStyle = 'rgba(22, 32, 54, 0.36)';
+      ctx.lineWidth = row % 2 === 0 ? 2.6 : 1.8;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
         const wy = baseY + waveAt(x);
@@ -114,69 +114,20 @@ function createCaveStriatedRockTexture(): THREE.CanvasTexture {
         else ctx.lineTo(x, wy);
       }
       ctx.stroke();
-
-      // Short perpendicular Seussian comb/fringe shadow tick-hatches along strata ledges
-      ctx.lineWidth = 2.0;
-      const stepX = row % 2 === 0 ? 16 : 24;
-      for (let x = 18; x < W - 18; x += stepX + ((row + x) % 10)) {
-        const wy = baseY + waveAt(x);
-        const tickLen = 11 + ((x * 3 + row * 7) % 18);
-        const tilt = ((x % 5) - 2) * 0.15;
-        ctx.beginPath();
-        ctx.moveTo(x, wy);
-        ctx.lineTo(x + Math.sin(tilt) * tickLen, wy + tickLen);
-        ctx.stroke();
-      }
     }
 
-    // 4. Curved Dr. Seuss cross-hatch clusters in rock hollows (kept inside tile bounds)
-    ctx.strokeStyle = 'rgba(16, 24, 42, 0.56)';
-    ctx.lineWidth = 1.8;
-    for (let c = 0; c < 42; c++) {
+    // 4. Subtle Dr. Seuss cross-hatch accents in rock hollows
+    ctx.strokeStyle = 'rgba(22, 32, 54, 0.24)';
+    ctx.lineWidth = 1.6;
+    for (let c = 0; c < 18; c++) {
       const cx = ((c * 229) % 880) + 52;
       const cy = ((c * 167) % 880) + 52;
-      const count = 5 + (c % 4);
-      for (let h = 0; h < count; h++) {
+      for (let h = 0; h < 4; h++) {
         ctx.beginPath();
-        ctx.moveTo(cx + h * 7, cy);
-        ctx.quadraticCurveTo(cx + h * 7 + 10, cy + 16, cx + h * 7 + 20, cy + 32);
+        ctx.moveTo(cx + h * 8, cy);
+        ctx.quadraticCurveTo(cx + h * 8 + 10, cy + 16, cx + h * 8 + 20, cy + 30);
         ctx.stroke();
       }
-      for (let h = 0; h < count - 1; h++) {
-        ctx.beginPath();
-        ctx.moveTo(cx - 4, cy + h * 7 + 5);
-        ctx.quadraticCurveTo(cx + 14, cy + h * 7 + 12, cx + 34, cy + h * 7 + 18);
-        ctx.stroke();
-      }
-    }
-
-    // 5. Zig-zag Seussian crag lightning-hatch scribbles & scenic spatter
-    ctx.lineWidth = 2.8;
-    for (let z = 0; z < 28; z++) {
-      const sx = ((z * 137) % 880) + 60;
-      const sy = ((z * 193) % 880) + 60;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(sx + 26, sy - 14);
-      ctx.lineTo(sx + 12, sy + 8);
-      ctx.lineTo(sx + 42, sy - 6);
-      ctx.lineTo(sx + 24, sy + 18);
-      ctx.stroke();
-    }
-
-    for (let sp = 0; sp < 480; sp++) {
-      const px = (sp * 283 + 19) % W;
-      const py = (sp * 199 + 47) % H;
-      const pr = 1.0 + (sp % 3) * 0.85;
-      ctx.fillStyle =
-        sp % 3 === 0
-          ? 'rgba(202, 212, 216, 0.28)'
-          : sp % 3 === 1
-            ? 'rgba(22, 34, 58, 0.30)'
-            : 'rgba(92, 144, 198, 0.25)';
-      ctx.beginPath();
-      ctx.arc(px, py, pr, 0, Math.PI * 2);
-      ctx.fill();
     }
   }
 

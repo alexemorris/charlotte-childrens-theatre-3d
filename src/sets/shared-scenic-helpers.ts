@@ -1925,12 +1925,40 @@ export function buildSoftMaskingLegsAndBorders(
 }
 
 let cachedPaintedIcicleTex: THREE.CanvasTexture | null = null;
+const cachedIcicleMaterials = new Map<string, THREE.MeshStandardMaterial>();
+
+const noopRaycast = (): void => {
+  // Purely decorative details (icicles, fairy cords/sockets/bulbs/halos) skip pointer raycasting
+};
+
+function getPooledIcicleMaterial(
+  sourceMat: THREE.Material
+): THREE.Material {
+  if (!(sourceMat instanceof THREE.MeshStandardMaterial)) {
+    return sourceMat;
+  }
+  const hex = sourceMat.color.getHexString();
+  const rough = Math.max(0.52, sourceMat.roughness).toFixed(2);
+  const metal = Math.max(0.06, sourceMat.metalness).toFixed(2);
+  const key = `${hex}_${rough}_${metal}`;
+  let pooled = cachedIcicleMaterials.get(key);
+  if (!pooled) {
+    pooled = new THREE.MeshStandardMaterial({
+      map: getPaintedIcicleCutoutTexture(),
+      color: sourceMat.color,
+      roughness: Math.max(0.52, sourceMat.roughness),
+      metalness: Math.max(0.06, sourceMat.metalness),
+      flatShading: true,
+    });
+    cachedIcicleMaterials.set(key, pooled);
+  }
+  return pooled;
+}
 
 /**
  * Generates a cached Scenic Artist Trompe-l'oeil Painted Ice & Snow-Drip Texture
  * for 3-axis CNC-routed 15mm–18mm plywood icicle cutouts: painted glacier-blue
- * bevel facets, crisp central specular white highlights, and Seussian charcoal
- * ink cross-hatching that gives flat timber cutouts convincing 3D depth.
+ * bevel facets and crisp central specular highlights.
  */
 export function getPaintedIcicleCutoutTexture(): THREE.CanvasTexture {
   if (cachedPaintedIcicleTex) {
@@ -1943,45 +1971,33 @@ export function getPaintedIcicleCutoutTexture(): THREE.CanvasTexture {
   if (ctx) {
     // Vertical glacier-blue to frost-white scenic paint wash
     const vGrad = ctx.createLinearGradient(0, 0, 0, 512);
-    vGrad.addColorStop(0, '#8cb4d8');
-    vGrad.addColorStop(0.38, '#b8d2e6');
+    vGrad.addColorStop(0, '#92b8da');
+    vGrad.addColorStop(0.38, '#bad2e5');
     vGrad.addColorStop(0.78, '#cde0ee');
-    vGrad.addColorStop(1, '#98bfe0');
+    vGrad.addColorStop(1, '#9ec2e0');
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Trompe-l'oeil vertical painted ice facets & specular highlight ribbons
-    for (let x = 24; x < 512; x += 48) {
-      const facetGrad = ctx.createLinearGradient(x - 18, 0, x + 22, 0);
-      facetGrad.addColorStop(0, 'rgba(72, 112, 164, 0.36)');
-      facetGrad.addColorStop(0.45, 'rgba(232, 245, 255, 0.52)');
-      facetGrad.addColorStop(1, 'rgba(84, 128, 178, 0.34)');
+    // Subtle vertical painted ice facets & specular highlight ribbons
+    for (let x = 24; x < 512; x += 64) {
+      const facetGrad = ctx.createLinearGradient(x - 20, 0, x + 24, 0);
+      facetGrad.addColorStop(0, 'rgba(72, 112, 164, 0.20)');
+      facetGrad.addColorStop(0.45, 'rgba(232, 245, 255, 0.34)');
+      facetGrad.addColorStop(1, 'rgba(84, 128, 178, 0.18)');
       ctx.fillStyle = facetGrad;
-      ctx.fillRect(x - 18, 0, 40, 512);
+      ctx.fillRect(x - 20, 0, 44, 512);
     }
 
-    // Horizontal painted melt-ring glazes
-    ctx.strokeStyle = 'rgba(236, 248, 255, 0.45)';
-    ctx.lineWidth = 5;
-    for (let y = 52; y < 480; y += 68) {
+    // Gentle horizontal melt-ring glazes
+    ctx.strokeStyle = 'rgba(232, 244, 252, 0.26)';
+    ctx.lineWidth = 4;
+    for (let y = 64; y < 480; y += 96) {
       ctx.beginPath();
       for (let x = 0; x <= 512; x += 32) {
-        const wave = Math.sin((x / 512) * Math.PI * 6 + y * 0.04) * 7;
+        const wave = Math.sin((x / 512) * Math.PI * 4 + y * 0.04) * 5;
         if (x === 0) ctx.moveTo(x, y + wave);
         else ctx.lineTo(x, y + wave);
       }
-      ctx.stroke();
-    }
-
-    // Scenic artist Seussian charcoal-blue ink cross-hatching
-    ctx.strokeStyle = 'rgba(26, 44, 72, 0.34)';
-    ctx.lineWidth = 2.2;
-    for (let i = 0; i < 84; i++) {
-      const hx = (i * 59) % 496;
-      const hy = (i * 43) % 496;
-      ctx.beginPath();
-      ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 22, hy - 9);
       ctx.stroke();
     }
   }
@@ -2039,7 +2055,7 @@ export function createSculptedIcicleDrip(
     bevelThickness: 0.005,
     bevelSize: 0.004,
     bevelSegments: 1,
-    curveSegments: 2,
+    curveSegments: 1,
   });
   geom.translate(0, 0, -plyThicknessM * 0.5);
 
@@ -2064,19 +2080,11 @@ export function createSculptedIcicleDrip(
   }
   geom.computeVertexNormals();
 
-  const paintedMat =
-    material instanceof THREE.MeshStandardMaterial
-      ? new THREE.MeshStandardMaterial({
-          map: getPaintedIcicleCutoutTexture(),
-          color: material.color,
-          roughness: Math.max(0.52, material.roughness),
-          metalness: Math.max(0.06, material.metalness),
-          flatShading: true,
-        })
-      : material;
+  const paintedMat = getPooledIcicleMaterial(material);
 
   const mesh = new THREE.Mesh(geom, paintedMat);
-  mesh.castShadow = true;
+  mesh.castShadow = false;
+  mesh.raycast = noopRaycast;
   return mesh;
 }
 
@@ -2142,7 +2150,7 @@ export function createSeussianIcicleValance(
     bevelThickness: 0.005,
     bevelSize: 0.004,
     bevelSegments: 1,
-    curveSegments: 2,
+    curveSegments: 1,
   });
   extrudeGeom.translate(0, 0, -plyDepth / 2);
 
@@ -2159,25 +2167,19 @@ export function createSeussianIcicleValance(
   }
   extrudeGeom.computeVertexNormals();
 
-  const paintedFrontMat =
-    frontMaterial instanceof THREE.MeshStandardMaterial
-      ? new THREE.MeshStandardMaterial({
-          map: getPaintedIcicleCutoutTexture(),
-          color: frontMaterial.color,
-          roughness: Math.max(0.52, frontMaterial.roughness),
-          metalness: Math.max(0.06, frontMaterial.metalness),
-          flatShading: true,
-        })
-      : frontMaterial;
+  const paintedFrontMat = getPooledIcicleMaterial(frontMaterial);
 
   const frontMesh = new THREE.Mesh(extrudeGeom, paintedFrontMat);
-  frontMesh.castShadow = true;
+  frontMesh.castShadow = false;
+  frontMesh.raycast = noopRaycast;
   group.add(frontMesh);
 
   if (glazeBackMaterial) {
     const backMesh = new THREE.Mesh(extrudeGeom, glazeBackMaterial);
     backMesh.scale.set(1.01, 1.05, 0.72);
     backMesh.position.set(0, -0.018, -0.022);
+    backMesh.castShadow = false;
+    backMesh.raycast = noopRaycast;
     group.add(backMesh);
   }
 
@@ -2211,6 +2213,41 @@ const DEFAULT_WHO_FAIRY_PALETTE: ReadonlyArray<number> = [
 ];
 
 let cachedFairyGlowSpriteTex: THREE.CanvasTexture | null = null;
+let sharedUnitBulbGeo: THREE.SphereGeometry | null = null;
+let sharedUnitSocketGeo: THREE.CylinderGeometry | null = null;
+let sharedFairySocketMat: THREE.MeshStandardMaterial | null = null;
+const sharedFairyCordMats = new Map<number, THREE.MeshStandardMaterial>();
+const sharedFairyBulbMats = new Map<string, THREE.MeshStandardMaterial>();
+const sharedFairySpriteMats = new Map<number, THREE.SpriteMaterial>();
+const registeredFairyPointLights: THREE.PointLight[] = [];
+
+/**
+ * Updates all registered Who-Land fairy light bulb materials, halo sprite materials,
+ * and practical `THREE.PointLight`s in $O(1)$ without traversing the 3D scene graph.
+ */
+export function updateRegisteredFairyLights(practicalsLevel: number): void {
+  for (const mat of sharedFairyBulbMats.values()) {
+    const baseEmissive =
+      typeof mat.userData.baseEmissiveIntensity === 'number'
+        ? mat.userData.baseEmissiveIntensity
+        : 1.85;
+    mat.emissiveIntensity = baseEmissive * practicalsLevel;
+  }
+  for (const mat of sharedFairySpriteMats.values()) {
+    const baseOp =
+      typeof mat.userData.baseOpacity === 'number'
+        ? mat.userData.baseOpacity
+        : 0.85;
+    mat.opacity = Math.min(1.0, baseOp * practicalsLevel);
+  }
+  for (const pt of registeredFairyPointLights) {
+    const baseInt =
+      typeof pt.userData.baseIntensity === 'number'
+        ? pt.userData.baseIntensity
+        : 1.15;
+    pt.intensity = baseInt * practicalsLevel;
+  }
+}
 
 /**
  * Generates a cached soft radial glow & subtle 4-point twinkle sprite texture
@@ -2263,10 +2300,6 @@ function getFairyLightGlowSpriteTexture(): THREE.CanvasTexture {
   return tex;
 }
 
-const noopRaycast = (): void => {
-  // Glow sprites are purely visual; ignore during pointer raycasting
-};
-
 /**
  * Builds a Multi-Colored Emissive Who-Land Fairy Light Strand (`createWhoLandFairyLightStrand`)
  * draped along `waypoints` with optional catenary sag between points, a dark
@@ -2315,45 +2348,48 @@ export function createWhoLandFairyLightStrand(
   }
 
   const curve = new THREE.CatmullRomCurve3(curvePts);
-  const cordMat = new THREE.MeshStandardMaterial({
-    color: options.cordColor ?? 0x163022,
-    roughness: 0.65,
-    metalness: 0.2,
-  });
-  const socketMat = new THREE.MeshStandardMaterial({
-    color: 0xd4a638,
-    roughness: 0.35,
-    metalness: 0.72,
-  });
+  const cordCol = options.cordColor ?? 0x163022;
+  let cordMat = sharedFairyCordMats.get(cordCol);
+  if (!cordMat) {
+    cordMat = new THREE.MeshStandardMaterial({
+      color: cordCol,
+      roughness: 0.65,
+      metalness: 0.2,
+    });
+    sharedFairyCordMats.set(cordCol, cordMat);
+  }
+  if (!sharedFairySocketMat) {
+    sharedFairySocketMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a638,
+      roughness: 0.35,
+      metalness: 0.72,
+    });
+  }
+  if (!sharedUnitBulbGeo) {
+    sharedUnitBulbGeo = new THREE.SphereGeometry(1, 8, 6);
+  }
+  if (!sharedUnitSocketGeo) {
+    sharedUnitSocketGeo = new THREE.CylinderGeometry(0.42, 0.5, 0.72, 6);
+  }
 
-  const cordSegments = Math.max(24, bulbCount * 2);
+  const cordSegments = Math.max(18, bulbCount * 2);
   const cordMesh = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, cordSegments, cordRadiusM, 6, false),
+    new THREE.TubeGeometry(curve, cordSegments, cordRadiusM, 5, false),
     cordMat
   );
+  cordMesh.raycast = noopRaycast;
   strandGroup.add(cordMesh);
 
-  const bulbGeo = new THREE.SphereGeometry(bulbRadiusM, 10, 8);
-  const socketGeo = new THREE.CylinderGeometry(
-    bulbRadiusM * 0.42,
-    bulbRadiusM * 0.5,
-    bulbRadiusM * 0.72,
-    6
-  );
-
   const glowTex = getFairyLightGlowSpriteTexture();
-  const bulbMatCache = new Map<number, THREE.MeshStandardMaterial>();
-  const spriteMatCache = new Map<number, THREE.SpriteMaterial>();
 
   for (let i = 0; i < bulbCount; i++) {
     const t = bulbCount === 1 ? 0.5 : (i + 0.5) / bulbCount;
     const pt = curve.getPoint(t);
     const col = palette[i % palette.length] ?? 0xff1438;
+    const bulbKey = `${col}_${baseEmissive.toFixed(2)}`;
 
-    let bulbMat = bulbMatCache.get(col);
+    let bulbMat = sharedFairyBulbMats.get(bulbKey);
     if (!bulbMat) {
-      // Blend 25% white into the base albedo so the bulb center looks hot and luminous,
-      // while keeping the emissive color 100% pure saturated hue
       const coreTint = new THREE.Color(col).lerp(new THREE.Color(0xffffff), 0.28);
       bulbMat = new THREE.MeshStandardMaterial({
         color: coreTint,
@@ -2365,10 +2401,10 @@ export function createWhoLandFairyLightStrand(
       });
       bulbMat.userData.isFairyLightMaterial = true;
       bulbMat.userData.baseEmissiveIntensity = baseEmissive;
-      bulbMatCache.set(col, bulbMat);
+      sharedFairyBulbMats.set(bulbKey, bulbMat);
     }
 
-    let spriteMat = spriteMatCache.get(col);
+    let spriteMat = sharedFairySpriteMats.get(col);
     if (!spriteMat) {
       spriteMat = new THREE.SpriteMaterial({
         map: glowTex,
@@ -2381,21 +2417,28 @@ export function createWhoLandFairyLightStrand(
       });
       spriteMat.userData.isFairyHaloMaterial = true;
       spriteMat.userData.baseOpacity = 0.85;
-      spriteMatCache.set(col, spriteMat);
+      sharedFairySpriteMats.set(col, spriteMat);
     }
 
-    const socket = new THREE.Mesh(socketGeo, socketMat);
+    const socket = new THREE.Mesh(sharedUnitSocketGeo, sharedFairySocketMat);
+    socket.scale.setScalar(bulbRadiusM);
     socket.position.set(pt.x, pt.y - bulbRadiusM * 0.28, pt.z);
+    socket.raycast = noopRaycast;
     strandGroup.add(socket);
 
-    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-    bulb.scale.set(0.86, 1.34, 0.86);
+    const bulb = new THREE.Mesh(sharedUnitBulbGeo, bulbMat);
+    bulb.scale.set(
+      bulbRadiusM * 0.86,
+      bulbRadiusM * 1.34,
+      bulbRadiusM * 0.86
+    );
     bulb.position.set(
       pt.x,
       pt.y - bulbRadiusM * 1.1,
       pt.z + bulbRadiusM * 0.18
     );
     bulb.rotation.z = ((i % 3) - 1) * 0.16;
+    bulb.raycast = noopRaycast;
     bulb.userData.isFairyLightBulb = true;
     bulb.userData.baseEmissiveIntensity = baseEmissive;
     strandGroup.add(bulb);
@@ -2432,6 +2475,7 @@ export function createWhoLandFairyLightStrand(
       ptLight.position.set(lPt.x, lPt.y - bulbRadiusM * 1.2, lPt.z + 0.14);
       ptLight.userData.isFairyPointLight = true;
       ptLight.userData.baseIntensity = lightIntensity;
+      registeredFairyPointLights.push(ptLight);
       strandGroup.add(ptLight);
     }
   }

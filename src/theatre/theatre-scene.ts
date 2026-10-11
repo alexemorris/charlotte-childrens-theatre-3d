@@ -8,6 +8,7 @@ import {
   DEFAULT_RIGGING_BATTENS,
   PRODUCTION_CATALOG,
   type ProductionSetsController,
+  updateRegisteredFairyLights,
 } from '../sets/index.ts';
 import type {
   AudienceEyeMode,
@@ -215,6 +216,8 @@ export class TheatreSceneController {
   private seatBaseYaw = 0;
   private seatBasePitch = 0;
   private isDraggingSeatLook = false;
+  private isOrbitDragging = false;
+  private lastHoverRayTimeMs = 0;
   private dragStartClientX = 0;
   private dragStartClientY = 0;
   private pointerDownClientX = 0;
@@ -294,6 +297,8 @@ export class TheatreSceneController {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.autoUpdate = false;
+    this.renderer.shadowMap.needsUpdate = true;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.85;
 
@@ -344,7 +349,7 @@ export class TheatreSceneController {
     this.architecture = buildMcCollTheatreArchitecture(this.seats);
     this.scene.add(this.architecture.root);
 
-    // 3. Build 8 Switchable Production Sets
+    // 3. Build Switchable Production Sets (lazy builds non-Grinch sets on demand)
     this.productionSets = buildProductionSetsController();
     this.scene.add(this.productionSets.root);
 
@@ -363,6 +368,10 @@ export class TheatreSceneController {
 
     // 6. Bind viewport pointer & keyboard interactions
     this.bindEvents();
+  }
+
+  private requestShadowMapUpdate(): void {
+    this.renderer.shadowMap.needsUpdate = true;
   }
 
   private buildLightingRig(): void {
@@ -687,40 +696,9 @@ export class TheatreSceneController {
       }
     }
 
-    // Live Who-Land Fairy Lights & Practicals Dimmer
-    const pLevel = s.practicalsLevel;
-    this.productionSets.root.traverse((obj) => {
-      if ((obj as THREE.PointLight).isPointLight && obj.userData.isFairyPointLight) {
-        const pt = obj as THREE.PointLight;
-        const baseInt =
-          typeof obj.userData.baseIntensity === 'number'
-            ? obj.userData.baseIntensity
-            : 1.5;
-        pt.intensity = baseInt * pLevel;
-      } else if ((obj as THREE.Mesh).isMesh || (obj as THREE.Sprite).isSprite) {
-        const mat = (obj as THREE.Mesh).material as
-          | (THREE.Material & {
-              emissiveIntensity?: number;
-              opacity?: number;
-              userData: Record<string, unknown>;
-            })
-          | undefined;
-        if (!mat || !mat.userData) return;
-        if (mat.userData.isFairyLightMaterial) {
-          const baseEmissive =
-            typeof mat.userData.baseEmissiveIntensity === 'number'
-              ? mat.userData.baseEmissiveIntensity
-              : 1.85;
-          mat.emissiveIntensity = baseEmissive * pLevel;
-        } else if (mat.userData.isFairyHaloMaterial) {
-          const baseOp =
-            typeof mat.userData.baseOpacity === 'number'
-              ? mat.userData.baseOpacity
-              : 0.92;
-          mat.opacity = Math.min(1.0, baseOp * pLevel);
-        }
-      }
-    });
+    // Live Who-Land Fairy Lights & Practicals Dimmer (O(1) material/light registry update)
+    updateRegisteredFairyLights(s.practicalsLevel);
+    this.requestShadowMapUpdate();
   }
 
   public setLightingPreset(preset: LightingPresetId): LightingState {
@@ -829,6 +807,7 @@ export class TheatreSceneController {
     this.syncStageFloorTexture();
     this.applyLightingState();
     this.refreshSeatColorsAndMetrics();
+    this.requestShadowMapUpdate();
     this.callbacks.onProductionChanged?.(spec);
     if (activeScene) {
       this.callbacks.onSceneChanged?.(activeScene, spec);
@@ -849,6 +828,7 @@ export class TheatreSceneController {
     this.syncLightingFromActiveSceneCue();
     this.syncStageFloorTexture();
     this.applyLightingState();
+    this.requestShadowMapUpdate();
     this.callbacks.onSceneChanged?.(scene, spec);
     return scene;
   }
@@ -862,6 +842,7 @@ export class TheatreSceneController {
     this.syncLightingFromActiveSceneCue();
     this.syncStageFloorTexture();
     this.applyLightingState();
+    this.requestShadowMapUpdate();
     this.callbacks.onSceneChanged?.(scene, spec);
     return scene;
   }
@@ -923,6 +904,7 @@ export class TheatreSceneController {
     ) {
       this.syncStageFloorTexture();
     }
+    this.requestShadowMapUpdate();
   }
 
   public isElementVisible(elementId: string): boolean {
@@ -942,6 +924,7 @@ export class TheatreSceneController {
 
   public setBattenTrimHeight(lineNumber: number, heightM: number): void {
     this.productionSets.setBattenTrimHeight(lineNumber, heightM);
+    this.requestShadowMapUpdate();
   }
 
   public getBattenTrimHeight(lineNumber: number): number {
@@ -961,6 +944,7 @@ export class TheatreSceneController {
   public setOrchestraPitOpen(open: boolean): void {
     this.orchestraPitOpen = open;
     this.architecture.setOrchestraPitOpen(open);
+    this.requestShadowMapUpdate();
   }
 
   public isOrchestraPitOpen(): boolean {
@@ -970,6 +954,7 @@ export class TheatreSceneController {
   public setStageTrapsOpen(open: boolean): void {
     this.stageTrapsOpen = open;
     this.architecture.setStageTrapsOpen(open);
+    this.requestShadowMapUpdate();
   }
 
   public isStageTrapsOpen(): boolean {
@@ -988,6 +973,7 @@ export class TheatreSceneController {
   public setGrandDrapeOpenFraction(fraction: number): void {
     this.grandDrapeOpenFraction = Math.max(0, Math.min(1, fraction));
     this.architecture.setGrandDrapeTrim(this.grandDrapeOpenFraction);
+    this.requestShadowMapUpdate();
   }
 
   public getGrandDrapeOpenFraction(): number {
@@ -1396,6 +1382,7 @@ export class TheatreSceneController {
       this.customPieces,
       this.selectedCustomPieceId
     );
+    this.requestShadowMapUpdate();
     this.callbacks.onCustomPiecesChanged?.(
       this.customPieces,
       this.selectedCustomPieceId
@@ -1409,6 +1396,7 @@ export class TheatreSceneController {
       this.customPieces,
       this.selectedCustomPieceId
     );
+    this.requestShadowMapUpdate();
     this.callbacks.onCustomPiecesChanged?.(
       this.customPieces,
       this.selectedCustomPieceId
@@ -1432,6 +1420,7 @@ export class TheatreSceneController {
       this.customPieces,
       this.selectedCustomPieceId
     );
+    this.requestShadowMapUpdate();
     this.callbacks.onCustomPiecesChanged?.(
       this.customPieces,
       this.selectedCustomPieceId
@@ -1449,6 +1438,7 @@ export class TheatreSceneController {
       this.customPieces,
       this.selectedCustomPieceId
     );
+    this.requestShadowMapUpdate();
     this.callbacks.onCustomPiecesChanged?.(
       this.customPieces,
       this.selectedCustomPieceId
@@ -1459,6 +1449,7 @@ export class TheatreSceneController {
     this.customPieces = [];
     this.selectedCustomPieceId = null;
     this.productionSets.rebuildCustomSetPieces([], null);
+    this.requestShadowMapUpdate();
     this.callbacks.onCustomPiecesChanged?.([], null);
   }
 
@@ -1494,10 +1485,16 @@ export class TheatreSceneController {
     window.addEventListener('resize', () => this.handleResize());
 
     this.controls.addEventListener('start', () => {
+      this.isOrbitDragging = true;
+      this.clearPointerHover();
       if (!this.inSeatView && !this.cameraTween && this.activeCameraPreset !== null) {
         this.activeCameraPreset = null;
         this.callbacks.onCameraModeChanged?.(false, null);
       }
+    });
+
+    this.controls.addEventListener('end', () => {
+      this.isOrbitDragging = false;
     });
 
     this.canvas.addEventListener('pointerleave', () => {
@@ -1530,7 +1527,16 @@ export class TheatreSceneController {
         return;
       }
 
+      if (this.isOrbitDragging) {
+        return;
+      }
+
       if (e.target === this.canvas && e.pointerType !== 'touch') {
+        const now = performance.now();
+        if (now - this.lastHoverRayTimeMs < 40) {
+          return;
+        }
+        this.lastHoverRayTimeMs = now;
         this.handlePointerHover(e);
       } else if (e.target !== this.canvas) {
         this.clearPointerHover();
@@ -1539,10 +1545,12 @@ export class TheatreSceneController {
 
     window.addEventListener('pointercancel', () => {
       this.isDraggingSeatLook = false;
+      this.isOrbitDragging = false;
     });
 
     window.addEventListener('pointerup', (e: PointerEvent) => {
       this.isDraggingSeatLook = false;
+      this.isOrbitDragging = false;
       if (e.target !== this.canvas) return;
       const dist = Math.hypot(
         e.clientX - this.pointerDownClientX,

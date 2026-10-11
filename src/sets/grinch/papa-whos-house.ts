@@ -109,67 +109,39 @@ function createSeussianOliveRoofTexture(): THREE.CanvasTexture {
       ctx.stroke();
     }
 
-    // 3. Organic woodgrain fibers & knots (kept inside interior margin)
+    // 3. Subtle organic woodgrain fibers (kept inside interior margin)
     ctx.lineCap = 'round';
-    for (let s = 0; s < 140; s++) {
+    for (let s = 0; s < 56; s++) {
       const sx = 24 + ((s * 179) % 820);
       const sy = 28 + ((s * 107) % 960);
       ctx.strokeStyle =
-        s % 4 === 0 ? 'rgba(168, 198, 78, 0.22)' : 'rgba(26, 38, 10, 0.32)';
-      ctx.lineWidth = 1.6 + (s % 3) * 0.8;
+        s % 4 === 0 ? 'rgba(168, 198, 78, 0.14)' : 'rgba(26, 38, 10, 0.18)';
+      ctx.lineWidth = 1.4 + (s % 2) * 0.6;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
       ctx.bezierCurveTo(
         sx + 48,
-        sy - 18,
+        sy - 14,
         sx + 104,
-        sy + 22,
+        sy + 16,
         sx + 156,
-        sy - 6
+        sy - 4
       );
       ctx.stroke();
     }
 
-    // 4. Bold Dr. Seuss charcoal pen-and-ink cross-hatch clusters
-    ctx.strokeStyle = 'rgba(18, 26, 8, 0.44)';
-    ctx.lineWidth = 2.0;
-    for (let c = 0; c < 48; c++) {
+    // 4. Subtle Dr. Seuss pen-and-ink cross-hatch accents
+    ctx.strokeStyle = 'rgba(18, 26, 8, 0.22)';
+    ctx.lineWidth = 1.6;
+    for (let c = 0; c < 18; c++) {
       const cx = 32 + ((c * 211 + 45) % 900);
       const cy = 32 + ((c * 163 + 38) % 900);
-      const hatchCount = 5 + (c % 5);
-      for (let h = 0; h < hatchCount; h++) {
+      for (let h = 0; h < 4; h++) {
         ctx.beginPath();
-        ctx.moveTo(cx + h * 7, cy);
-        ctx.quadraticCurveTo(cx + h * 7 + 12, cy + 16, cx + h * 7 + 22, cy + 34);
+        ctx.moveTo(cx + h * 8, cy);
+        ctx.quadraticCurveTo(cx + h * 8 + 12, cy + 16, cx + h * 8 + 22, cy + 32);
         ctx.stroke();
       }
-      for (let h = 0; h < hatchCount - 1; h++) {
-        ctx.beginPath();
-        ctx.moveTo(cx - 4, cy + h * 7 + 6);
-        ctx.quadraticCurveTo(
-          cx + 16,
-          cy + h * 7 + 14,
-          cx + 38,
-          cy + h * 7 + 20
-        );
-        ctx.stroke();
-      }
-    }
-
-    // 5. Scenic paint shop spatter dots (chartreuse, moss, dark umber)
-    for (let sp = 0; sp < 480; sp++) {
-      const px = 8 + ((sp * 293 + 17) % 1008);
-      const py = 8 + ((sp * 197 + 53) % 1008);
-      const pr = 1.0 + (sp % 3) * 0.85;
-      ctx.fillStyle =
-        sp % 3 === 0
-          ? 'rgba(182, 214, 92, 0.25)'
-          : sp % 3 === 1
-            ? 'rgba(22, 34, 8, 0.28)'
-            : 'rgba(88, 118, 36, 0.24)';
-      ctx.beginPath();
-      ctx.arc(px, py, pr, 0, Math.PI * 2);
-      ctx.fill();
     }
   }
   const tex = new THREE.CanvasTexture(canvas);

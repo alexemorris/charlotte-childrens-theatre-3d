@@ -885,67 +885,48 @@ export function createGrinchSnowFloorTexture(): THREE.CanvasTexture {
       ctx.fill();
     }
 
-    // 3. Sweeping, swirling Seussian snow-path brushstrokes & cobalt shadow troughs
+    // 3. Soft, sweeping Seussian snow-path brushstrokes & gentle periwinkle troughs
     ctx.lineCap = 'round';
-    for (let i = 0; i < 22; i++) {
-      const y = 44 + i * 44;
-      const sway = (i % 2 === 0 ? 1 : -1) * (32 + (i % 3) * 12);
+    for (let i = 0; i < 12; i++) {
+      const y = 64 + i * 78;
+      const sway = (i % 2 === 0 ? 1 : -1) * (28 + (i % 3) * 10);
 
       // Broad soft cobalt-periwinkle drift shadow trough
-      ctx.strokeStyle = 'rgba(78, 98, 148, 0.22)';
-      ctx.lineWidth = 22 + (i % 4) * 6;
+      ctx.strokeStyle = 'rgba(78, 98, 148, 0.13)';
+      ctx.lineWidth = 26 + (i % 4) * 6;
       ctx.beginPath();
       ctx.moveTo(-20, y + 8);
       ctx.bezierCurveTo(260, y + sway + 8, 764, y - sway + 8, 1044, y + 8);
       ctx.stroke();
 
-      // Broad toned-snow crest dry-brush highlight (<= 0xd8)
-      ctx.strokeStyle = 'rgba(204, 212, 216, 0.28)';
-      ctx.lineWidth = 14 + (i % 3) * 4;
+      // Broad toned-snow crest highlight (<= 0xd8)
+      ctx.strokeStyle = 'rgba(204, 212, 216, 0.18)';
+      ctx.lineWidth = 16 + (i % 3) * 4;
       ctx.beginPath();
       ctx.moveTo(-20, y - 5);
       ctx.bezierCurveTo(260, y + sway - 5, 764, y - sway - 5, 1044, y - 5);
       ctx.stroke();
 
-      // Curving Dr. Seuss pen-and-ink contour line
-      ctx.strokeStyle = 'rgba(26, 34, 68, 0.34)';
-      ctx.lineWidth = i % 3 === 0 ? 3.0 : 2.0;
+      // Subtle curving Dr. Seuss contour line
+      ctx.strokeStyle = 'rgba(38, 52, 92, 0.14)';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.bezierCurveTo(260, y + sway, 764, y - sway, 1024, y);
       ctx.stroke();
-
-      // Short rhythmic Seussian cross-hatch feather ticks along the snow drift ridge
-      if (i % 2 === 0) {
-        ctx.strokeStyle = 'rgba(24, 32, 64, 0.26)';
-        ctx.lineWidth = 1.8;
-        for (let tx = 48 + (i % 3) * 24; tx < 980; tx += 56) {
-          const u = tx / 1024;
-          const ty =
-            y +
-            Math.sin(u * Math.PI * 2) * (sway * 0.42) +
-            ((tx % 7) - 3) * 1.5;
-          ctx.beginPath();
-          ctx.moveTo(tx, ty);
-          ctx.lineTo(tx - 8, ty + 14);
-          ctx.moveTo(tx + 9, ty + 1);
-          ctx.lineTo(tx + 2, ty + 13);
-          ctx.stroke();
-        }
-      }
     }
 
-    // 4. Multi-pass scenic shop paint spatter (cobalt shadow flecks, lavender mid-tones, frost highlights)
-    for (let s = 0; s < 950; s++) {
+    // 4. Subtle scenic paint spatter (toned down for a cleaner stage floor finish)
+    for (let s = 0; s < 220; s++) {
       const sx = (s * 173 + (s % 7) * 29) % 1020;
       const sy = (s * 257 + (s % 11) * 19) % 1020;
-      const r = 1.2 + (s % 3) * 1.1;
+      const r = 1.1 + (s % 2) * 0.8;
       if (s % 3 === 0) {
-        ctx.fillStyle = 'rgba(208, 214, 216, 0.52)';
+        ctx.fillStyle = 'rgba(208, 214, 216, 0.22)';
       } else if (s % 3 === 1) {
-        ctx.fillStyle = 'rgba(64, 82, 134, 0.34)';
+        ctx.fillStyle = 'rgba(64, 82, 134, 0.14)';
       } else {
-        ctx.fillStyle = 'rgba(186, 172, 208, 0.38)';
+        ctx.fillStyle = 'rgba(186, 172, 208, 0.16)';
       }
       ctx.beginPath();
       ctx.arc(sx, sy, r, 0, Math.PI * 2);
@@ -1210,53 +1191,61 @@ export function drawGrinchLogoGraphic(
  * "Dr. Seuss' HOW THE GRINCH STOLE CHRISTMAS" logo asset centered on the scrim.
  */
 export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
+  // Match canvas aspect ratio (1024 × 720 ≈ 1.422:1) to the 3D scrim plane (9.4m × 6.6m = 1.424:1)
+  // so 2D drawing and the official logo PNG map 1:1 in 3D world space with zero vertical stretching.
+  const W = 1024;
+  const H = 720;
+  const planeAspect = 9.4 / 6.6;
+  const canvasAspect = W / H;
+  const uvAspectCorrection = planeAspect / canvasAspect;
+
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
 
   const drawScrimBackdrop = (c: CanvasRenderingContext2D): void => {
     // 1. Rich violet-periwinkle sharkstooth scrim wash
-    const bg = c.createLinearGradient(0, 0, 0, 512);
+    const bg = c.createLinearGradient(0, 0, 0, H);
     bg.addColorStop(0, '#3e2d74');
     bg.addColorStop(0.28, '#58449c');
     bg.addColorStop(0.68, '#725ec0');
     bg.addColorStop(1, '#8472d0');
     c.fillStyle = bg;
-    c.fillRect(0, 0, 1024, 512);
+    c.fillRect(0, 0, W, H);
 
     // Authentic sharkstooth scrim gauze warp & weft weave
     c.strokeStyle = 'rgba(230, 224, 255, 0.045)';
     c.lineWidth = 1;
-    for (let y = 0; y < 512; y += 5) {
+    for (let y = 0; y < H; y += 6) {
       c.beginPath();
       c.moveTo(0, y);
-      c.lineTo(1024, y);
+      c.lineTo(W, y);
       c.stroke();
     }
     c.strokeStyle = 'rgba(30, 18, 64, 0.05)';
-    for (let x = 0; x < 1024; x += 8) {
+    for (let x = 0; x < W; x += 8) {
       c.beginPath();
       c.moveTo(x, 0);
-      c.lineTo(x, 512);
+      c.lineTo(x, H);
       c.stroke();
     }
 
     // Soft center gobo spotlight halo behind the Grinch logo
-    const glow = c.createRadialGradient(512, 256, 20, 512, 256, 310);
+    const glow = c.createRadialGradient(W * 0.5, H * 0.5, 20, W * 0.5, H * 0.5, 320);
     glow.addColorStop(0, 'rgba(240, 234, 255, 0.34)');
     glow.addColorStop(0.6, 'rgba(190, 174, 248, 0.14)');
     glow.addColorStop(1, 'rgba(110, 88, 180, 0.0)');
     c.fillStyle = glow;
     c.beginPath();
-    c.ellipse(512, 256, 320, 210, 0, 0, Math.PI * 2);
+    c.ellipse(W * 0.5, H * 0.5, 320, 225 * uvAspectCorrection, 0, 0, Math.PI * 2);
     c.fill();
   };
 
   if (ctx) {
     drawScrimBackdrop(ctx);
     // Initial fallback while the PNG image decodes
-    drawGrinchLogoGraphic(ctx, 512, 256, 1.0);
+    drawGrinchLogoGraphic(ctx, W * 0.5, H * 0.5, 1.0);
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -1264,19 +1253,20 @@ export function createGrinchPreShowScrimTexture(): THREE.CanvasTexture {
   tex.colorSpace = THREE.SRGBColorSpace;
 
   // Load and draw the actual official Grinch logo PNG asset centered on the scrim
+  // with exact 3D world-space aspect ratio preservation
   if (typeof Image !== 'undefined' && ctx) {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
     logoImg.onload = () => {
       drawScrimBackdrop(ctx);
-      const targetW = 580;
-      const aspect =
+      const targetW = 540;
+      const imgAspect =
         logoImg.naturalWidth > 0
           ? logoImg.naturalHeight / logoImg.naturalWidth
           : 576 / 881;
-      const targetH = targetW * aspect;
-      const dx = (1024 - targetW) * 0.5;
-      const dy = (512 - targetH) * 0.5;
+      const targetH = targetW * imgAspect * uvAspectCorrection;
+      const dx = (W - targetW) * 0.5;
+      const dy = (H - targetH) * 0.5;
       ctx.drawImage(logoImg, dx, dy, targetW, targetH);
       tex.needsUpdate = true;
     };
@@ -1518,7 +1508,7 @@ export function createPapierMacheNormalTexture(): THREE.CanvasTexture {
     }
   }
 
-  cachedPapierMacheNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 3.6, 2, 2);
+  cachedPapierMacheNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 1.15, 2, 2);
   return cachedPapierMacheNormalTex;
 }
 
@@ -1544,11 +1534,11 @@ export function createSeussianRockNormalTexture(): THREE.CanvasTexture {
     ctx.fillRect(0, 0, W, H);
 
     // 1. Toroidal rock boulder bulges and hollows
-    for (let i = 0; i < 96; i++) {
+    for (let i = 0; i < 64; i++) {
       const cx = (i * 163) % W;
       const cy = (i * 229) % H;
-      const rx = 34 + (i % 6) * 12;
-      const ry = 20 + (i % 5) * 8;
+      const rx = 36 + (i % 6) * 12;
+      const ry = 22 + (i % 5) * 8;
       const isBulge = i % 3 !== 0;
 
       for (const ox of [-W, 0, W]) {
@@ -1557,7 +1547,7 @@ export function createSeussianRockNormalTexture(): THREE.CanvasTexture {
           const py = cy + oy;
           if (px + rx < 0 || px - rx > W || py + ry < 0 || py - ry > H) continue;
           const g = ctx.createRadialGradient(px, py, 4, px, py, rx);
-          g.addColorStop(0, isBulge ? 'rgba(230,230,230,0.28)' : 'rgba(25,25,25,0.26)');
+          g.addColorStop(0, isBulge ? 'rgba(220,220,220,0.18)' : 'rgba(35,35,35,0.16)');
           g.addColorStop(1, 'rgba(128,128,128,0)');
           ctx.fillStyle = g;
           ctx.beginPath();
@@ -1568,12 +1558,12 @@ export function createSeussianRockNormalTexture(): THREE.CanvasTexture {
     }
 
     // 2. Periodic horizontal rock strata ledges & crevices (exact integer harmonics of W)
-    for (let row = 0; row < 12; row++) {
-      const baseY = (row + 0.5) * (H / 12);
+    for (let row = 0; row < 10; row++) {
+      const baseY = (row + 0.5) * (H / 10);
       for (const oy of [-H, 0, H]) {
-        // Deep rock fissure groove
-        ctx.strokeStyle = 'rgba(18,18,18,0.45)';
-        ctx.lineWidth = 4.5;
+        // Soft rock fissure groove
+        ctx.strokeStyle = 'rgba(28,28,28,0.28)';
+        ctx.lineWidth = 4.0;
         ctx.beginPath();
         for (let x = 0; x <= W; x += 16) {
           const u = (x / W) * Math.PI * 2;
@@ -1584,8 +1574,8 @@ export function createSeussianRockNormalTexture(): THREE.CanvasTexture {
         ctx.stroke();
 
         // Raised upper rock lip
-        ctx.strokeStyle = 'rgba(240,240,240,0.38)';
-        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = 'rgba(230,230,230,0.24)';
+        ctx.lineWidth = 3.0;
         ctx.beginPath();
         for (let x = 0; x <= W; x += 16) {
           const u = (x / W) * Math.PI * 2;
@@ -1598,7 +1588,7 @@ export function createSeussianRockNormalTexture(): THREE.CanvasTexture {
     }
   }
 
-  cachedSeussianRockNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 4.2, 1, 1);
+  cachedSeussianRockNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 1.45, 1, 1);
   return cachedSeussianRockNormalTex;
 }
 
@@ -1623,19 +1613,19 @@ export function createStuccoPlasterNormalTexture(): THREE.CanvasTexture {
     ctx.fillStyle = '#808080';
     ctx.fillRect(0, 0, W, H);
 
-    // Troweled stucco swirls (toroidally wrapped)
-    for (let i = 0; i < 180; i++) {
+    // Subtle troweled stucco swirls (toroidally wrapped)
+    for (let i = 0; i < 90; i++) {
       const cx = (i * 149) % W;
       const cy = (i * 211) % H;
-      const r = 16 + (i % 6) * 6;
-      const lum = i % 2 === 0 ? 195 : 62;
+      const r = 18 + (i % 6) * 6;
+      const lum = i % 2 === 0 ? 185 : 72;
       for (const ox of [-W, 0, W]) {
         for (const oy of [-H, 0, H]) {
           const px = cx + ox;
           const py = cy + oy;
           if (px + r < 0 || px - r > W || py + r < 0 || py - r > H) continue;
-          ctx.strokeStyle = `rgba(${lum},${lum},${lum},0.18)`;
-          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = `rgba(${lum},${lum},${lum},0.11)`;
+          ctx.lineWidth = 3.0;
           ctx.beginPath();
           ctx.arc(px, py, r, (i % 4) * 0.6, (i % 4) * 0.6 + Math.PI * 1.1);
           ctx.stroke();
@@ -1646,8 +1636,8 @@ export function createStuccoPlasterNormalTexture(): THREE.CanvasTexture {
     // Periodic wavy horizontal clapboard courses
     for (let row = 0; row < 8; row++) {
       const y = (row + 0.5) * (H / 8);
-      ctx.strokeStyle = 'rgba(35,35,35,0.32)';
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(42,42,42,0.20)';
+      ctx.lineWidth = 3.5;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
         const wave = Math.sin((x / W) * Math.PI * 4 + row * 0.8) * 5;
@@ -1656,8 +1646,8 @@ export function createStuccoPlasterNormalTexture(): THREE.CanvasTexture {
       }
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(225,225,225,0.28)';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(218,218,218,0.18)';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 16) {
         const wave = Math.sin((x / W) * Math.PI * 4 + row * 0.8) * 5;
@@ -1668,7 +1658,7 @@ export function createStuccoPlasterNormalTexture(): THREE.CanvasTexture {
     }
   }
 
-  cachedStuccoPlasterNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 2.8, 1, 1);
+  cachedStuccoPlasterNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 1.05, 1, 1);
   return cachedStuccoPlasterNormalTex;
 }
 
@@ -1698,18 +1688,18 @@ export function createFabricWeaveNormalTexture(): THREE.CanvasTexture {
     for (let y = 0; y < H; y += step) {
       for (let x = 0; x < W; x += step) {
         const diag = ((x + y) / step) % 2 === 0;
-        ctx.fillStyle = diag ? 'rgba(205,205,205,0.28)' : 'rgba(55,55,55,0.28)';
+        ctx.fillStyle = diag ? 'rgba(195,195,195,0.16)' : 'rgba(65,65,65,0.16)';
         ctx.fillRect(x, y, step - 1, step - 1);
       }
     }
 
     // Soft organic drapery/fur ripple lines
-    for (let i = 0; i < 64; i++) {
+    for (let i = 0; i < 42; i++) {
       const cx = (i * 73) % W;
       const cy = (i * 109) % H;
       for (const ox of [-W, 0, W]) {
         for (const oy of [-H, 0, H]) {
-          ctx.strokeStyle = i % 2 === 0 ? 'rgba(225,225,225,0.22)' : 'rgba(40,40,40,0.22)';
+          ctx.strokeStyle = i % 2 === 0 ? 'rgba(215,215,215,0.14)' : 'rgba(45,45,45,0.14)';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(cx + ox, cy + oy);
@@ -1720,7 +1710,7 @@ export function createFabricWeaveNormalTexture(): THREE.CanvasTexture {
     }
   }
 
-  cachedFabricWeaveNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 2.4, 4, 4);
+  cachedFabricWeaveNormalTex = createNormalMapFromHeightCanvas(heightCanvas, 0.9, 4, 4);
   return cachedFabricWeaveNormalTex;
 }
 
@@ -1728,8 +1718,7 @@ export function createFabricWeaveNormalTexture(): THREE.CanvasTexture {
  * Generates the 1024×1024 hand-painted Seussian icy-blue/lavender snow cliff & cave rock texture
  * with 100% periodic toroidal wrapping (`top == bottom`, `left == right`), multi-layered scenic
  * glazing (glacier blue, slate indigo, frost lavender, creamy snow highlights <= 0xd8),
- * trompe-l'oeil rock fissures, scenic paint spatter dots, and authentic curved Dr. Seuss
- * cross-hatch pen strokes (matching Model Box slides 1A–1H) with zero tiling seams.
+ * subtle rock strata washes, and light Seussian contour strokes with zero tiling seams.
  */
 export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
   const W = 1024;
@@ -1752,18 +1741,18 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
 
     // Periodic horizontal modulation so left & right edges match identically
     const hGrad = ctx.createLinearGradient(0, 0, W, 0);
-    hGrad.addColorStop(0.0, 'rgba(180, 204, 224, 0.16)');
-    hGrad.addColorStop(0.5, 'rgba(72, 102, 156, 0.16)');
-    hGrad.addColorStop(1.0, 'rgba(180, 204, 224, 0.16)');
+    hGrad.addColorStop(0.0, 'rgba(180, 204, 224, 0.14)');
+    hGrad.addColorStop(0.5, 'rgba(72, 102, 156, 0.14)');
+    hGrad.addColorStop(1.0, 'rgba(180, 204, 224, 0.14)');
     ctx.fillStyle = hGrad;
     ctx.fillRect(0, 0, W, H);
 
     // 2. Toroidally wrapped painterly scumble & sponge-glaze washes
-    for (let i = 0; i < 48; i++) {
+    for (let i = 0; i < 32; i++) {
       const cx = (i * 193) % W;
       const cy = (i * 139) % H;
-      const rx = 110 + (i % 5) * 38;
-      const ry = 54 + (i % 4) * 26;
+      const rx = 120 + (i % 5) * 38;
+      const ry = 60 + (i % 4) * 26;
       const angle = ((i % 7) - 3) * 0.24;
 
       for (const ox of [-W, 0, W]) {
@@ -1773,13 +1762,13 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
           if (px + rx < 0 || px - rx > W || py + rx < 0 || py - rx > H) continue;
           const wash = ctx.createRadialGradient(px, py, 12, px, py, rx);
           if (i % 4 === 0) {
-            wash.addColorStop(0, 'rgba(208, 214, 216, 0.34)');
+            wash.addColorStop(0, 'rgba(208, 214, 216, 0.22)');
           } else if (i % 4 === 1) {
-            wash.addColorStop(0, 'rgba(198, 178, 212, 0.24)');
+            wash.addColorStop(0, 'rgba(198, 178, 212, 0.16)');
           } else if (i % 4 === 2) {
-            wash.addColorStop(0, 'rgba(68, 96, 152, 0.24)');
+            wash.addColorStop(0, 'rgba(68, 96, 152, 0.16)');
           } else {
-            wash.addColorStop(0, 'rgba(136, 184, 216, 0.28)');
+            wash.addColorStop(0, 'rgba(136, 184, 216, 0.18)');
           }
           wash.addColorStop(1, 'rgba(140, 172, 212, 0)');
           ctx.fillStyle = wash;
@@ -1790,18 +1779,18 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
       }
     }
 
-    // 3. Periodic trompe-l'oeil rock strata fissures (integer harmonics of W so x=0 matches x=W!)
+    // 3. Periodic soft rock strata fissures (integer harmonics of W so x=0 matches x=W!)
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    for (let row = 0; row < 12; row++) {
-      const baseY = (row + 0.5) * (H / 12);
+    for (let row = 0; row < 8; row++) {
+      const baseY = (row + 0.5) * (H / 8);
       const waveAt = (x: number): number => {
         const u = (x / W) * Math.PI * 2;
-        return Math.sin(u * 2 + row * 1.1) * 18 + Math.cos(u * 3 - row * 0.7) * 8;
+        return Math.sin(u * 2 + row * 1.1) * 16 + Math.cos(u * 3 - row * 0.7) * 7;
       };
 
       // Soft cobalt-slate shadow band below fissure
-      ctx.strokeStyle = 'rgba(54, 78, 128, 0.26)';
+      ctx.strokeStyle = 'rgba(54, 78, 128, 0.15)';
       ctx.lineWidth = 14;
       ctx.beginPath();
       ctx.moveTo(0, baseY + waveAt(0) + 6);
@@ -1811,7 +1800,7 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
       ctx.stroke();
 
       // Toned frost highlight lip above fissure (<= 0xd8)
-      ctx.strokeStyle = 'rgba(206, 214, 216, 0.34)';
+      ctx.strokeStyle = 'rgba(206, 214, 216, 0.20)';
       ctx.lineWidth = 6;
       ctx.beginPath();
       ctx.moveTo(0, baseY + waveAt(0) - 4);
@@ -1821,62 +1810,52 @@ export function createSeussianRockHatchTexture(): THREE.CanvasTexture {
       ctx.stroke();
     }
 
-    // 4. Fine scenic shop spatter dots
-    for (let s = 0; s < 680; s++) {
+    // 4. Subtle scenic shop spatter dots
+    for (let s = 0; s < 160; s++) {
       const sx = (s * 179 + (s % 9) * 31) % W;
       const sy = (s * 263 + (s % 7) * 23) % H;
-      const sr = 1.2 + (s % 3);
+      const sr = 1.1 + (s % 2) * 0.8;
       ctx.fillStyle =
-        s % 2 === 0 ? 'rgba(34, 48, 86, 0.28)' : 'rgba(208, 214, 216, 0.42)';
+        s % 2 === 0 ? 'rgba(34, 48, 86, 0.14)' : 'rgba(208, 214, 216, 0.22)';
       ctx.beginPath();
       ctx.arc(sx, sy, sr, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 5. Toroidally wrapped curved Dr. Seuss pen-and-ink cross-hatch clusters
-    ctx.strokeStyle = '#151c2c';
+    // 5. Light, understated Seussian contour cross-hatch accents
+    ctx.strokeStyle = 'rgba(24, 34, 58, 0.26)';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let c = 0; c < 36; c++) {
-      const cx = (c * 167) % W;
-      const cy = (c * 127) % H;
-      const tilt = ((c % 5) - 2) * 0.14;
+    for (let c = 0; c < 14; c++) {
+      const cx = (c * 241) % W;
+      const cy = (c * 179) % H;
+      const tilt = ((c % 5) - 2) * 0.12;
 
       for (const ox of [-W, 0, W]) {
         for (const oy of [-H, 0, H]) {
           const bx = cx + ox;
           const by = cy + oy;
-          if (bx + 100 < 0 || bx - 40 > W || by + 60 < 0 || by - 30 > H) continue;
+          if (bx + 90 < 0 || bx - 30 > W || by + 50 < 0 || by - 25 > H) continue;
 
-          ctx.lineWidth = 4.2;
+          ctx.lineWidth = 2.6;
           ctx.beginPath();
-          ctx.moveTo(bx - 16, by);
-          ctx.quadraticCurveTo(bx + 28, by - 12, bx + 78, by + 4);
+          ctx.moveTo(bx - 12, by);
+          ctx.quadraticCurveTo(bx + 24, by - 9, bx + 64, by + 3);
           ctx.stroke();
 
-          ctx.lineWidth = 3.0;
-          for (let h = 0; h < 6; h++) {
-            const hx = bx + h * 13;
-            const hy = by + Math.sin(h * 0.5) * 4;
+          ctx.lineWidth = 2.0;
+          for (let h = 0; h < 4; h++) {
+            const hx = bx + h * 15;
+            const hy = by + Math.sin(h * 0.5) * 3;
             ctx.beginPath();
             ctx.moveTo(hx, hy);
             ctx.quadraticCurveTo(
-              hx - 8 + tilt * 12,
-              hy + 18,
-              hx - 18 + tilt * 20,
-              hy + 38 + (h % 2) * 8
+              hx - 6 + tilt * 10,
+              hy + 14,
+              hx - 14 + tilt * 16,
+              hy + 28 + (h % 2) * 6
             );
-            ctx.stroke();
-          }
-
-          if (c % 2 === 0) {
-            ctx.lineWidth = 2.4;
-            ctx.beginPath();
-            ctx.moveTo(bx - 8, by + 16);
-            ctx.lineTo(bx + 68, by + 24);
-            ctx.moveTo(bx - 4, by + 28);
-            ctx.lineTo(bx + 54, by + 34);
             ctx.stroke();
           }
         }

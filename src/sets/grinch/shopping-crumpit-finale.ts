@@ -106,35 +106,16 @@ function createPaintedShopCounterTimberTexture(
       ctx.restore();
     }
 
-    // 4. Seussian charcoal cross-hatching along lower kickplate and corners
-    ctx.strokeStyle = 'rgba(12, 18, 34, 0.42)';
-    ctx.lineWidth = 2.6;
-    for (let i = 0; i < 140; i++) {
+    // 4. Subtle Seussian charcoal cross-hatching along lower kickplate and corners
+    ctx.strokeStyle = 'rgba(12, 18, 34, 0.22)';
+    ctx.lineWidth = 2.0;
+    for (let i = 0; i < 48; i++) {
       const hx = (i * 89 + 24) % 970;
       const hy = i % 2 === 0 ? 860 + (i % 9) * 14 : 36 + (i % 7) * 14;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 28, hy - 14);
+      ctx.lineTo(hx + 24, hy - 12);
       ctx.stroke();
-      if (i % 3 === 0) {
-        ctx.beginPath();
-        ctx.moveTo(hx + 6, hy - 16);
-        ctx.lineTo(hx + 22, hy + 8);
-        ctx.stroke();
-      }
-    }
-
-    // 5. Scenic paint spatter
-    for (let sp = 0; sp < 360; sp++) {
-      const px = (sp * 263 + 17) % 1024;
-      const py = (sp * 197 + 43) % 1024;
-      ctx.fillStyle =
-        sp % 2 === 0
-          ? 'rgba(198, 228, 242, 0.22)'
-          : 'rgba(10, 22, 46, 0.26)';
-      ctx.beginPath();
-      ctx.arc(px, py, 1.2 + (sp % 3) * 0.8, 0, Math.PI * 2);
-      ctx.fill();
     }
   }
   const tex = new THREE.CanvasTexture(canvas);

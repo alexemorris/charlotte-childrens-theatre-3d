@@ -53,158 +53,90 @@ function createWhovilleStuccoTexture(
       ctx.fill();
     }
 
-    // 2. Scenic artist sponge-stipple & scumble plaster texture
-    for (let i = 0; i < 320; i++) {
+    // 2. Soft scenic plaster wash (toned down for a clean painted finish)
+    for (let i = 0; i < 120; i++) {
       const sx = (i * 157) % 1024;
       const sy = (i * 227) % 1024;
-      const sr = 22 + (i % 44);
+      const sr = 26 + (i % 44);
       ctx.fillStyle =
         i % 3 === 0
-          ? 'rgba(255, 224, 240, 0.13)'
+          ? 'rgba(255, 224, 240, 0.06)'
           : i % 3 === 1
-            ? 'rgba(104, 18, 60, 0.11)'
-            : 'rgba(236, 98, 162, 0.10)';
+            ? 'rgba(104, 18, 60, 0.05)'
+            : 'rgba(236, 98, 162, 0.05)';
       ctx.beginPath();
       ctx.ellipse(sx, sy, sr * 1.45, sr * 0.82, (i % 7) * 0.42, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 3. Trompe-l'oeil painted vertical Seussian rib bevels & timber seam shading
+    // 3. Subtle painted vertical Seussian rib bevels & seam shading
     for (const rx of [128, 336, 512, 688, 896]) {
       const ribGrad = ctx.createLinearGradient(rx - 28, 0, rx + 28, 0);
-      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.32)');
-      ribGrad.addColorStop(0.45, 'rgba(255, 216, 236, 0.40)');
-      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.32)');
+      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.16)');
+      ribGrad.addColorStop(0.45, 'rgba(255, 216, 236, 0.22)');
+      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.16)');
       ctx.fillStyle = ribGrad;
       ctx.fillRect(rx - 28, 0, 56, 1024);
 
-      // Subtle vertical Seussian ink seam line alongside each rib
-      ctx.strokeStyle = 'rgba(34, 16, 40, 0.36)';
-      ctx.lineWidth = 2.6;
+      ctx.strokeStyle = 'rgba(34, 16, 40, 0.18)';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(rx - 20, 0);
       ctx.bezierCurveTo(rx - 12, 340, rx - 28, 680, rx - 18, 1024);
       ctx.stroke();
     }
 
-    // 4. Hand-painted horizontal Seussian clapboard & contour shadow bands
-    for (let y = 76; y < 968; y += 84) {
+    // 4. Gentle horizontal Seussian contour bands
+    for (let y = 96; y < 960; y += 112) {
       ctx.strokeStyle = stripeHex;
-      ctx.lineWidth = 10;
-      ctx.globalAlpha = 0.44;
+      ctx.lineWidth = 8;
+      ctx.globalAlpha = 0.24;
       ctx.beginPath();
       for (let x = 0; x <= 1024; x += 32) {
-        const wave = Math.sin((x / 1024) * Math.PI * 4 + y * 0.04) * 11;
+        const wave = Math.sin((x / 1024) * Math.PI * 4 + y * 0.04) * 10;
         if (x === 0) ctx.moveTo(x, y + wave);
         else ctx.lineTo(x, y + wave);
       }
       ctx.stroke();
 
-      // Painted underside highlight line on each course for trompe-l'oeil relief
-      ctx.strokeStyle = 'rgba(255, 232, 244, 0.34)';
-      ctx.lineWidth = 3.5;
-      ctx.globalAlpha = 0.65;
+      ctx.strokeStyle = 'rgba(255, 232, 244, 0.20)';
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = 0.45;
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
 
-    // 5. Trompe-l'oeil painted brick/stucco plaster patches & cracks with Seussian ink hatching
-    const brickClusters: ReadonlyArray<readonly [number, number]> = [
-      [190, 320],
-      [420, 620],
-      [610, 290],
-      [810, 560],
-      [280, 740],
-      [720, 780],
-    ];
-    for (let cIdx = 0; cIdx < brickClusters.length; cIdx++) {
-      const cluster = brickClusters[cIdx]!;
-      const cx = cluster[0];
-      const cy = cluster[1];
-
-      // Exposed warm coral-rose brick courses peeking through plaster
-      for (let row = 0; row < 2; row++) {
-        for (let col = 0; col < 2; col++) {
-          const bx = cx + col * 38 + (row % 2) * 16;
-          const by = cy + row * 20;
-          ctx.fillStyle =
-            (row + col) % 2 === 0
-              ? 'rgba(176, 38, 88, 0.46)'
-              : 'rgba(214, 62, 118, 0.42)';
-          ctx.beginPath();
-          ctx.roundRect(bx, by, 32, 15, 4);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(42, 14, 34, 0.52)';
-          ctx.lineWidth = 2.0;
-          ctx.stroke();
-        }
-      }
-
-      // Cracked plaster contour line + short Seussian cross-hatch ticks
-      ctx.strokeStyle = 'rgba(34, 16, 40, 0.58)';
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.moveTo(cx - 18, cy + 8);
-      ctx.lineTo(cx - 4, cy - 8);
-      ctx.lineTo(cx + 28, cy - 12);
-      ctx.stroke();
-    }
-
-    // 6. Upper Eaves Shadow Glaze & Whimsical Painted Seussian Curlicue Trim (under snow cap)
-    const eaveShadow = ctx.createLinearGradient(0, 0, 0, 210);
-    eaveShadow.addColorStop(0, 'rgba(48, 12, 36, 0.62)');
-    eaveShadow.addColorStop(0.55, 'rgba(128, 22, 74, 0.32)');
+    // 5. Upper Eaves Shadow Glaze & subtle Seussian curlicue trim (under snow cap)
+    const eaveShadow = ctx.createLinearGradient(0, 0, 0, 200);
+    eaveShadow.addColorStop(0, 'rgba(48, 12, 36, 0.42)');
+    eaveShadow.addColorStop(0.55, 'rgba(128, 22, 74, 0.18)');
     eaveShadow.addColorStop(1, 'rgba(180, 38, 102, 0)');
     ctx.fillStyle = eaveShadow;
-    ctx.fillRect(0, 0, 1024, 210);
+    ctx.fillRect(0, 0, 1024, 200);
 
-    // Painted scalloped curlicue eaves frieze along y ≈ 150..195
-    ctx.strokeStyle = 'rgba(42, 14, 36, 0.58)';
-    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = 'rgba(42, 14, 36, 0.32)';
+    ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
     for (let ex = 32; ex < 992; ex += 64) {
       ctx.beginPath();
       ctx.moveTo(ex, 148);
-      ctx.bezierCurveTo(ex + 16, 184, ex + 48, 184, ex + 64, 148);
-      ctx.stroke();
-
-      // Little Seussian spiral curl at each scallop cusp
-      ctx.beginPath();
-      ctx.arc(ex + 32, 176, 6, 0, Math.PI * 1.65);
+      ctx.bezierCurveTo(ex + 16, 180, ex + 48, 180, ex + 64, 148);
       ctx.stroke();
     }
 
-    // 7. Dense scenic artist cross-hatch ink marks along lower skirt, eaves, and seams
+    // 6. Subtle scenic cross-hatch accents along lower skirt and eaves
     ctx.strokeStyle = inkHex;
-    ctx.lineWidth = 3.2;
-    ctx.globalAlpha = 0.48;
-    for (let i = 0; i < 160; i++) {
+    ctx.lineWidth = 2.0;
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 48; i++) {
       const hx = (i * 67) % 1000;
-      const hy =
-        i % 3 === 0
-          ? 820 + (i % 11) * 16
-          : i % 3 === 1
-            ? 68 + (i % 9) * 18
-            : 340 + (i % 13) * 28;
+      const hy = i % 2 === 0 ? 840 + (i % 9) * 16 : 72 + (i % 7) * 18;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 34, hy - 14);
-      ctx.moveTo(hx + 6, hy - 18);
-      ctx.lineTo(hx + 28, hy + 8);
+      ctx.lineTo(hx + 28, hy - 12);
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
-
-    // 8. Fine scenic shop spatter (blush highlights & plum shadow specks)
-    for (let sp = 0; sp < 480; sp++) {
-      const sx = (sp * 193) % 1020;
-      const sy = (sp * 271) % 1020;
-      ctx.fillStyle =
-        sp % 2 === 0 ? 'rgba(255, 224, 240, 0.32)' : 'rgba(64, 12, 42, 0.28)';
-      ctx.beginPath();
-      ctx.arc(sx, sy, 1.5 + (sp % 3), 0, Math.PI * 2);
-      ctx.fill();
-    }
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
@@ -218,8 +150,7 @@ function createWhovilleStuccoTexture(
  * Generates a hand-painted 1024×1024 Seussian Snowy Roof Cap texture matching the
  * 3 Pink Whoville Round Houses in `model_1B_whoville.jpg`:
  * - Toned-down lavender-snow crown (`<= 0xd8`) grading to icy glacier-blue at the eaves
- * - Painted scalloped roof shingle/drift contour lines in bold black Dr. Seuss ink
- * - Short perpendicular Seussian tick-hatches & fine frost spatter
+ * - Soft scalloped snow-drift contour lines
  */
 function createWhovilleSnowRoofTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -229,61 +160,49 @@ function createWhovilleSnowRoofTexture(): THREE.CanvasTexture {
   if (ctx) {
     // Vertical gradient from icy glacier-cyan at eaves (bottom of lathe UV) to toned lavender-snow at crown
     const grad = ctx.createLinearGradient(0, 1024, 0, 0);
-    grad.addColorStop(0, '#88b4d8');
-    grad.addColorStop(0.28, '#a8c6d8');
-    grad.addColorStop(0.68, '#c0ced8');
+    grad.addColorStop(0, '#96bcdb');
+    grad.addColorStop(0.28, '#aec8d8');
+    grad.addColorStop(0.68, '#c2d0d8');
     grad.addColorStop(1, '#ccd4d8');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
     // Soft rosy-lavender stage light bounce washes across the snow dome
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 16; i++) {
       const px = (i * 173) % 1024;
       const py = (i * 137) % 1024;
-      const wash = ctx.createRadialGradient(px, py, 10, px, py, 130);
+      const wash = ctx.createRadialGradient(px, py, 10, px, py, 140);
       wash.addColorStop(
         0,
-        i % 2 === 0 ? 'rgba(206, 192, 216, 0.28)' : 'rgba(130, 174, 214, 0.26)'
+        i % 2 === 0 ? 'rgba(206, 196, 216, 0.16)' : 'rgba(136, 178, 214, 0.15)'
       );
       wash.addColorStop(1, 'rgba(180, 200, 216, 0)');
       ctx.fillStyle = wash;
       ctx.beginPath();
-      ctx.ellipse(px, py, 130, 75, (i % 5) * 0.3, 0, Math.PI * 2);
+      ctx.ellipse(px, py, 140, 80, (i % 5) * 0.3, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Painted scalloped snow-shingle & drift contour lines in bold Seussian ink (matching Model 1B!)
-    ctx.strokeStyle = 'rgba(22, 28, 48, 0.72)';
+    // Subtle scalloped snow-drift contour lines (toned down so the snow cap reads smooth and pillowy)
+    ctx.strokeStyle = 'rgba(42, 62, 98, 0.26)';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let row = 0; row < 10; row++) {
-      const y = 110 + row * 88;
-      ctx.lineWidth = row > 6 ? 4.2 : 3.0;
+    for (let row = 0; row < 6; row++) {
+      const y = 160 + row * 140;
+      ctx.lineWidth = row > 3 ? 2.4 : 1.8;
       ctx.beginPath();
       for (let x = 0; x <= 1024; x += 64) {
-        const scallop = Math.abs(Math.sin((x / 1024) * Math.PI * 8 + row * 0.7)) * 18;
+        const scallop = Math.abs(Math.sin((x / 1024) * Math.PI * 6 + row * 0.7)) * 14;
         if (x === 0) ctx.moveTo(x, y + scallop);
         else ctx.lineTo(x, y + scallop);
       }
       ctx.stroke();
-
-      // Short Seussian vertical/diagonal ink hatch ticks hanging under each snow-drift contour
-      ctx.lineWidth = 2.4;
-      for (let hx = 28 + (row % 2) * 32; hx < 996; hx += 64) {
-        const scallop = Math.abs(Math.sin((hx / 1024) * Math.PI * 8 + row * 0.7)) * 18;
-        ctx.beginPath();
-        ctx.moveTo(hx, y + scallop);
-        ctx.lineTo(hx - 6, y + scallop + 16);
-        ctx.moveTo(hx + 10, y + scallop + 2);
-        ctx.lineTo(hx + 4, y + scallop + 15);
-        ctx.stroke();
-      }
     }
 
-    // Bold black Seussian eave-drip shadow band at bottom rim of snow cap
-    ctx.fillStyle = 'rgba(20, 24, 42, 0.78)';
-    ctx.fillRect(0, 996, 1024, 28);
+    // Soft eave shadow band at bottom rim of snow cap
+    ctx.fillStyle = 'rgba(34, 48, 78, 0.38)';
+    ctx.fillRect(0, 1002, 1024, 22);
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
