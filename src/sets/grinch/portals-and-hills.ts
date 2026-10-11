@@ -2150,24 +2150,25 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   crumpitGroup.name = 'MtCrumpit_PeakUnit';
   crumpitGroup.position.set(0, 0, -7.25);
 
-  const crumpitDepth = 0.3;
+  const crumpitDepth = 0.36;
   const crumpitShape = new THREE.Shape();
-  crumpitShape.moveTo(-3.75, 0);
-  crumpitShape.lineTo(-3.12, 1.58);
-  crumpitShape.lineTo(-2.38, 2.42);
-  crumpitShape.lineTo(-1.58, 2.94);
-  crumpitShape.lineTo(-0.88, 3.52);
-  crumpitShape.lineTo(-0.34, 4.38);
-  crumpitShape.lineTo(0.18, 5.06);
-  crumpitShape.lineTo(0.74, 5.14); // Sharp overhanging summit crag
-  crumpitShape.lineTo(0.98, 4.86);
-  crumpitShape.lineTo(0.68, 4.38); // Undercut sheer cliff notch
-  crumpitShape.lineTo(0.84, 4.18);
-  crumpitShape.lineTo(0.56, 3.68);
-  crumpitShape.lineTo(0.72, 3.48);
-  crumpitShape.lineTo(0.46, 2.88);
-  crumpitShape.lineTo(0.84, 1.48);
-  crumpitShape.lineTo(1.08, 0);
+  crumpitShape.moveTo(-4.35, 0);
+  crumpitShape.lineTo(-3.62, 1.72);
+  crumpitShape.lineTo(-2.78, 2.68);
+  crumpitShape.lineTo(-1.86, 3.32);
+  crumpitShape.lineTo(-0.96, 4.02);
+  crumpitShape.lineTo(-0.22, 4.88);
+  crumpitShape.lineTo(0.52, 5.56);
+  crumpitShape.lineTo(1.28, 5.78); // Towering Matterhorn / Mt. Crumpit summit crown
+  crumpitShape.lineTo(1.76, 5.52); // Exaggerated cantilevered overhanging horn tip jutting right
+  crumpitShape.lineTo(1.42, 5.18); // Underside of overhanging horn beak
+  crumpitShape.lineTo(0.62, 4.62); // Deep overhanging undercut throat (recessed 1.14m inward!)
+  crumpitShape.lineTo(0.92, 4.38); // Secondary jutting cliff tooth / snow shelf
+  crumpitShape.lineTo(0.44, 3.68); // Deep lower undercut recess (recessed 1.32m from horn tip!)
+  crumpitShape.lineTo(0.76, 3.42); // Lower stepped cliff ledge
+  crumpitShape.lineTo(0.38, 2.64); // Lower sheer cliff concavity
+  crumpitShape.lineTo(0.88, 1.48); // Flaring rocky base buttress
+  crumpitShape.lineTo(1.24, 0);
   crumpitShape.closePath();
 
   const crumpitGeo = new THREE.ExtrudeGeometry(crumpitShape, {
@@ -2175,19 +2176,19 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     bevelEnabled: true,
     bevelSegments: 1,
     steps: 1,
-    bevelSize: 0.02,
-    bevelThickness: 0.02,
+    bevelSize: 0.022,
+    bevelThickness: 0.022,
   });
   // Center `crumpitGeo` around z = 0 so its coordinate system matches `createIntegratedRidgeSnowMantle`!
   crumpitGeo.translate(0, 0, -crumpitDepth * 0.5);
 
   // Shared 3D arrête ridge + planar rock facet displacement function for BOTH Mt. Crumpit and its snow mantles!
   const crumpitSurfaceZOffset = (x: number, y: number): number => {
-    const ridgeX = -1.6 + (y / 5.14) * 2.1;
+    const ridgeX = -2.1 + (y / 5.78) * 3.35;
     const dist = Math.abs(x - ridgeX);
-    const arrete = Math.max(0, 1.0 - dist / 1.4) * 0.1;
+    const arrete = Math.max(0, 1.0 - dist / 1.65) * 0.12;
     const cragFacet =
-      Math.sin(x * 3.2 + 1.1) * 0.018 + Math.cos(y * 4.1 - 0.7) * 0.014;
+      Math.sin(x * 2.9 + 1.1) * 0.02 + Math.cos(y * 3.8 - 0.7) * 0.016;
     return arrete + cragFacet;
   };
 
@@ -2211,31 +2212,31 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   // 1. Continuous 3D Topology-Conforming Snow Mantle along Mt. Crumpit's entire windward slope & overhanging summit horn!
   //    Preserves every vertex of `crumpitShape` and applies `crumpitSurfaceZOffset` so the mountain NEVER clips through!
   const crumpitWindwardAndSummitPts: ReadonlyArray<readonly [number, number]> = [
-    [-3.12, 1.58],
-    [-2.38, 2.42],
-    [-1.58, 2.94],
-    [-0.88, 3.52],
-    [-0.34, 4.38],
-    [0.18, 5.06],
-    [0.74, 5.14],
-    [0.98, 4.86],
+    [-3.62, 1.72],
+    [-2.78, 2.68],
+    [-1.86, 3.32],
+    [-0.96, 4.02],
+    [-0.22, 4.88],
+    [0.52, 5.56],
+    [1.28, 5.78],
+    [1.76, 5.52],
   ];
   const summitSnowCap = createIntegratedRidgeSnowMantle(
     crumpitWindwardAndSummitPts,
     crumpitDepth,
-    0.34,
+    0.38,
     snowCrestMat,
     9,
     crumpitSurfaceZOffset
   );
   crumpitGroup.add(summitSnowCap);
 
-  // 2. Secondary topology-conforming snow mantles along the stepped leeward cliff shelves of Mt. Crumpit
+  // 2. Secondary topology-conforming snow mantles along the stepped leeward cliff shelves beneath the overhang
   const crumpitOverhangSnow = createIntegratedRidgeSnowMantle(
     [
-      [0.56, 3.68],
-      [0.68, 4.18],
-      [0.84, 4.18],
+      [0.62, 4.62],
+      [0.77, 4.5],
+      [0.92, 4.38],
     ],
     crumpitDepth,
     0.22,
@@ -2247,11 +2248,12 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   const crumpitLowerShelfSnow = createIntegratedRidgeSnowMantle(
     [
-      [0.46, 2.88],
-      [0.72, 3.48],
+      [0.44, 3.68],
+      [0.6, 3.55],
+      [0.76, 3.42],
     ],
     crumpitDepth,
-    0.16,
+    0.18,
     snowCrestMat,
     29,
     crumpitSurfaceZOffset
@@ -2261,10 +2263,11 @@ export function buildGrinchWhovilleHillsAndCrumpit(
   // 3. Angular warm-brown stone strata ledges jutting from Mt. Crumpit's exposed rock face,
   //    each crowned with a fitted snow/ice cap following the ledge's exact 3-point top ridge!
   for (const [lx, ly, wx, hy, dz, lean, seedOff] of [
-    [-2.05, 1.52, 0.78, 0.24, 0.16, 0.1, 91],
-    [-1.12, 2.08, 0.72, 0.22, 0.16, 0.12, 92],
-    [-0.22, 2.72, 0.64, 0.2, 0.16, 0.1, 93],
-    [0.18, 1.92, 0.58, 0.18, 0.15, -0.08, 94],
+    [-2.48, 1.68, 0.86, 0.25, 0.17, 0.1, 91],
+    [-1.42, 2.34, 0.78, 0.23, 0.17, 0.12, 92],
+    [-0.38, 3.12, 0.7, 0.21, 0.16, 0.1, 93],
+    [0.16, 3.98, 0.62, 0.2, 0.16, 0.12, 94],
+    [0.12, 2.08, 0.64, 0.19, 0.15, -0.08, 95],
   ] as const) {
     const ledgeZ =
       crumpitDepth * 0.5 + crumpitSurfaceZOffset(lx, ly) - dz * 0.22;
@@ -2312,11 +2315,11 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   // 4. Winding "Dump-It-To-Crumpit" sleigh trail ribbon conforming to Mt. Crumpit's 3D arrête surface (zero scale distortion!)
   const trailWaypoints: ReadonlyArray<readonly [number, number]> = [
-    [-2.18, 1.82],
-    [-1.24, 2.38],
-    [-0.42, 3.12],
-    [0.14, 3.92],
-    [0.42, 4.52],
+    [-2.58, 1.96],
+    [-1.54, 2.68],
+    [-0.58, 3.52],
+    [0.18, 4.38],
+    [0.78, 5.08],
   ];
   const crumpitTrailCurve = new THREE.CatmullRomCurve3(
     trailWaypoints.map(
@@ -2336,9 +2339,9 @@ export function buildGrinchWhovilleHillsAndCrumpit(
 
   // Miniature glowing trail lanterns along the Mt. Crumpit ascent
   for (const [tx, ty, tScale, tLean] of [
-    [-1.85, 2.02, 0.54, 1],
-    [-0.92, 2.68, 0.48, -1],
-    [-0.18, 3.48, 0.42, 1],
+    [-2.15, 2.22, 0.56, 1],
+    [-1.08, 3.06, 0.5, -1],
+    [-0.08, 4.02, 0.44, 1],
   ] as const) {
     const trailLamp = createMiniatureCrookedLampPost(
       tScale,
@@ -2353,32 +2356,6 @@ export function buildGrinchWhovilleHillsAndCrumpit(
     );
     crumpitGroup.add(trailLamp);
   }
-
-  // Miniature glowing Grinch cave mouth tucked near the upper cliff of Mt. Crumpit
-  const caveX = 0.28;
-  const caveY = 4.22;
-  const caveBaseZ =
-    crumpitDepth * 0.5 + 0.022 + crumpitSurfaceZOffset(caveX, caveY);
-  const caveFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(0.36, 0.4, 0.08, 2, 0.04),
-    contourInkMat
-  );
-  caveFrame.position.set(caveX, caveY, caveBaseZ + 0.02);
-  caveFrame.rotation.z = -0.18;
-  crumpitGroup.add(caveFrame);
-
-  const caveGlow = new THREE.Mesh(
-    new RoundedBoxGeometry(0.24, 0.28, 0.05, 1, 0.03),
-    new THREE.MeshStandardMaterial({
-      color: 0x8cc864,
-      emissive: 0x52a432,
-      emissiveIntensity: 0.72,
-      roughness: 0.55,
-    })
-  );
-  caveGlow.position.set(caveX + 0.01, caveY - 0.02, caveBaseZ + 0.05);
-  caveGlow.rotation.z = -0.18;
-  crumpitGroup.add(caveGlow);
 
   hillsGroup.add(crumpitGroup);
 

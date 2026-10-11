@@ -29,7 +29,7 @@ function createWhovilleStuccoTexture(
   canvas.height = 1024;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // 1. Vertical & radial stucco ombré wash (deep raspberry-rose at eaves/base, luminous blush-pink in belly)
+    // 1. Vertical & radial stucco ombré wash (rich eave/base tone, warm luminous center belly)
     const vGrad = ctx.createLinearGradient(0, 0, 0, 1024);
     vGrad.addColorStop(0, stripeHex);
     vGrad.addColorStop(0.14, baseHex);
@@ -39,12 +39,12 @@ function createWhovilleStuccoTexture(
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Warm radial belly glow in the center of each facade bay
+    // Warm neutral ivory radial belly glow in the center of each facade bay (works cleanly with any house color!)
     for (const bx of [256, 512, 768]) {
       const bellyGlow = ctx.createRadialGradient(bx, 480, 24, bx, 480, 260);
-      bellyGlow.addColorStop(0, 'rgba(255, 210, 232, 0.34)');
-      bellyGlow.addColorStop(0.65, 'rgba(248, 148, 196, 0.14)');
-      bellyGlow.addColorStop(1, 'rgba(180, 36, 102, 0)');
+      bellyGlow.addColorStop(0, 'rgba(248, 242, 230, 0.22)');
+      bellyGlow.addColorStop(0.65, 'rgba(240, 232, 218, 0.08)');
+      bellyGlow.addColorStop(1, 'rgba(240, 232, 218, 0)');
       ctx.fillStyle = bellyGlow;
       ctx.beginPath();
       ctx.ellipse(bx, 480, 260, 310, 0, 0, Math.PI * 2);
@@ -52,86 +52,69 @@ function createWhovilleStuccoTexture(
     }
 
     // 2. Soft scenic plaster wash (toned down for a clean painted finish)
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 96; i++) {
       const sx = (i * 157) % 1024;
       const sy = (i * 227) % 1024;
       const sr = 26 + (i % 44);
       ctx.fillStyle =
         i % 3 === 0
-          ? 'rgba(255, 224, 240, 0.06)'
+          ? 'rgba(248, 242, 232, 0.05)'
           : i % 3 === 1
-            ? 'rgba(104, 18, 60, 0.05)'
-            : 'rgba(236, 98, 162, 0.05)';
+            ? 'rgba(32, 24, 28, 0.05)'
+            : 'rgba(220, 210, 196, 0.04)';
       ctx.beginPath();
       ctx.ellipse(sx, sy, sr * 1.45, sr * 0.82, (i % 7) * 0.42, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 3. Subtle painted vertical Seussian rib bevels & seam shading
-    for (const rx of [128, 336, 512, 688, 896]) {
-      const ribGrad = ctx.createLinearGradient(rx - 28, 0, rx + 28, 0);
-      ribGrad.addColorStop(0, 'rgba(68, 12, 42, 0.16)');
-      ribGrad.addColorStop(0.45, 'rgba(255, 216, 236, 0.22)');
-      ribGrad.addColorStop(1, 'rgba(68, 12, 42, 0.16)');
-      ctx.fillStyle = ribGrad;
-      ctx.fillRect(rx - 28, 0, 56, 1024);
-
-      ctx.strokeStyle = 'rgba(34, 16, 40, 0.18)';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(rx - 20, 0);
-      ctx.bezierCurveTo(rx - 12, 340, rx - 28, 680, rx - 18, 1024);
-      ctx.stroke();
-    }
-
-    // 4. Gentle horizontal Seussian contour bands
-    for (let y = 96; y < 960; y += 112) {
+    // 3. Gentle horizontal Seussian contour bands
+    for (let y = 112; y < 940; y += 128) {
       ctx.strokeStyle = stripeHex;
-      ctx.lineWidth = 8;
-      ctx.globalAlpha = 0.24;
+      ctx.lineWidth = 6;
+      ctx.globalAlpha = 0.2;
       ctx.beginPath();
       for (let x = 0; x <= 1024; x += 32) {
-        const wave = Math.sin((x / 1024) * Math.PI * 4 + y * 0.04) * 10;
+        const wave = Math.sin((x / 1024) * Math.PI * 4 + y * 0.04) * 8;
         if (x === 0) ctx.moveTo(x, y + wave);
         else ctx.lineTo(x, y + wave);
       }
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255, 232, 244, 0.20)';
-      ctx.lineWidth = 2.5;
-      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = 'rgba(248, 242, 232, 0.16)';
+      ctx.lineWidth = 2.0;
+      ctx.globalAlpha = 0.35;
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
 
-    // 5. Upper Eaves Shadow Glaze & subtle Seussian curlicue trim (under snow cap)
-    const eaveShadow = ctx.createLinearGradient(0, 0, 0, 200);
-    eaveShadow.addColorStop(0, 'rgba(48, 12, 36, 0.42)');
-    eaveShadow.addColorStop(0.55, 'rgba(128, 22, 74, 0.18)');
-    eaveShadow.addColorStop(1, 'rgba(180, 38, 102, 0)');
+    // 4. Upper Eaves Shadow Glaze & subtle Seussian curlicue trim (under snow cap)
+    const eaveShadow = ctx.createLinearGradient(0, 0, 0, 190);
+    eaveShadow.addColorStop(0, 'rgba(28, 22, 30, 0.36)');
+    eaveShadow.addColorStop(0.55, 'rgba(38, 28, 36, 0.14)');
+    eaveShadow.addColorStop(1, 'rgba(38, 28, 36, 0)');
     ctx.fillStyle = eaveShadow;
-    ctx.fillRect(0, 0, 1024, 200);
+    ctx.fillRect(0, 0, 1024, 190);
 
-    ctx.strokeStyle = 'rgba(42, 14, 36, 0.32)';
-    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = 'rgba(34, 24, 30, 0.26)';
+    ctx.lineWidth = 2.0;
     ctx.lineCap = 'round';
     for (let ex = 32; ex < 992; ex += 64) {
       ctx.beginPath();
       ctx.moveTo(ex, 148);
-      ctx.bezierCurveTo(ex + 16, 180, ex + 48, 180, ex + 64, 148);
+      ctx.bezierCurveTo(ex + 16, 178, ex + 48, 178, ex + 64, 148);
       ctx.stroke();
     }
 
-    // 6. Subtle scenic cross-hatch accents along lower skirt and eaves
+    // 5. Subtle scenic cross-hatch accents along lower skirt and eaves
     ctx.strokeStyle = inkHex;
-    ctx.lineWidth = 2.0;
-    ctx.globalAlpha = 0.22;
-    for (let i = 0; i < 48; i++) {
+    ctx.lineWidth = 1.8;
+    ctx.globalAlpha = 0.18;
+    for (let i = 0; i < 40; i++) {
       const hx = (i * 67) % 1000;
       const hy = i % 2 === 0 ? 840 + (i % 9) * 16 : 72 + (i % 7) * 18;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
-      ctx.lineTo(hx + 28, hy - 12);
+      ctx.lineTo(hx + 26, hy - 10);
       ctx.stroke();
     }
     ctx.globalAlpha = 1.0;
@@ -145,8 +128,7 @@ function createWhovilleStuccoTexture(
 }
 
 /**
- * Generates a hand-painted 1024×1024 Seussian Snowy Roof Cap texture matching the
- * 3 Pink Whoville Round Houses in `model_1B_whoville.jpg`:
+ * Generates a hand-painted 1024×1024 Seussian Snowy Roof Cap texture:
  * - Toned-down lavender-snow crown (`<= 0xd8`) grading to icy glacier-blue at the eaves
  * - Soft scalloped snow-drift contour lines
  */
@@ -211,9 +193,9 @@ function createWhovilleSnowRoofTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Generates a hand-painted Seussian Arched Door Leaf texture with warm coral-pink
- * vertical timber planks, trompe-l'oeil recessed arch molding, and charcoal ink hatching
- * matching the 3 Pink Whoville Houses in `model_1B_whoville.jpg`.
+ * Generates a hand-painted Seussian Arched Timber Door Leaf texture with warm roasted-chestnut
+ * & honey-walnut vertical planks, arched top shadow vignette, and natural woodgrain curls
+ * (no square outer rectangle that clips against the arch).
  */
 function createWhovilleDoorTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -222,56 +204,59 @@ function createWhovilleDoorTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (ctx) {
     const grad = ctx.createLinearGradient(0, 0, 512, 512);
-    grad.addColorStop(0, '#f47cb4');
-    grad.addColorStop(0.5, '#ea5c9c');
-    grad.addColorStop(1, '#c83878');
+    grad.addColorStop(0, '#8a5432');
+    grad.addColorStop(0.5, '#724224');
+    grad.addColorStop(1, '#542e16');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Vertical hand-painted Seussian plank seams & woodgrain curls
-    for (let x = 64; x < 512; x += 64) {
-      ctx.strokeStyle = 'rgba(48, 12, 34, 0.48)';
-      ctx.lineWidth = 3.5;
+    // Soft recessed shadow around perimeter so the door sits naturally inside its arch casing
+    const vig = ctx.createRadialGradient(256, 280, 80, 256, 280, 310);
+    vig.addColorStop(0, 'rgba(232, 184, 132, 0.16)');
+    vig.addColorStop(0.7, 'rgba(90, 48, 22, 0)');
+    vig.addColorStop(1, 'rgba(24, 12, 6, 0.48)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Vertical hand-painted Seussian timber plank seams & woodgrain curls
+    for (let x = 72; x < 512; x += 72) {
+      ctx.strokeStyle = 'rgba(30, 14, 6, 0.52)';
+      ctx.lineWidth = 3.2;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.bezierCurveTo(x + 6, 170, x - 6, 340, x, 512);
+      ctx.bezierCurveTo(x + 5, 170, x - 5, 340, x, 512);
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255, 220, 238, 0.32)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(224, 178, 130, 0.24)';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(x + 4, 0);
-      ctx.bezierCurveTo(x + 10, 170, x - 2, 340, x + 4, 512);
+      ctx.bezierCurveTo(x + 9, 170, x - 1, 340, x + 4, 512);
       ctx.stroke();
     }
 
-    // Trompe-l'oeil painted inner arch frame & cross-hatch shadow ticks
-    ctx.strokeStyle = '#221024';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(24, 24, 464, 464);
-
-    ctx.lineWidth = 2.6;
-    for (let y = 48; y < 464; y += 36) {
-      ctx.beginPath();
-      ctx.moveTo(24, y);
-      ctx.lineTo(42, y - 8);
-      ctx.moveTo(488, y);
-      ctx.lineTo(470, y - 8);
-      ctx.stroke();
-    }
+    // Subtle arched inner panel groove matching the arched door silhouette
+    ctx.strokeStyle = 'rgba(28, 14, 6, 0.45)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(64, 468);
+    ctx.lineTo(64, 220);
+    ctx.arc(256, 220, 192, Math.PI, 0, false);
+    ctx.lineTo(448, 468);
+    ctx.closePath();
+    ctx.stroke();
   }
   const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.anisotropy = 8;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
 /**
- * Generates a hand-painted Seussian Cream Arch Casing texture with painted stone/timber
- * voussoir joints and black Seussian ink tick-marks (matching the door & window surrounds
- * in `model_1B_whoville.jpg`).
+ * Generates a hand-painted Seussian Warm Stone/Cream Arch Casing texture with subtle
+ * voussoir joints (harmonizing with coral-rose, golden-apricot, and sage-mint stucco!).
  */
 function createWhovilleArchCasingTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
@@ -279,27 +264,27 @@ function createWhovilleArchCasingTexture(): THREE.CanvasTexture {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // Toned-down warm cream-blush base (all channels <= 0xd8)
-    ctx.fillStyle = '#d6c8ce';
+    // Toned-down warm limestone-cream base (all channels <= 0xd8)
+    ctx.fillStyle = '#d4cabe';
     ctx.fillRect(0, 0, 256, 256);
 
-    // Subtle rosy-cream brushstroke mottling
-    for (let i = 0; i < 40; i++) {
+    // Subtle warm stone brushstroke mottling
+    for (let i = 0; i < 36; i++) {
       ctx.fillStyle =
-        i % 2 === 0 ? 'rgba(216, 196, 206, 0.35)' : 'rgba(168, 138, 154, 0.25)';
+        i % 2 === 0 ? 'rgba(216, 206, 192, 0.32)' : 'rgba(164, 150, 136, 0.22)';
       ctx.fillRect((i * 43) % 256, (i * 67) % 256, 36, 18);
     }
 
-    // Crisp black Seussian ink horizontal tick marks along the casing (visible in Model 1B!)
-    ctx.strokeStyle = '#1e1424';
-    ctx.lineWidth = 3.2;
+    // Subtle Seussian stone mortar tick marks along the casing
+    ctx.strokeStyle = 'rgba(42, 32, 26, 0.42)';
+    ctx.lineWidth = 2.4;
     ctx.lineCap = 'round';
-    for (let y = 16; y < 256; y += 28) {
+    for (let y = 20; y < 256; y += 32) {
       ctx.beginPath();
-      ctx.moveTo(8, y);
-      ctx.lineTo(46, y + 4);
-      ctx.moveTo(208, y - 2);
-      ctx.lineTo(248, y + 3);
+      ctx.moveTo(10, y);
+      ctx.lineTo(44, y + 3);
+      ctx.moveTo(212, y - 2);
+      ctx.lineTo(246, y + 2);
       ctx.stroke();
     }
   }
@@ -311,7 +296,7 @@ function createWhovilleArchCasingTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Generates a hand-painted louvered berry-magenta wood shutter texture with
+ * Generates a hand-painted louvered warm timber/walnut shutter texture with
  * trompe-l'oeil slat shadows and Seussian ink outlines.
  */
 function createPaintedShutterTexture(): THREE.CanvasTexture {
@@ -320,18 +305,18 @@ function createPaintedShutterTexture(): THREE.CanvasTexture {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.fillStyle = '#922258';
+    ctx.fillStyle = '#6c422c';
     ctx.fillRect(0, 0, 128, 256);
 
-    ctx.strokeStyle = '#1e0e1c';
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#24140c';
+    ctx.lineWidth = 5;
     ctx.strokeRect(4, 4, 120, 248);
 
     // Painted horizontal louver slats with highlight & shadow bevels
     for (let y = 24; y < 232; y += 16) {
-      ctx.fillStyle = '#520e30';
+      ctx.fillStyle = '#3c2012';
       ctx.fillRect(14, y, 100, 6);
-      ctx.fillStyle = '#c84884';
+      ctx.fillStyle = '#966246';
       ctx.fillRect(14, y + 6, 100, 4);
     }
   }
@@ -742,7 +727,7 @@ function buildSingleWhovilleHouse(
 
   const halfW = cfg.widthM * 0.5;
   // Narrow foundation at the bottom, wide exaggerated flare at the upper trapezoid eaves
-  const baseHalfW = halfW * 0.48;
+  const baseHalfW = halfW * 0.54;
   const topLeftX = -halfW * (1.14 + (cfg.dormerSide < 0 ? 0.08 : 0.0));
   const topRightX = halfW * (1.14 + (cfg.dormerSide > 0 ? 0.08 : 0.0));
   const houseDepth = Math.max(0.7, cfg.widthM * cfg.depthScale * 0.88);
@@ -886,8 +871,8 @@ function buildSingleWhovilleHouse(
   bodyMesh.receiveShadow = true;
   house.add(bodyMesh);
 
-  // 3D Flared Trapezoid Corner & Panel Trim Ribs hugging the outward-leaning walls
-  for (const ribFrac of [-1.0, -0.46, 0.46, 1.0]) {
+  // 3D Flared Trapezoid Outer Corner Trim Ribs hugging the left & right outward-leaning walls
+  for (const ribFrac of [-1.0, 1.0]) {
     const ribPts: THREE.Vector3[] = [];
     for (let i = 0; i <= 12; i++) {
       const t = i / 12;
@@ -895,17 +880,18 @@ function buildSingleWhovilleHouse(
       const rx = getRightWallX(t);
       const u = (ribFrac + 1) * 0.5;
       const x = THREE.MathUtils.lerp(lx, rx, u);
-      const topYAtU = THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
+      const topYAtU =
+        THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
         Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.72;
       const y = THREE.MathUtils.lerp(baseY + 0.04, topYAtU - 0.04, t);
       const camber = Math.max(0, 1 - Math.pow(x / (halfW * 1.2), 2)) * 0.032;
-      ribPts.push(new THREE.Vector3(x, y, frontSurfaceZ + camber + 0.012));
+      ribPts.push(new THREE.Vector3(x, y, frontSurfaceZ + camber + 0.01));
     }
     const ribTube = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(ribPts),
         18,
-        Math.abs(ribFrac) === 1.0 ? 0.026 : 0.018,
+        0.024,
         8,
         false
       ),
@@ -1164,7 +1150,8 @@ function buildSingleWhovilleHouse(
   house.add(chimTopGroup);
 
   // ==========================================================================
-  // 5. RECESSED ARCHED DOORWAY AT THE NARROWER BASE, STONE STEPS & WREATH
+  // 5. ARCHITECTURAL RECESSED ARCHED DOORWAY INTEGRATED INTO THE LOWER WALL
+  //    (Hollow arch casing sunk into the wall + timber door leaf recessed inside!)
   // ==========================================================================
   const doorCamberZ =
     Math.max(0, 1 - Math.pow(cfg.doorX / (halfW * 1.15), 2)) * 0.032;
@@ -1173,11 +1160,12 @@ function buildSingleWhovilleHouse(
   const doorGroup = new THREE.Group();
   doorGroup.position.set(cfg.doorX, 0, doorLocalZ);
 
+  // Integrated stone threshold steps grounded into the snow plinth and lower wall
   const stepBottom = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      cfg.doorWidth * 0.76,
-      cfg.doorWidth * 0.84,
-      0.08,
+      cfg.doorWidth * 0.72,
+      cfg.doorWidth * 0.78,
+      0.07,
       18,
       1,
       false,
@@ -1186,16 +1174,16 @@ function buildSingleWhovilleHouse(
     ),
     sharedMats.stoneStepMat
   );
-  stepBottom.scale.set(1.0, 1.0, 0.52);
-  stepBottom.position.set(0, 0.04, 0.08);
+  stepBottom.scale.set(1.0, 1.0, 0.42);
+  stepBottom.position.set(0, 0.035, 0.04);
   stepBottom.receiveShadow = true;
   doorGroup.add(stepBottom);
 
   const stepTop = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      cfg.doorWidth * 0.62,
-      cfg.doorWidth * 0.68,
-      0.08,
+      cfg.doorWidth * 0.58,
+      cfg.doorWidth * 0.64,
+      0.07,
       18,
       1,
       false,
@@ -1204,18 +1192,18 @@ function buildSingleWhovilleHouse(
     ),
     sharedMats.stoneStepMat
   );
-  stepTop.scale.set(1.0, 1.0, 0.42);
-  stepTop.position.set(0, 0.12, 0.05);
+  stepTop.scale.set(1.0, 1.0, 0.34);
+  stepTop.position.set(0, 0.1, 0.02);
   stepTop.receiveShadow = true;
   doorGroup.add(stepTop);
 
   const doorArchGroup = new THREE.Group();
-  doorArchGroup.position.set(0, 0.16, 0);
+  doorArchGroup.position.set(0, 0.13, 0);
   doorArchGroup.rotation.z = cfg.doorTiltZ;
 
   const makeArchShape = (w: number, h: number): THREE.Shape => {
     const hw = w * 0.5;
-    const straightH = Math.max(0.2, h - hw);
+    const straightH = Math.max(0.18, h - hw);
     const shape = new THREE.Shape();
     shape.moveTo(-hw, 0);
     shape.lineTo(-hw, straightH);
@@ -1225,106 +1213,93 @@ function buildSingleWhovilleHouse(
     return shape;
   };
 
-  const doorInkMesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(
-      makeArchShape(cfg.doorWidth + 0.14, cfg.doorHeight + 0.08),
-      { depth: 0.03, bevelEnabled: false, curveSegments: 20 }
-    ),
-    sharedMats.inkMat
-  );
-  doorInkMesh.position.z = 0.0;
-  doorArchGroup.add(doorInkMesh);
+  const makeArchHolePath = (w: number, h: number): THREE.Path => {
+    const hw = w * 0.5;
+    const straightH = Math.max(0.18, h - hw);
+    const path = new THREE.Path();
+    path.moveTo(-hw, 0);
+    path.lineTo(-hw, straightH);
+    path.absarc(0, straightH, hw, Math.PI, 0, true);
+    path.lineTo(hw, 0);
+    path.closePath();
+    return path;
+  };
 
-  const frameMat =
-    cfg.doorFrameStyle === 'candy'
-      ? sharedMats.candyFrameMat
-      : cfg.doorFrameStyle === 'olive'
-        ? sharedMats.oliveFrameMat
-        : sharedMats.creamFrameMat;
+  const innerOpenW = cfg.doorWidth - 0.02;
+  const innerOpenH = cfg.doorHeight - 0.02;
 
-  const doorSurroundGeo = new THREE.ExtrudeGeometry(
-    makeArchShape(cfg.doorWidth + 0.08, cfg.doorHeight + 0.04),
-    { depth: 0.035, bevelEnabled: false, curveSegments: 20 }
-  );
-  normalizeExtrudeUVs(doorSurroundGeo, 'fit');
-  const doorSurroundMesh = new THREE.Mesh(
-    doorSurroundGeo,
-    sharedMats.creamFrameMat
-  );
-  doorSurroundMesh.position.z = 0.03;
-  doorArchGroup.add(doorSurroundMesh);
-
+  // 1. Recessed Carved Timber Door Leaf seated INSIDE the doorway opening (z = 0.003..0.015)
   const doorLeafGeo = new THREE.ExtrudeGeometry(
-    makeArchShape(cfg.doorWidth - 0.04, cfg.doorHeight - 0.04),
-    { depth: 0.035, bevelEnabled: false, curveSegments: 20 }
+    makeArchShape(innerOpenW + 0.016, innerOpenH + 0.01),
+    { depth: 0.012, bevelEnabled: false, curveSegments: 22 }
   );
   normalizeExtrudeUVs(doorLeafGeo, 'fit');
   const doorLeafMesh = new THREE.Mesh(doorLeafGeo, sharedMats.doorPanelMat);
-  doorLeafMesh.position.z = 0.065;
+  doorLeafMesh.position.z = 0.003;
+  doorLeafMesh.receiveShadow = true;
   doorArchGroup.add(doorLeafMesh);
 
-  const archFramePts: THREE.Vector3[] = [];
-  const dhw = cfg.doorWidth * 0.5 + 0.02;
-  const dStraightH = cfg.doorHeight - dhw;
-  for (let i = 0; i <= 16; i++) {
-    const t = i / 16;
-    if (t < 0.25) {
-      archFramePts.push(new THREE.Vector3(-dhw, (t / 0.25) * dStraightH, 0.11));
-    } else if (t <= 0.75) {
-      const a = Math.PI - ((t - 0.25) / 0.5) * Math.PI;
-      archFramePts.push(
-        new THREE.Vector3(
-          Math.cos(a) * dhw,
-          dStraightH + Math.sin(a) * dhw,
-          0.11
-        )
-      );
-    } else {
-      archFramePts.push(
-        new THREE.Vector3(dhw, (1 - (t - 0.75) / 0.25) * dStraightH, 0.11)
-      );
-    }
-  }
-  const archMoldingTube = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(archFramePts),
-      28,
-      0.026,
-      10,
-      false
-    ),
-    frameMat
-  );
-  doorArchGroup.add(archMoldingTube);
+  // 2. Hollow 3D Stone/Timber Arch Casing sunk INTO the stucco wall (z = -0.028 to +0.026)
+  //    Because its front face (z = +0.032 with bevel) sits in front of the recessed door leaf (z = 0.015),
+  //    the doorway reads as a genuine recessed architectural portal rather than an object stuck on top!
+  const outerCasingW = cfg.doorWidth + 0.1;
+  const outerCasingH = cfg.doorHeight + 0.05;
+  const hollowCasingShape = makeArchShape(outerCasingW, outerCasingH);
+  hollowCasingShape.holes.push(makeArchHolePath(innerOpenW, innerOpenH));
 
-  const handleSide = cfg.doorX >= 0 ? -1 : 1;
+  const doorCasingGeo = new THREE.ExtrudeGeometry(hollowCasingShape, {
+    depth: 0.054,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.007,
+    bevelThickness: 0.007,
+    curveSegments: 24,
+  });
+  normalizeExtrudeUVs(doorCasingGeo, 'fit');
+  doorCasingGeo.computeVertexNormals();
+
+  const casingMat =
+    cfg.doorFrameStyle === 'olive'
+      ? sharedMats.oliveFrameMat
+      : sharedMats.creamFrameMat;
+
+  const doorCasingMesh = new THREE.Mesh(doorCasingGeo, casingMat);
+  doorCasingMesh.position.z = -0.028;
+  doorCasingMesh.castShadow = true;
+  doorCasingMesh.receiveShadow = true;
+  doorArchGroup.add(doorCasingMesh);
+
+  // 3. Small Warm-Lit Round Cottage Peep-Window recessed into the upper door leaf
+  const peepRadius = cfg.doorWidth * 0.19;
+  const peepY = cfg.doorHeight * 0.67;
+
+  const peepGlass = new THREE.Mesh(
+    new THREE.CircleGeometry(peepRadius, 18),
+    sharedMats.windowGlowMat
+  );
+  peepGlass.position.set(0, peepY, 0.017);
+  doorArchGroup.add(peepGlass);
+
+  const peepRim = new THREE.Mesh(
+    new THREE.TorusGeometry(peepRadius, 0.012, 8, 18),
+    sharedMats.oliveFrameMat
+  );
+  peepRim.position.set(0, peepY, 0.019);
+  doorArchGroup.add(peepRim);
+
+  // 4. Subtle Brass Doorknob on the recessed door leaf
+  const handleSide = cfg.dormerSide < 0 ? -1 : 1;
   const doorknob = new THREE.Mesh(
-    new THREE.SphereGeometry(0.032, 10, 10),
+    new THREE.SphereGeometry(0.024, 10, 10),
     sharedMats.brassMat
   );
   doorknob.position.set(
-    handleSide * (cfg.doorWidth * 0.32),
-    cfg.doorHeight * 0.44,
-    0.135
+    handleSide * (innerOpenW * 0.34),
+    cfg.doorHeight * 0.42,
+    0.024
   );
   doorArchGroup.add(doorknob);
-
-  const knockerRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.042, 0.011, 8, 14),
-    sharedMats.brassMat
-  );
-  knockerRing.position.set(0, cfg.doorHeight * 0.36, 0.135);
-  doorArchGroup.add(knockerRing);
-
-  const doorWreath = createHolidayWreath(
-    0.175,
-    0.05,
-    sharedMats.wreathGreenMat,
-    sharedMats.crimsonBowMat,
-    sharedMats.goldBowMat
-  );
-  doorWreath.position.set(0, cfg.doorHeight * 0.64, 0.155);
-  doorArchGroup.add(doorWreath);
 
   doorGroup.add(doorArchGroup);
   house.add(doorGroup);
@@ -1507,23 +1482,13 @@ function buildSingleWhovilleHouse(
   eaveFairyLights.position.z = 0.025;
   house.add(eaveFairyLights);
 
-  const doorFairyPts = archFramePts.map(
-    (p) => new THREE.Vector3(p.x, p.y, p.z + 0.028)
-  );
-  doorArchGroup.add(
-    createWhoLandFairyLightStrand(doorFairyPts, {
-      bulbCount: 11,
-      bulbRadiusM: 0.024,
-      emissiveIntensity: 2.8,
-    })
-  );
-
   return house;
 }
 
 /**
- * 1. Builds the 3 Pink Whoville Upside-Down Trapezoid Houses (DSR, USR & MSL Wagons)
- *    for element `'grinch-whoville-houses'`.
+ * 1. Builds the 3 Whoville Upside-Down Trapezoid Houses (DSR, USR & MSL Wagons)
+ *    with varied Seussian storybook stucco palettes (Dusty Coral-Rose, Warm Buttercream-Apricot,
+ *    and Soft Sage-Mint) for element `'grinch-whoville-houses'`.
  */
 export function buildGrinchWhovilleHouses(
   rockTex: THREE.CanvasTexture
@@ -1638,7 +1603,7 @@ export function buildGrinchWhovilleHouses(
     doorPanelMat,
   };
 
-  // DSR House (-3.32, 0, -2.82): Upside-down exaggerated trapezoid with signature round windows
+  // DSR House (-3.32, 0, -2.82): Warm Dusty Terracotta-Rose / Soft Coral Stucco
   const dsrConfig: WhovilleHouseConfig = {
     label: 'DSR',
     position: new THREE.Vector3(-3.32, 0, -2.82),
@@ -1646,15 +1611,15 @@ export function buildGrinchWhovilleHouses(
     widthM: 2.26,
     heightM: 2.84,
     depthScale: 0.36,
-    basePinkHex: '#d83e82',
-    bellyPinkHex: '#f26aa8',
-    stripePinkHex: '#b42464',
-    ribColor: 0xc42e72,
-    doorX: 0.22,
-    doorWidth: 0.56,
-    doorHeight: 1.24,
-    doorTiltZ: -0.05,
-    doorFrameStyle: 'candy',
+    basePinkHex: '#c85e72',
+    bellyPinkHex: '#de8898',
+    stripePinkHex: '#9e4054',
+    ribColor: 0xa8485c,
+    doorX: 0.0,
+    doorWidth: 0.48,
+    doorHeight: 1.18,
+    doorTiltZ: -0.03,
+    doorFrameStyle: 'cream',
     dormerSide: -1,
     chimneyLeanX: -0.14,
     chimneyStyle: 't-cap',
@@ -1680,7 +1645,7 @@ export function buildGrinchWhovilleHouses(
     ],
   };
 
-  // USR House (-2.12, 0, -5.02): Upside-down exaggerated trapezoid with prominent center-left round window
+  // USR House (-2.12, 0, -5.02): Warm Buttercream / Golden-Apricot Ochre Stucco (matching center Who house in reference art!)
   const usrConfig: WhovilleHouseConfig = {
     label: 'USR',
     position: new THREE.Vector3(-2.12, 0, -5.02),
@@ -1688,14 +1653,14 @@ export function buildGrinchWhovilleHouses(
     widthM: 1.98,
     heightM: 2.58,
     depthScale: 0.35,
-    basePinkHex: '#ce468c',
-    bellyPinkHex: '#ec72b2',
-    stripePinkHex: '#a62868',
-    ribColor: 0xb83276,
-    doorX: 0.18,
-    doorWidth: 0.5,
-    doorHeight: 1.16,
-    doorTiltZ: 0.05,
+    basePinkHex: '#c8944a',
+    bellyPinkHex: '#dcb672',
+    stripePinkHex: '#9c6c2c',
+    ribColor: 0xa87634,
+    doorX: 0.0,
+    doorWidth: 0.44,
+    doorHeight: 1.1,
+    doorTiltZ: 0.03,
     doorFrameStyle: 'olive',
     dormerSide: -1,
     chimneyLeanX: 0.16,
@@ -1722,7 +1687,7 @@ export function buildGrinchWhovilleHouses(
     ],
   };
 
-  // MSL House (+3.22, 0, -2.88): Upside-down exaggerated trapezoid with large upper round windows
+  // MSL House (+3.22, 0, -2.88): Soft Sage-Mint / Seafoam-Pistachio Stucco (matching right-hand Who house in reference art!)
   const mslConfig: WhovilleHouseConfig = {
     label: 'MSL',
     position: new THREE.Vector3(3.22, 0, -2.88),
@@ -1730,15 +1695,15 @@ export function buildGrinchWhovilleHouses(
     widthM: 2.22,
     heightM: 2.8,
     depthScale: 0.36,
-    basePinkHex: '#dc4286',
-    bellyPinkHex: '#f46ea8',
-    stripePinkHex: '#b82666',
-    ribColor: 0xc83074,
-    doorX: -0.22,
-    doorWidth: 0.56,
-    doorHeight: 1.22,
-    doorTiltZ: 0.05,
-    doorFrameStyle: 'candy',
+    basePinkHex: '#689e84',
+    bellyPinkHex: '#8cbca4',
+    stripePinkHex: '#487860',
+    ribColor: 0x54866c,
+    doorX: 0.0,
+    doorWidth: 0.48,
+    doorHeight: 1.16,
+    doorTiltZ: 0.03,
+    doorFrameStyle: 'cream',
     dormerSide: 1,
     chimneyLeanX: -0.18,
     chimneyStyle: 'keyhole-pot',
@@ -1862,7 +1827,7 @@ export function buildGrinchWhovilleHouses(
 /**
  * Builds the standalone DSR Whoville Upside-Down Trapezoid House Wagon for Scene 1F
  * so Scene 1F shares the exact same upgraded house geometry, round bullseye windows,
- * and integrated snow roof mantle as Scene 1B/1D/1G.
+ * recessed doorway, and integrated snow roof mantle as Scene 1B/1D/1G.
  */
 export function buildDsrWhovilleHouseWagon(
   rockTex: THREE.CanvasTexture
@@ -1961,15 +1926,15 @@ export function buildDsrWhovilleHouseWagon(
       widthM: 2.26,
       heightM: 2.84,
       depthScale: 0.36,
-      basePinkHex: '#d83e82',
-      bellyPinkHex: '#f26aa8',
-      stripePinkHex: '#b42464',
-      ribColor: 0xc42e72,
-      doorX: 0.22,
-      doorWidth: 0.56,
-      doorHeight: 1.24,
-      doorTiltZ: -0.05,
-      doorFrameStyle: 'candy',
+      basePinkHex: '#c85e72',
+      bellyPinkHex: '#de8898',
+      stripePinkHex: '#9e4054',
+      ribColor: 0xa8485c,
+      doorX: 0.0,
+      doorWidth: 0.48,
+      doorHeight: 1.18,
+      doorTiltZ: -0.03,
+      doorFrameStyle: 'cream',
       dormerSide: -1,
       chimneyLeanX: -0.14,
       chimneyStyle: 't-cap',
