@@ -4,7 +4,6 @@ import {
   createFabricWeaveNormalTexture,
   createPapierMacheNormalTexture,
   createSeussianRockNormalTexture,
-  createStuccoPlasterNormalTexture,
   drawSeussianDisplayText,
   normalizeExtrudeUVs,
 } from '../../engine/procedural-textures.ts';
@@ -16,6 +15,7 @@ import {
   createWhoCharacter,
   createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
+import { buildDsrWhovilleHouseWagon } from './whoville-town.ts';
 
 /**
  * Generates a Scenic Artist Hand-Painted Timber Wainscot & Trompe-l'oeil Beveled Panel
@@ -170,55 +170,6 @@ function createLimeBranchBarkTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-/**
- * Hand-painted pink stucco & clapboard texture (512×512) for the DSR Whoville House in Scene 1F.
- */
-function createDsrHousePinkStuccoTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#b82868');
-    grad.addColorStop(0.48, '#e8589a');
-    grad.addColorStop(1, '#9e1e58');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Warm blush belly glow
-    const belly = ctx.createRadialGradient(256, 256, 24, 256, 256, 240);
-    belly.addColorStop(0, 'rgba(255, 184, 218, 0.36)');
-    belly.addColorStop(1, 'rgba(140, 24, 76, 0)');
-    ctx.fillStyle = belly;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Wavy Seussian clapboards & ink cross-hatching
-    for (let y = 36; y < 512; y += 44) {
-      ctx.strokeStyle = 'rgba(38, 10, 26, 0.46)';
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      for (let x = 0; x <= 512; x += 48) {
-        ctx.lineTo(x, y + Math.sin(x * 0.025 + y) * 6);
-      }
-      ctx.stroke();
-
-      ctx.strokeStyle = 'rgba(255, 206, 228, 0.26)';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.moveTo(0, y + 3);
-      for (let x = 0; x <= 512; x += 48) {
-        ctx.lineTo(x, y + 3 + Math.sin(x * 0.025 + y) * 6);
-      }
-      ctx.stroke();
-    }
-  }
-  const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -1697,31 +1648,112 @@ export function buildGrinchShoppingCounters(
     );
     chaletUnit.add(awningGroup);
 
-    // 4. Flanking Decorated Whoville Christmas Trees on Left & Right of the Stall (matching reference photo!)
+    // 4. Flanking Showpiece-Style Seussian Whoville Christmas Trees on Left & Right of the Stall
+    const brightPineGarlandMat = new THREE.MeshStandardMaterial({
+      color: 0x369a4a,
+      roughness: 0.56,
+      metalness: 0.04,
+    });
+    const treeTrunkBarkMat = new THREE.MeshStandardMaterial({
+      color: 0x4a3424,
+      roughness: 0.72,
+    });
+    const sharedBoothLobeGeo = new THREE.ConeGeometry(1, 1, 7);
+
     for (const side of [-1, 1] as const) {
       const sideTreeGroup = new THREE.Group();
       sideTreeGroup.position.set(side * 1.12, 0.04, 0.08);
 
-      for (let tier = 0; tier < 4; tier++) {
-        const tierCone = new THREE.Mesh(
-          new THREE.ConeGeometry(0.36 - tier * 0.065, 0.48, 14),
-          pineGarlandMat
+      // S-Curved Seussian Trunk Spine
+      const spineCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.02, 0),
+        new THREE.Vector3(-side * 0.04, 0.42, 0.01),
+        new THREE.Vector3(side * 0.06, 0.92, -0.01),
+        new THREE.Vector3(-side * 0.03, 1.38, 0.01),
+        new THREE.Vector3(side * 0.07, 1.66, 0),
+      ]);
+      const spineMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(spineCurve, 16, 0.032, 8, false),
+        treeTrunkBarkMat
+      );
+      sideTreeGroup.add(spineMesh);
+
+      const tierSpecs = [
+        { t: 0.14, r: 0.38, h: 0.42, tiltZ: side * 0.09 },
+        { t: 0.30, r: 0.33, h: 0.38, tiltZ: -side * 0.11 },
+        { t: 0.46, r: 0.28, h: 0.34, tiltZ: side * 0.12 },
+        { t: 0.62, r: 0.23, h: 0.30, tiltZ: -side * 0.10 },
+        { t: 0.78, r: 0.18, h: 0.26, tiltZ: side * 0.13 },
+        { t: 0.92, r: 0.13, h: 0.22, tiltZ: -side * 0.14 },
+      ] as const;
+
+      for (let tier = 0; tier < tierSpecs.length; tier++) {
+        const spec = tierSpecs[tier];
+        if (!spec) continue;
+        const pt = spineCurve.getPoint(spec.t);
+        const tierGrp = new THREE.Group();
+        tierGrp.position.copy(pt);
+        tierGrp.rotation.z = spec.tiltZ;
+
+        // Concave-skirted fluted LatheGeometry whorl matching the Center Showpiece Tree
+        const profilePts: THREE.Vector2[] = [];
+        for (let s = 0; s <= 10; s++) {
+          const u = s / 10;
+          const rad = Math.pow(1 - u, 1.2) * spec.r + Math.sin(u * Math.PI) * 0.018;
+          const py = (u - 0.36) * spec.h;
+          profilePts.push(new THREE.Vector2(Math.max(0.01, rad), py));
+        }
+        const whorlGeo = new THREE.LatheGeometry(profilePts, 16);
+        const wPos = whorlGeo.attributes.position;
+        for (let vi = 0; vi < wPos.count; vi++) {
+          const vx = wPos.getX(vi);
+          const vy = wPos.getY(vi);
+          const vz = wPos.getZ(vi);
+          const r = Math.hypot(vx, vz);
+          if (r > 0.015) {
+            const ang = Math.atan2(vz, vx);
+            const flute = 1 + 0.1 * Math.cos(ang * 8);
+            const droop = Math.cos(ang * 8) * 0.014 * (r / spec.r);
+            wPos.setXYZ(vi, vx * flute, vy - droop, vz * flute);
+          }
+        }
+        whorlGeo.computeVertexNormals();
+
+        const whorlMesh = new THREE.Mesh(
+          whorlGeo,
+          tier % 2 === 0 ? pineGarlandMat : brightPineGarlandMat
         );
-        tierCone.position.set(
-          side * (tier * 0.02),
-          0.32 + tier * 0.32,
-          0
-        );
-        tierCone.rotation.z = side * -0.04 * tier;
-        tierCone.castShadow = true;
-        sideTreeGroup.add(tierCone);
+        whorlMesh.castShadow = true;
+        tierGrp.add(whorlMesh);
+
+        // Drooping branch-tip lobes ringing the scalloped skirt
+        const lobeCount = 9 - tier;
+        for (let l = 0; l < lobeCount; l++) {
+          const lAngle = (l / lobeCount) * Math.PI * 2 + tier * 0.4;
+          const lobe = new THREE.Mesh(
+            sharedBoothLobeGeo,
+            tier % 2 === 0 ? brightPineGarlandMat : pineGarlandMat
+          );
+          const lobeR = Math.max(0.022, 0.052 - tier * 0.005);
+          const lobeH = Math.max(0.06, 0.12 - tier * 0.01);
+          lobe.scale.set(lobeR, lobeH, lobeR);
+          lobe.position.set(
+            Math.cos(lAngle) * spec.r * 0.94,
+            -spec.h * 0.28,
+            Math.sin(lAngle) * spec.r * 0.94
+          );
+          lobe.rotation.z = -Math.cos(lAngle) * 0.65;
+          lobe.rotation.x = Math.sin(lAngle) * 0.65;
+          tierGrp.add(lobe);
+        }
 
         // Ornaments around each tree tier
-        for (let o = 0; o < 4; o++) {
-          const oa = (o / 4) * Math.PI * 2 + tier * 0.6;
-          const orad = 0.28 - tier * 0.05;
+        const ornCount = Math.max(3, 5 - Math.floor(tier * 0.5));
+        for (let o = 0; o < ornCount; o++) {
+          const oa = (o / ornCount) * Math.PI * 2 + tier * 0.6;
+          const orad = spec.r * 0.88;
           const orn = new THREE.Mesh(
-            new THREE.SphereGeometry(0.036, 8, 8),
+            new THREE.SphereGeometry(0.032, 8, 8),
             (o + tier) % 3 === 0
               ? crimsonOrnamentMat
               : (o + tier) % 3 === 1
@@ -1730,15 +1762,52 @@ export function buildGrinchShoppingCounters(
           );
           orn.position.set(
             Math.cos(oa) * orad,
-            0.22 + tier * 0.32,
+            -spec.h * 0.2,
             Math.sin(oa) * orad
           );
-          sideTreeGroup.add(orn);
+          tierGrp.add(orn);
         }
+
+        sideTreeGroup.add(tierGrp);
       }
 
-      const treeTopStar = createGoldStarFinial(0.11);
-      treeTopStar.position.set(side * 0.06, 1.62, 0);
+      // Helical gold tinsel garland spiraling up the tree
+      const garlandPts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 28; i++) {
+        const u = i / 28;
+        const spinePt = spineCurve.getPoint(0.14 + u * 0.76);
+        const rad = THREE.MathUtils.lerp(0.36, 0.12, u);
+        const ang = u * Math.PI * 6 * side;
+        garlandPts.push(
+          new THREE.Vector3(
+            spinePt.x + Math.cos(ang) * rad,
+            spinePt.y - 0.04,
+            spinePt.z + Math.sin(ang) * rad
+          )
+        );
+      }
+      const garlandTube = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(garlandPts), 32, 0.016, 6, false),
+        goldOrnamentMat
+      );
+      sideTreeGroup.add(garlandTube);
+
+      // Curled Seussian treetop spire + gold star finial
+      const topPt = spineCurve.getPoint(1.0);
+      const curlCurve = new THREE.CatmullRomCurve3([
+        topPt.clone(),
+        new THREE.Vector3(topPt.x + side * 0.08, topPt.y + 0.14, 0),
+        new THREE.Vector3(topPt.x + side * 0.16, topPt.y + 0.08, 0.02),
+        new THREE.Vector3(topPt.x + side * 0.12, topPt.y + 0.01, -0.02),
+      ]);
+      const curlMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(curlCurve, 12, 0.018, 6, false),
+        brightPineGarlandMat
+      );
+      sideTreeGroup.add(curlMesh);
+
+      const treeTopStar = createGoldStarFinial(0.1);
+      treeTopStar.position.set(topPt.x + side * 0.12, topPt.y + 0.12, 0.02);
       sideTreeGroup.add(treeTopStar);
 
       chaletUnit.add(sideTreeGroup);
@@ -1811,182 +1880,12 @@ export function buildGrinchShoppingCounters(
 }
 
 /**
- * Helper to build the DSR Pink Whoville Round House wagon that remains onstage
- * during Scene 1F (`model_1F_mt_crumpit_sleigh.jpg` & `plan_1F_cave2_crumpit.jpg`),
- * upgraded with `createSeussianIcicleValance` and `createSculptedIcicleDrip` eaves!
- */
-function buildDsrWhovilleHouseFor1F(rockTex: THREE.CanvasTexture): THREE.Group {
-  const widthM = 2.35;
-  const heightM = 2.75;
-  const g = new THREE.Group();
-  g.name = 'WhovillePinkHouse_DSR_1F';
-
-  const wagonBase = new THREE.Mesh(
-    new THREE.BoxGeometry(widthM + 0.35, 0.12, 1.05),
-    new THREE.MeshStandardMaterial({ color: 0x262c3a, roughness: 0.65 })
-  );
-  wagonBase.position.y = 0.06;
-  g.add(wagonBase);
-
-  const stuccoNormalTex = createStuccoPlasterNormalTexture();
-  const papierMacheNormalTex = createPapierMacheNormalTexture();
-  const pinkMat = new THREE.MeshStandardMaterial({
-    map: createDsrHousePinkStuccoTexture(),
-    normalMap: stuccoNormalTex,
-    normalScale: new THREE.Vector2(0.42, 0.42),
-    roughness: 0.56,
-    metalness: 0.04,
-  });
-  const snowRoofMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    normalMap: papierMacheNormalTex,
-    normalScale: new THREE.Vector2(0.48, 0.48),
-    color: 0xbed0d8,
-    roughness: 0.62,
-  });
-  const crystallineIceFrontMat = new THREE.MeshStandardMaterial({
-    color: 0xa4c4d8,
-    roughness: 0.45,
-    metalness: 0.16,
-    flatShading: true,
-  });
-  const crystallineIceBackMat = new THREE.MeshStandardMaterial({
-    color: 0x6290c8,
-    roughness: 0.48,
-    metalness: 0.14,
-    flatShading: true,
-  });
-  const outlineMat = new THREE.MeshBasicMaterial({ color: 0x181422 });
-  const warmWindowMat = new THREE.MeshStandardMaterial({
-    color: 0xd8c058,
-    emissive: 0xd89020,
-    emissiveIntensity: 0.55,
-    roughness: 0.55,
-  });
-  const wreathGreenMat = new THREE.MeshStandardMaterial({
-    color: 0x1d8a42,
-    roughness: 0.6,
-  });
-  const redBowMat = new THREE.MeshStandardMaterial({
-    color: 0xc82438,
-    roughness: 0.55,
-  });
-
-  const body = new THREE.Mesh(
-    new RoundedBoxGeometry(widthM, heightM * 0.68, 0.68, 3, 0.26),
-    pinkMat
-  );
-  body.position.y = (heightM * 0.68) / 2 + 0.12;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  g.add(body);
-
-  const roof = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      widthM * 0.54,
-      20,
-      14,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI * 0.56
-    ),
-    snowRoofMat
-  );
-  roof.scale.set(1.04, 0.68, 0.58);
-  roof.position.set(0, heightM * 0.64, 0);
-  roof.castShadow = true;
-  g.add(roof);
-
-  // Continuous jagged cavemouth-style crystalline icicle valance tucked under the roof eaves
-  const eavesValance = createSeussianIcicleValance(
-    widthM * 0.9,
-    0.34,
-    9,
-    crystallineIceFrontMat,
-    crystallineIceBackMat,
-    0.042,
-    17
-  );
-  eavesValance.position.set(0, heightM * 0.66, 0.34);
-  g.add(eavesValance);
-
-  // Additional sharp crystalline icicle fangs flanking the eaves corners
-  for (const side of [-1, 1] as const) {
-    const cornerIcicle = createSculptedIcicleDrip(
-      0.36,
-      0.048,
-      crystallineIceFrontMat,
-      side * 0.024
-    );
-    cornerIcicle.position.set(side * (widthM * 0.44), heightM * 0.66, 0.33);
-    g.add(cornerIcicle);
-  }
-
-  const chimney = new THREE.Mesh(
-    new RoundedBoxGeometry(0.28, 0.56, 0.22, 2, 0.06),
-    snowRoofMat
-  );
-  chimney.position.set(0.08, heightM * 0.94, -0.02);
-  chimney.rotation.z = -0.18;
-  g.add(chimney);
-
-  const doorX = widthM * 0.2;
-  const doorFrame = new THREE.Mesh(
-    new RoundedBoxGeometry(0.62, 1.32, 0.06, 2, 0.22),
-    outlineMat
-  );
-  doorFrame.position.set(doorX, 0.78, 0.35);
-  g.add(doorFrame);
-
-  const doorPanel = new THREE.Mesh(
-    new RoundedBoxGeometry(0.54, 1.24, 0.06, 2, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0xd870a8, roughness: 0.55 })
-  );
-  doorPanel.position.set(doorX, 0.78, 0.39);
-  g.add(doorPanel);
-
-  const doorWreath = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.055, 10, 18),
-    wreathGreenMat
-  );
-  doorWreath.position.set(doorX, 0.98, 0.45);
-  g.add(doorWreath);
-
-  const doorBow = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.09, 0.05),
-    redBowMat
-  );
-  doorBow.position.set(doorX, 1.14, 0.49);
-  g.add(doorBow);
-
-  for (const wx of [-widthM * 0.3, -widthM * 0.05]) {
-    const win = new THREE.Mesh(
-      new RoundedBoxGeometry(0.34, 0.46, 0.06, 2, 0.12),
-      warmWindowMat
-    );
-    win.position.set(wx, 0.98, 0.36);
-    g.add(win);
-
-    const winWreath = new THREE.Mesh(
-      new THREE.TorusGeometry(0.1, 0.035, 8, 14),
-      wreathGreenMat
-    );
-    winWreath.position.set(wx, 0.98, 0.42);
-    g.add(winWreath);
-  }
-
-  return g;
-}
-
-/**
  * 2. SCENE 1F — MT. CRUMPIT SLEIGH CLIFF WAGON (`'grinch-mt-crumpit-sleigh'`)
  *
  * Recreates Scene 1F from `model_1F_mt_crumpit_sleigh.jpg` and `plan_1F_cave2_crumpit.jpg`:
- * - DSR Pink Whoville House at `x = -3.35m, z = -3.05m` (matching Scene 1B)
- * - Steep, jagged icy-blue Mt. Crumpit precipice wagon at DSL (`x = +2.35m, z = -2.25m`)
- *   with stepped rock strata, overhanging snow ledges, and sculpted `createSeussianIcicleValance`
- *   & `createSculptedIcicleDrip` icicles
+ * - DSR Pink Whoville Upside-Down Trapezoid House at `x = -3.35m, z = -3.05m` (matching Scene 1B)
+ * - Steep, jagged stratified rock Mt. Crumpit precipice wagon at DSL (`x = +2.35m, z = -2.25m`)
+ *   with stepped rock strata and flush-integrated snow ledges
  * - Tilted sleigh runners resting 100% flush on the upper snow ledge (zero floating, zero penetration)
  * - `createGrinchCharacter({ heightM: 1.82, santaDisguise: true })` and
  *   `createMaxDogCharacter({ withAntler: true })` standing firmly on horizontal snow-ledge
@@ -1998,13 +1897,13 @@ export function buildGrinchMtCrumpitSleigh(
   const crumpitSleighGroup = new THREE.Group();
   crumpitSleighGroup.name = 'Element_grinch-mt-crumpit-sleigh';
 
-  // 1. DSR Pink Whoville House at x = -3.35m, z = -3.05m (matching Scene 1B)
-  const dsrHouse1F = buildDsrWhovilleHouseFor1F(rockTex);
+  // 1. DSR Pink Whoville Upside-Down Trapezoid House at x = -3.35m, z = -3.05m (shared with Scene 1B)
+  const dsrHouse1F = buildDsrWhovilleHouseWagon(rockTex);
   dsrHouse1F.position.set(-3.35, 0, -3.05);
   dsrHouse1F.rotation.y = 0.18;
   crumpitSleighGroup.add(dsrHouse1F);
 
-  // 2. Steep Jagged Icy-Blue Mt. Crumpit Precipice Wagon at DSL (x = +2.35m, z = -2.25m)
+  // 2. Steep Jagged Stratified Rock Mt. Crumpit Precipice Wagon at DSL (x = +2.35m, z = -2.25m)
   const cliffWagon = new THREE.Group();
   cliffWagon.name = 'MtCrumpitCliffWagon';
   cliffWagon.position.set(2.35, 0, -2.25);
@@ -2016,7 +1915,7 @@ export function buildGrinchMtCrumpitSleigh(
     map: rockTex,
     normalMap: rockNormalTex,
     normalScale: new THREE.Vector2(0.85, 0.85),
-    color: 0x5c6878,
+    color: 0x767068,
     roughness: 0.72,
     metalness: 0.06,
     flatShading: true,
@@ -2025,7 +1924,7 @@ export function buildGrinchMtCrumpitSleigh(
     map: rockTex,
     normalMap: rockNormalTex,
     normalScale: new THREE.Vector2(0.82, 0.82),
-    color: 0x6e7c8e,
+    color: 0x888076,
     roughness: 0.68,
     metalness: 0.06,
     flatShading: true,
@@ -2034,7 +1933,7 @@ export function buildGrinchMtCrumpitSleigh(
     map: rockTex,
     normalMap: rockNormalTex,
     normalScale: new THREE.Vector2(0.8, 0.8),
-    color: 0x7e766c,
+    color: 0x988874,
     roughness: 0.74,
     metalness: 0.05,
     flatShading: true,
@@ -2045,18 +1944,6 @@ export function buildGrinchMtCrumpitSleigh(
     normalScale: new THREE.Vector2(0.48, 0.48),
     color: 0xc8d2d8,
     roughness: 0.58,
-  });
-  const icicleMat = new THREE.MeshStandardMaterial({
-    color: 0xa4c4d8,
-    roughness: 0.45,
-    metalness: 0.16,
-    flatShading: true,
-  });
-  const icicleGlazeBackMat = new THREE.MeshStandardMaterial({
-    color: 0x6290c8,
-    roughness: 0.48,
-    metalness: 0.14,
-    flatShading: true,
   });
 
   // Rolling steel wagon base frame
@@ -2157,48 +2044,24 @@ export function buildGrinchMtCrumpitSleigh(
   // Horizontal Snow-Ledge Step #1 (Lower Left Terrace for Max the Dog):
   // Centered at (x = -1.16, y = 0.62, z = 0.40), height = 0.12m -> exact top surface Y = 0.68m!
   const lowerSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.78, 0.12, 0.64, 1, 0.025),
+    new RoundedBoxGeometry(0.76, 0.12, 0.60, 2, 0.035),
     snowLedgeMat
   );
-  lowerSnowStep.position.set(-1.16, 0.62, 0.40);
+  lowerSnowStep.position.set(-1.16, 0.62, 0.38);
   lowerSnowStep.castShadow = true;
   lowerSnowStep.receiveShadow = true;
   cliffWagon.add(lowerSnowStep);
 
-  const lowerValance = createSeussianIcicleValance(
-    0.68,
-    0.20,
-    6,
-    icicleMat,
-    icicleGlazeBackMat,
-    0.038,
-    31
-  );
-  lowerValance.position.set(-1.16, 0.60, 0.68);
-  cliffWagon.add(lowerValance);
-
   // Horizontal Snow-Ledge Step #2 (Mid Terrace for the Grinch):
   // Centered at (x = -0.52, y = 0.94, z = 0.46), height = 0.12m -> exact top surface Y = 1.00m!
   const midSnowStep = new THREE.Mesh(
-    new RoundedBoxGeometry(0.76, 0.12, 0.64, 1, 0.025),
+    new RoundedBoxGeometry(0.74, 0.12, 0.60, 2, 0.035),
     snowLedgeMat
   );
-  midSnowStep.position.set(-0.52, 0.94, 0.46);
+  midSnowStep.position.set(-0.52, 0.94, 0.44);
   midSnowStep.castShadow = true;
   midSnowStep.receiveShadow = true;
   cliffWagon.add(midSnowStep);
-
-  const midValance = createSeussianIcicleValance(
-    0.66,
-    0.22,
-    6,
-    icicleMat,
-    icicleGlazeBackMat,
-    0.038,
-    37
-  );
-  midValance.position.set(-0.52, 0.92, 0.74);
-  cliffWagon.add(midValance);
 
   // Upper Tilted Summit Snow Ramp Ledge (for the Grinch's Sleigh):
   // Positioned in the upstage plane (z = -0.32m, depth = 0.76m -> z ∈ [-0.70m, +0.06m])
@@ -2210,7 +2073,7 @@ export function buildGrinchMtCrumpitSleigh(
   const upperLedgeHalfThick = 0.08;
 
   const upperSummitLedge = new THREE.Mesh(
-    new RoundedBoxGeometry(1.58, upperLedgeHalfThick * 2, 0.76, 1, 0.025),
+    new RoundedBoxGeometry(1.52, upperLedgeHalfThick * 2, 0.74, 2, 0.04),
     snowLedgeMat
   );
   upperSummitLedge.position.set(
@@ -2222,40 +2085,6 @@ export function buildGrinchMtCrumpitSleigh(
   upperSummitLedge.castShadow = true;
   upperSummitLedge.receiveShadow = true;
   cliffWagon.add(upperSummitLedge);
-
-  // Jagged cavemouth-style crystalline icicle valance + fangs tucked cleanly under the summit ledge
-  const summitValance = createSeussianIcicleValance(
-    1.46,
-    0.32,
-    9,
-    icicleMat,
-    icicleGlazeBackMat,
-    0.042,
-    43
-  );
-  summitValance.position.set(
-    upperLedgeCenterX,
-    upperLedgeCenterY - 0.02,
-    upperLedgeCenterZ + 0.34
-  );
-  summitValance.rotation.z = sleighTiltRad;
-  cliffWagon.add(summitValance);
-
-  for (let dIdx = -2; dIdx <= 2; dIdx++) {
-    const drip = createSculptedIcicleDrip(
-      0.30 + (Math.abs(dIdx) % 2) * 0.08,
-      0.044,
-      icicleMat,
-      dIdx * 0.015
-    );
-    const localX = dIdx * 0.3;
-    drip.position.set(
-      upperLedgeCenterX + localX * Math.cos(sleighTiltRad),
-      upperLedgeCenterY + localX * Math.sin(sleighTiltRad) - 0.05,
-      upperLedgeCenterZ + 0.32
-    );
-    cliffWagon.add(drip);
-  }
 
   // Upstage technician access steps behind the cliff flat (drawn on plan_1F_cave2_crumpit.jpg)
   for (let step = 0; step < 4; step++) {

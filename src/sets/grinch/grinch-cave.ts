@@ -340,34 +340,23 @@ function createMiniatureWhoCottage(
   body.castShadow = true;
   cottage.add(body);
 
-  // Wide overhanging wet-snow roof cornice with rounded snow-drip lobes
-  const roofW = topHalfW * 1.18;
+  // Flush-integrated pitched snow roof mantle hugging the upper trapezoid gable
+  const roofW = topHalfW * 1.1;
   const roofShape = new THREE.Shape();
   roofShape.moveTo(-roofW, bodyH * 0.9);
-  roofShape.quadraticCurveTo(0, bodyH * 1.16, roofW, bodyH * 0.86);
-  const drips = 5;
-  for (let d = 0; d < drips; d++) {
-    const u0 = d / drips;
-    const u1 = (d + 1) / drips;
-    const uM = (u0 + u1) * 0.5;
-    const xR = THREE.MathUtils.lerp(roofW, -roofW, u0);
-    const xM = THREE.MathUtils.lerp(roofW, -roofW, uM);
-    const xL = THREE.MathUtils.lerp(roofW, -roofW, u1);
-    const yBase = THREE.MathUtils.lerp(bodyH * 0.86, bodyH * 0.9, uM);
-    const dipY = yBase - (d % 2 === 0 ? bodyH * 0.14 : bodyH * 0.07);
-    roofShape.bezierCurveTo(xR, dipY, xM, dipY, xL, yBase - bodyH * 0.02);
-  }
+  roofShape.quadraticCurveTo(0, bodyH * 1.12, roofW, bodyH * 0.86);
+  roofShape.quadraticCurveTo(0, bodyH * 0.96, -roofW, bodyH * 0.9);
   roofShape.closePath();
 
   const roofGeo = new THREE.ExtrudeGeometry(roofShape, {
-    depth: cottageDepth * 1.16,
+    depth: cottageDepth * 1.08,
     bevelEnabled: true,
     bevelSegments: 2,
     steps: 1,
-    bevelSize: 0.014,
-    bevelThickness: 0.014,
+    bevelSize: 0.01,
+    bevelThickness: 0.01,
   });
-  roofGeo.translate(0, 0, -cottageDepth * 0.58);
+  roofGeo.translate(0, 0, -cottageDepth * 0.54);
   normalizeExtrudeUVs(roofGeo, 'fit');
   roofGeo.computeVertexNormals();
 

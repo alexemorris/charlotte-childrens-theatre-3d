@@ -11,8 +11,6 @@ import {
 import {
   createGrinchCharacter,
   createMaxDogCharacter,
-  createSculptedIcicleDrip,
-  createSeussianIcicleValance,
   createWhoCharacter,
   createWhoLandFairyLightStrand,
 } from '../shared-scenic-helpers.ts';
@@ -589,8 +587,8 @@ function createSeussianHolidayWreath(
 }
 
 /**
- * Builds an arched multi-pane Seussian window with curved olive timber frame,
- * crooked mullions, lavender glass panes, snow-draped sill, and holiday wreath.
+ * Builds a signature round/oval Seussian bullseye window with curved olive timber frame,
+ * central bullseye ring, curved cross-muntins, lavender glass pane, snow-draped sill, and holiday wreath.
  */
 function createSeussianArchedWindow(
   widthM: number,
@@ -607,78 +605,69 @@ function createSeussianArchedWindow(
   const winGroup = new THREE.Group();
   winGroup.rotation.z = tiltRad;
 
-  const hw = widthM * 0.5;
-  const hh = heightM * 0.5;
+  const rx = widthM * 0.52;
+  const ry = heightM * 0.46;
 
-  // 1. Tinted Window Glass Pane at z = 0.02m (inside the wall cutout)
+  // 1. Tinted Circular/Oval Window Glass Pane at z = 0.015m (inside the wall cutout)
   const glassShape = new THREE.Shape();
-  glassShape.moveTo(-hw * 0.88, -hh * 0.88);
-  glassShape.lineTo(hw * 0.88, -hh * 0.88);
-  glassShape.quadraticCurveTo(hw * 0.96, hh * 0.2, hw * 0.68, hh * 0.62);
-  glassShape.quadraticCurveTo(0, hh * 1.08, -hw * 0.68, hh * 0.62);
-  glassShape.quadraticCurveTo(-hw * 0.96, hh * 0.2, -hw * 0.88, -hh * 0.88);
-
-  const glassGeo = new THREE.ExtrudeGeometry(glassShape, { depth: 0.018, bevelEnabled: false });
+  glassShape.absellipse(0, 0, rx * 0.94, ry * 0.94, 0, Math.PI * 2, false, 0);
+  const glassGeo = new THREE.ExtrudeGeometry(glassShape, {
+    depth: 0.018,
+    bevelEnabled: false,
+    curveSegments: 24,
+  });
   normalizeExtrudeUVs(glassGeo, 'fit');
-  const glassMesh = new THREE.Mesh(
-    glassGeo,
-    glassMat
-  );
+  const glassMesh = new THREE.Mesh(glassGeo, glassMat);
   glassMesh.position.z = 0.01;
   winGroup.add(glassMesh);
 
-  // 2. Curved Outer Window Frame Perimeter at z = 0.09m
-  const framePts = [
-    new THREE.Vector3(-hw * 0.9, -hh * 0.9, 0.09),
-    new THREE.Vector3(-hw * 0.98, 0, 0.09),
-    new THREE.Vector3(-hw * 0.65, hh * 0.68, 0.09),
-    new THREE.Vector3(0, hh * 0.96, 0.09),
-    new THREE.Vector3(hw * 0.65, hh * 0.68, 0.09),
-    new THREE.Vector3(hw * 0.98, 0, 0.09),
-    new THREE.Vector3(hw * 0.9, -hh * 0.9, 0.09),
-    new THREE.Vector3(-hw * 0.9, -hh * 0.9, 0.09),
-  ];
-  winGroup.add(createCurvedTimberTube(framePts, 0.042, frameMat, 36, 8));
+  // 2. Sculpted Circular/Oval Outer Window Casing Ring at z = 0.08m
+  const outerRingPts: THREE.Vector3[] = [];
+  for (let i = 0; i <= 28; i++) {
+    const a = (i / 28) * Math.PI * 2;
+    outerRingPts.push(new THREE.Vector3(Math.cos(a) * rx, Math.sin(a) * ry, 0.08));
+  }
+  winGroup.add(createCurvedTimberTube(outerRingPts, 0.042, frameMat, 36, 10));
 
-  // 3. Crooked Seussian Mullions at z = 0.055m (distinct Z plane from glass and outer frame)
+  // 3. Curved Seussian Cross-Muntins & Central Bullseye Ring at z = 0.055m
   const vertMullionPts = [
-    new THREE.Vector3(-0.02, -hh * 0.88, 0.055),
-    new THREE.Vector3(0.03, 0, 0.055),
-    new THREE.Vector3(0, hh * 0.92, 0.055),
+    new THREE.Vector3(-0.015, -ry * 0.92, 0.055),
+    new THREE.Vector3(0.025, 0, 0.058),
+    new THREE.Vector3(0, ry * 0.92, 0.055),
   ];
-  winGroup.add(createCurvedTimberTube(vertMullionPts, 0.022, frameMat, 16, 6));
+  winGroup.add(createCurvedTimberTube(vertMullionPts, 0.02, frameMat, 16, 6));
 
-  for (const my of [-hh * 0.28, hh * 0.26]) {
-    const horizPts = [
-      new THREE.Vector3(-hw * 0.9, my - 0.03, 0.055),
-      new THREE.Vector3(0, my + 0.04, 0.055),
-      new THREE.Vector3(hw * 0.9, my - 0.02, 0.055),
-    ];
-    winGroup.add(createCurvedTimberTube(horizPts, 0.02, frameMat, 16, 6));
+  const horizMullionPts = [
+    new THREE.Vector3(-rx * 0.92, -0.02, 0.055),
+    new THREE.Vector3(0, 0.025, 0.058),
+    new THREE.Vector3(rx * 0.92, -0.02, 0.055),
+  ];
+  winGroup.add(createCurvedTimberTube(horizMullionPts, 0.02, frameMat, 16, 6));
+
+  const centerBullseyePts: THREE.Vector3[] = [];
+  for (let i = 0; i <= 20; i++) {
+    const a = (i / 20) * Math.PI * 2;
+    centerBullseyePts.push(
+      new THREE.Vector3(Math.cos(a) * rx * 0.34, Math.sin(a) * ry * 0.34, 0.06)
+    );
   }
+  winGroup.add(createCurvedTimberTube(centerBullseyePts, 0.016, frameMat, 24, 6));
 
-  // 4. Snow-Draped Window Sill at z = 0.14m + Organic Icicle Drips
-  const sillTimber = new THREE.Mesh(
-    new RoundedBoxGeometry(widthM * 1.16, 0.09, 0.14, 2, 0.03),
-    frameMat
-  );
-  sillTimber.position.set(0, -hh * 0.94, 0.11);
-  winGroup.add(sillTimber);
-
-  const sillSnow = new THREE.Mesh(
-    new RoundedBoxGeometry(widthM * 1.12, 0.065, 0.12, 2, 0.03),
-    snowMat
-  );
-  sillSnow.position.set(0, -hh * 0.87, 0.15);
-  winGroup.add(sillSnow);
-
-  for (const ix of [-hw * 0.65, 0, hw * 0.65]) {
-    const sillDrip = createSculptedIcicleDrip(0.16, 0.028, snowMat, ix * 0.06);
-    sillDrip.position.set(ix, -hh * 0.9, 0.18);
-    winGroup.add(sillDrip);
+  // 4. Curved Snow-Drift Window Sill hugging the bottom arc of the round window
+  const sillCurvePts: THREE.Vector3[] = [];
+  for (let s = 0; s <= 12; s++) {
+    const a = Math.PI * 1.15 + (s / 12) * Math.PI * 0.7;
+    sillCurvePts.push(
+      new THREE.Vector3(
+        Math.cos(a) * (rx + 0.03),
+        Math.sin(a) * (ry + 0.03) - 0.01,
+        0.115
+      )
+    );
   }
+  winGroup.add(createCurvedTimberTube(sillCurvePts, 0.038, snowMat, 18, 8));
 
-  // 5. Window Holiday Wreath at z = 0.17m
+  // 5. Window Holiday Wreath at z = 0.14m
   if (includeWreath) {
     const wreath = createSeussianHolidayWreath(
       widthM * 0.28,
@@ -687,7 +676,7 @@ function createSeussianArchedWindow(
       bowMat,
       berryMat
     );
-    wreath.position.set(0, -0.04, 0.17);
+    wreath.position.set(0, 0, 0.14);
     winGroup.add(wreath);
   }
 
@@ -822,13 +811,6 @@ export function buildPapaWhosHouseUnit(
     roughness: 0.68,
     metalness: 0.02,
   });
-  const iceGlazeMat = new THREE.MeshStandardMaterial({
-    map: rockTex,
-    normalMap: rockNormalTex,
-    normalScale: new THREE.Vector2(0.38, 0.38),
-    color: 0x8ab0dc,
-    roughness: 0.58,
-  });
   const windowGlassMat = new THREE.MeshStandardMaterial({
     color: 0xc8aad8,
     emissive: translucentScrimMode ? 0x623888 : 0x482c64,
@@ -894,19 +876,15 @@ export function buildPapaWhosHouseUnit(
   //     Solid warm plaster in 1H (opacity 0.96) / Translucent scrim in 1E (opacity 0.24)
   // --------------------------------------------------------------------------
   const leftWallShape = new THREE.Shape();
-  leftWallShape.moveTo(-3.06, 0.02);
+  leftWallShape.moveTo(-2.96, 0.02);
   leftWallShape.lineTo(-0.74, 0.02);
   leftWallShape.lineTo(-0.74, 3.24);
-  leftWallShape.bezierCurveTo(-1.45, 3.22, -2.45, 3.05, -3.42, 2.56);
-  leftWallShape.bezierCurveTo(-3.44, 1.75, -3.28, 0.85, -3.06, 0.02);
+  leftWallShape.bezierCurveTo(-1.45, 3.22, -2.52, 3.05, -3.52, 2.56);
+  leftWallShape.bezierCurveTo(-3.36, 1.75, -3.14, 0.85, -2.96, 0.02);
 
-  // Arched cutout hole for Left Window (centered at x = -1.85m, y = 1.72m)
+  // Round/oval bullseye cutout hole for Left Window (centered at x = -1.85m, y = 1.72m)
   const leftWinHole = new THREE.Path();
-  leftWinHole.moveTo(-2.22, 1.12);
-  leftWinHole.lineTo(-1.48, 1.12);
-  leftWinHole.quadraticCurveTo(-1.44, 1.88, -1.62, 2.18);
-  leftWinHole.quadraticCurveTo(-1.85, 2.42, -2.08, 2.18);
-  leftWinHole.quadraticCurveTo(-2.26, 1.88, -2.22, 1.12);
+  leftWinHole.absellipse(-1.85, 1.72, 0.4, 0.54, 0, Math.PI * 2, true, 0);
   leftWallShape.holes.push(leftWinHole);
 
   const leftWallGeo = new THREE.ExtrudeGeometry(leftWallShape, {
@@ -931,22 +909,18 @@ export function buildPapaWhosHouseUnit(
     houseFrame.add(dadoPanel);
   }
 
-  // Right Wall Bay (x = +0.66m to +3.28m, y = 0.02m to 3.08m)
+  // Right Wall Bay (x = +0.66m to +3.42m, flaring outward toward upper eaves)
   const rightWallShape = new THREE.Shape();
   rightWallShape.moveTo(0.66, 0.02);
-  rightWallShape.lineTo(2.76, 0.02);
-  rightWallShape.bezierCurveTo(3.14, 0.85, 3.34, 1.82, 3.32, 2.92);
-  rightWallShape.bezierCurveTo(2.65, 3.16, 1.95, 3.08, 1.42, 2.76);
+  rightWallShape.lineTo(2.68, 0.02);
+  rightWallShape.bezierCurveTo(3.04, 0.85, 3.28, 1.82, 3.42, 2.92);
+  rightWallShape.bezierCurveTo(2.68, 3.16, 1.95, 3.08, 1.42, 2.76);
   rightWallShape.bezierCurveTo(1.12, 2.86, 0.88, 2.98, 0.66, 3.06);
   rightWallShape.lineTo(0.66, 0.02);
 
-  // Arched cutout hole for Right Window (centered at x = +2.15m, y = 1.68m)
+  // Round/oval bullseye cutout hole for Right Window (centered at x = +2.15m, y = 1.68m)
   const rightWinHole = new THREE.Path();
-  rightWinHole.moveTo(1.86, 1.16);
-  rightWinHole.lineTo(2.44, 1.16);
-  rightWinHole.quadraticCurveTo(2.48, 1.82, 2.32, 2.08);
-  rightWinHole.quadraticCurveTo(2.15, 2.28, 1.98, 2.08);
-  rightWinHole.quadraticCurveTo(1.82, 1.82, 1.86, 1.16);
+  rightWinHole.absellipse(2.15, 1.68, 0.32, 0.48, 0, Math.PI * 2, true, 0);
   rightWallShape.holes.push(rightWinHole);
 
   const rightWallGeo = new THREE.ExtrudeGeometry(rightWallShape, {
@@ -1160,83 +1134,38 @@ export function buildPapaWhosHouseUnit(
   }
 
   // --------------------------------------------------------------------------
-  // 1D. SNOWY ROOF EAVE CREST, JAGGED CAVEMOUTH-STYLE CRYSTALLINE ICICLES, HOLIDAY GARLAND & CHIMNEY
+  // 1D. INTEGRATED SNOWY ROOF EAVE MANTLE, HOLIDAY GARLAND & CHIMNEY
   // --------------------------------------------------------------------------
   const roofCurveForSnow = new THREE.CatmullRomCurve3(outerRoofArchPts);
 
-  // Continuous sculpted snow eave crest along the gable arch (replaces boxy RoundedBox blocks!)
+  // Continuous flush-integrated snow eave mantle along the gable arch
   const snowEaveCrest = new THREE.Mesh(
-    new THREE.TubeGeometry(roofCurveForSnow, 56, 0.095, 10, false),
+    new THREE.TubeGeometry(roofCurveForSnow, 56, 0.088, 10, false),
     tonedSnowMat
   );
-  snowEaveCrest.scale.set(1.0, 1.05, 1.25);
-  snowEaveCrest.position.set(0, 0.08, 0.055);
+  snowEaveCrest.scale.set(1.0, 0.92, 1.15);
+  snowEaveCrest.position.set(0, 0.06, 0.045);
   snowEaveCrest.castShadow = true;
   houseFrame.add(snowEaveCrest);
 
-  const crystallineIceFrontMat = new THREE.MeshStandardMaterial({
-    color: 0xa4c4d8,
-    roughness: 0.45,
-    metalness: 0.16,
-    flatShading: true,
-  });
-  const crystallineIceBackMat = new THREE.MeshStandardMaterial({
-    color: 0x6290c8,
-    roughness: 0.48,
-    metalness: 0.14,
-    flatShading: true,
-  });
-
-  // Segmented jagged cavemouth-style icicle valances tucked cleanly behind the snow eave crest
-  const valanceSegCount = 7;
-  for (let s = 0; s < valanceSegCount; s++) {
-    const t0 = (s + 0.12) / valanceSegCount;
-    const t1 = (s + 0.88) / valanceSegCount;
-    const p0 = roofCurveForSnow.getPoint(t0);
-    const p1 = roofCurveForSnow.getPoint(t1);
-    const midPt = roofCurveForSnow.getPoint((t0 + t1) * 0.5);
-    const segLen = p0.distanceTo(p1);
-    const segAngle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
-
-    const roofValanceSeg = createSeussianIcicleValance(
-      segLen * 0.96,
-      0.28 + (s % 2) * 0.06,
-      5,
-      crystallineIceFrontMat,
-      crystallineIceBackMat,
-      0.036,
-      s * 11 + 5
-    );
-    roofValanceSeg.position.set(midPt.x, midPt.y + 0.05, 0.12);
-    roofValanceSeg.rotation.z = segAngle;
-    houseFrame.add(roofValanceSeg);
-  }
+  // Evergreen eave garland & red/gold ornaments along the gable arch
+  const eaveGarlandMesh = new THREE.Mesh(
+    new THREE.TubeGeometry(roofCurveForSnow, 48, 0.036, 8, false),
+    wreathGreenMat
+  );
+  eaveGarlandMesh.position.set(0, -0.02, 0.09);
+  houseFrame.add(eaveGarlandMesh);
 
   const snowLobeCount = 19;
-  for (let i = 0; i < snowLobeCount; i++) {
+  for (let i = 1; i < snowLobeCount - 1; i += 2) {
     const t = i / (snowLobeCount - 1);
     const pt = roofCurveForSnow.getPoint(t);
-
-    // Jagged crystalline icicle fang hanging down from inside the snow eave crest
-    const dripLen = 0.24 + ((i * 5 + 2) % 4) * 0.08;
-    const eaveIcicle = createSculptedIcicleDrip(
-      dripLen,
-      0.042 + (i % 2) * 0.008,
-      i % 3 === 1 ? crystallineIceBackMat : crystallineIceFrontMat,
-      (i % 2 === 0 ? 1 : -1) * 0.022
+    const ornament = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 10, 8),
+      i % 4 === 1 ? crimsonMat : goldBowMat
     );
-    eaveIcicle.position.set(pt.x, pt.y + 0.05, 0.135);
-    houseFrame.add(eaveIcicle);
-
-    // Evergreen eave garland & red/gold ornaments every 2nd scallop
-    if (i > 0 && i < snowLobeCount - 1 && i % 2 === 0) {
-      const ornament = new THREE.Mesh(
-        new THREE.SphereGeometry(0.045, 10, 8),
-        i % 4 === 0 ? crimsonMat : goldBowMat
-      );
-      ornament.position.set(pt.x, pt.y - 0.09, 0.24);
-      houseFrame.add(ornament);
-    }
+    ornament.position.set(pt.x, pt.y - 0.06, 0.21);
+    houseFrame.add(ornament);
   }
 
   // Multi-colored emissive Who-land fairy light strand along the gable roof eaves
@@ -1501,7 +1430,7 @@ export function buildPapaWhosHouseUnit(
     hearthGroup.add(flame);
   }
 
-  // Contoured Mantel Shelf with Sculpted Seussian Snow Valance (y = 1.30m, z = +0.18m -> world z ∈ [-1.96m, -1.64m])
+  // Contoured Mantel Shelf with Sculpted Seussian Molding (y = 1.30m, z = +0.18m -> world z ∈ [-1.96m, -1.64m])
   const mantelShelf = new THREE.Mesh(
     new RoundedBoxGeometry(1.84, 0.11, 0.32, 3, 0.04),
     tonedSnowMat
@@ -1510,17 +1439,12 @@ export function buildPapaWhosHouseUnit(
   mantelShelf.castShadow = true;
   hearthGroup.add(mantelShelf);
 
-  const mantelValance = createSeussianIcicleValance(
-    1.8,
-    0.16,
-    11,
-    tonedSnowMat,
-    iceGlazeMat,
-    0.045,
-    7
-  );
-  mantelValance.position.set(0, 1.28, 0.32);
-  hearthGroup.add(mantelValance);
+  const mantelMoldingPts = [
+    new THREE.Vector3(-0.9, 1.24, 0.31),
+    new THREE.Vector3(0, 1.27, 0.33),
+    new THREE.Vector3(0.9, 1.24, 0.31),
+  ];
+  hearthGroup.add(createCurvedTimberTube(mantelMoldingPts, 0.028, oliveTimberMat, 20, 8));
 
   // 4 Colorful Seussian Christmas Stockings with White Fuzzy Cuffs & Toe Pom-Poms (z = +0.36m -> world z = -1.62m)
   const stockingSpecs = [

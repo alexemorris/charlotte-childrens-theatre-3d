@@ -947,30 +947,23 @@ function buildSingleWhovilleHouse(
   dormerBody.castShadow = true;
   dormerGroup.add(dormerBody);
 
-  // Wet dripping snow cap on the side wing bay
+  // Flush-integrated snow gable mantle on the side wing bay
   const wingSnowShape = new THREE.Shape();
-  wingSnowShape.moveTo(-0.46, 0.28);
-  wingSnowShape.quadraticCurveTo(0, 0.56, 0.46, 0.28);
-  const wingDrips = 4;
-  for (let d = 0; d < wingDrips; d++) {
-    const xR = 0.46 - (d / wingDrips) * 0.92;
-    const xL = 0.46 - ((d + 1) / wingDrips) * 0.92;
-    const xM = (xR + xL) * 0.5;
-    const dipY = 0.12 - (d % 2) * 0.07;
-    wingSnowShape.bezierCurveTo(xR - 0.05, dipY + 0.06, xM + 0.04, dipY, xM, dipY);
-    wingSnowShape.bezierCurveTo(xM - 0.04, dipY, xL + 0.05, dipY + 0.06, xL, 0.22);
-  }
+  wingSnowShape.moveTo(-0.42, 0.29);
+  wingSnowShape.quadraticCurveTo(0, 0.49, 0.42, 0.29);
+  wingSnowShape.quadraticCurveTo(0.2, 0.33, 0, 0.36);
+  wingSnowShape.quadraticCurveTo(-0.2, 0.33, -0.42, 0.29);
   wingSnowShape.closePath();
 
   const wingSnowGeo = new THREE.ExtrudeGeometry(wingSnowShape, {
-    depth: houseDepth * 0.8,
+    depth: houseDepth * 0.72,
     bevelEnabled: true,
     bevelSegments: 2,
     steps: 1,
-    bevelSize: 0.022,
-    bevelThickness: 0.022,
+    bevelSize: 0.016,
+    bevelThickness: 0.016,
   });
-  wingSnowGeo.translate(0, 0, -houseDepth * 0.4);
+  wingSnowGeo.translate(0, 0, -houseDepth * 0.36);
   normalizeExtrudeUVs(wingSnowGeo, 'fit');
   wingSnowGeo.computeVertexNormals();
 
@@ -995,101 +988,91 @@ function buildSingleWhovilleHouse(
   house.add(dormerGroup);
 
   // ==========================================================================
-  // 3. WIDE OVERHANGING WET DRIPPING SNOW ROOF CORNICE (No Spiky Icicles)
+  // 3. INTEGRATED PITCHED GABLE SNOW ROOF MANTLE (Flush Eave Taper, No Blob Look)
   // ==========================================================================
-  const roofPeakY = cfg.heightM * 0.94;
-  const roofLeftX = topLeftX - 0.18;
-  const roofRightX = topRightX + 0.18;
-  const roofDepth = houseDepth + 0.16;
+  const roofPeakY = cfg.heightM * 0.91;
+  const roofLeftX = topLeftX - 0.11;
+  const roofRightX = topRightX + 0.11;
+  const roofDepth = houseDepth + 0.08;
 
   const getEavePoint = (u: number): { x: number; y: number; slopeRad: number } => {
-    const x = THREE.MathUtils.lerp(roofLeftX + 0.08, roofRightX - 0.08, u);
+    const x = THREE.MathUtils.lerp(roofLeftX + 0.06, roofRightX - 0.06, u);
     const y =
       THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
-      Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.52 -
-      0.03;
+      Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.78 -
+      0.02;
     const slopeRad = Math.atan2(rightEaveY - leftEaveY, roofRightX - roofLeftX);
     return { x, y, slopeRad };
   };
 
-  const buildWetSnowRoofShape = (yOffset: number): THREE.Shape => {
+  const buildIntegratedSnowRoofShape = (yOffset: number): THREE.Shape => {
     const shape = new THREE.Shape();
-    shape.moveTo(roofLeftX, leftEaveY - 0.04 + yOffset);
+    shape.moveTo(roofLeftX, leftEaveY - 0.02 + yOffset);
     shape.quadraticCurveTo(
-      roofLeftX * 0.82,
-      leftEaveY + 0.24 + yOffset,
+      THREE.MathUtils.lerp(roofLeftX, gablePeakX, 0.45),
+      THREE.MathUtils.lerp(leftEaveY, roofPeakY, 0.62) + 0.06 + yOffset,
       gablePeakX,
       roofPeakY + yOffset
     );
     shape.quadraticCurveTo(
-      roofRightX * 0.82,
-      rightEaveY + 0.24 + yOffset,
+      THREE.MathUtils.lerp(gablePeakX, roofRightX, 0.55),
+      THREE.MathUtils.lerp(roofPeakY, rightEaveY, 0.38) + 0.06 + yOffset,
       roofRightX,
-      rightEaveY - 0.04 + yOffset
+      rightEaveY - 0.02 + yOffset
     );
 
-    // Plump, rounded "wet" snow-melt drips & wavy lobes along the wide trapezoid eaves
-    const roofScallops = 8;
-    for (let s = 0; s < roofScallops; s++) {
-      const u0 = s / roofScallops;
-      const u1 = (s + 1) / roofScallops;
-      const uMid = (u0 + u1) * 0.5;
-      const xRight = THREE.MathUtils.lerp(roofRightX, roofLeftX, u0);
-      const xMid = THREE.MathUtils.lerp(roofRightX, roofLeftX, uMid);
-      const xLeft = THREE.MathUtils.lerp(roofRightX, roofLeftX, u1);
-      const stepW = xRight - xLeft;
-
-      const yBaseMid =
-        THREE.MathUtils.lerp(rightEaveY, leftEaveY, uMid) +
-        Math.sin(uMid * Math.PI) * (gablePeakY - eaveY) * 0.5;
-      const yBaseNext =
-        THREE.MathUtils.lerp(rightEaveY, leftEaveY, u1) +
-        Math.sin(u1 * Math.PI) * (gablePeakY - eaveY) * 0.5;
-
-      const dripDepth = s % 2 === 0 ? 0.24 : 0.12;
-      const dipY = yBaseMid - dripDepth + yOffset;
-      const notchY = yBaseNext - 0.03 + yOffset;
-
-      shape.bezierCurveTo(
-        xRight - stepW * 0.22,
-        yBaseMid - dripDepth * 0.6 + yOffset,
-        xMid + stepW * 0.16,
-        dipY,
-        xMid,
-        dipY
-      );
-      shape.bezierCurveTo(
-        xMid - stepW * 0.16,
-        dipY,
-        xLeft + stepW * 0.22,
-        yBaseMid - dripDepth * 0.6 + yOffset,
-        xLeft,
-        notchY
-      );
+    // Subtle, natural wet-snow eave line hugging the upper trapezoid gable contour
+    const eaveSteps = 16;
+    for (let s = 1; s <= eaveSteps; s++) {
+      const u = 1 - s / eaveSteps;
+      const x = THREE.MathUtils.lerp(roofLeftX, roofRightX, u);
+      const yArch =
+        THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
+        Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.82;
+      const wave =
+        Math.sin(u * Math.PI) *
+        (0.055 + 0.028 * Math.sin(u * Math.PI * 5 + cfg.dormerSide));
+      shape.lineTo(x, yArch - wave + yOffset);
     }
     shape.closePath();
     return shape;
   };
 
-  // Dark Seussian undercut shadow contour directly beneath the wet dripping snow eaves
-  const roofShadowGeo = new THREE.ExtrudeGeometry(buildWetSnowRoofShape(-0.042), {
-    depth: roofDepth * 0.94,
+  // Subtle dark Seussian eave shadow line beneath the roof overhang
+  const roofShadowGeo = new THREE.ExtrudeGeometry(buildIntegratedSnowRoofShape(-0.024), {
+    depth: roofDepth * 0.96,
     bevelEnabled: false,
   });
-  roofShadowGeo.translate(0, 0, -roofDepth * 0.46);
+  roofShadowGeo.translate(0, 0, -roofDepth * 0.48);
   const roofShadowMesh = new THREE.Mesh(roofShadowGeo, sharedMats.inkMat);
   house.add(roofShadowMesh);
 
-  // Plump, rounded wet snow roof blanket in front
-  const snowRoofGeo = new THREE.ExtrudeGeometry(buildWetSnowRoofShape(0), {
+  // Integrated 3D snow roof mantle whose lower edge tapers flush into the house wall
+  const snowRoofGeo = new THREE.ExtrudeGeometry(buildIntegratedSnowRoofShape(0), {
     depth: roofDepth,
     bevelEnabled: true,
-    bevelSegments: 3,
-    steps: 1,
-    bevelSize: 0.034,
-    bevelThickness: 0.034,
+    bevelSegments: 2,
+    steps: 2,
+    bevelSize: 0.022,
+    bevelThickness: 0.022,
   });
   snowRoofGeo.translate(0, 0, -roofDepth * 0.5);
+
+  const rPos = snowRoofGeo.attributes.position;
+  for (let i = 0; i < rPos.count; i++) {
+    const vx = rPos.getX(i);
+    const vy = rPos.getY(i);
+    const vz = rPos.getZ(i);
+    const u = Math.max(0, Math.min(1, (vx - roofLeftX) / (roofRightX - roofLeftX)));
+    const yArch =
+      THREE.MathUtils.lerp(leftEaveY, rightEaveY, u) +
+      Math.sin(u * Math.PI) * (gablePeakY - eaveY) * 0.82;
+    const hRatio = Math.max(0, Math.min(1, (vy - (yArch - 0.08)) / 0.24));
+    // Taper the bottom eave edge in Z so it blends smoothly onto the stucco wall
+    const zScale = 0.84 + 0.16 * Math.sin(hRatio * Math.PI * 0.5);
+    const camber = Math.max(0, 1 - Math.pow(vx / (halfW * 1.2), 2)) * 0.028 * Math.sign(vz);
+    rPos.setZ(i, vz * zScale + camber);
+  }
   normalizeExtrudeUVs(snowRoofGeo, 'fit');
   snowRoofGeo.computeVertexNormals();
 
@@ -1099,7 +1082,7 @@ function buildSingleWhovilleHouse(
   house.add(snowRoofCap);
 
   // ==========================================================================
-  // 4. S-CURVED CROOKED CHIMNEY (TubeGeometry + Tilted Chimney Pot & Snow Puffs)
+  // 4. S-CURVED CROOKED CHIMNEY (TubeGeometry + Architectural Seussian Chimney Pot)
   // ==========================================================================
   const chimBaseY = roofPeakY - 0.08;
   const lean = cfg.chimneyLeanX;
@@ -1111,18 +1094,18 @@ function buildSingleWhovilleHouse(
   ]);
 
   const chimneyPipe = new THREE.Mesh(
-    new THREE.TubeGeometry(chimCurve, 20, 0.115, 12, false),
-    sharedMats.snowCapMat
+    new THREE.TubeGeometry(chimCurve, 20, 0.11, 12, false),
+    stuccoMat
   );
   chimneyPipe.castShadow = true;
   house.add(chimneyPipe);
 
   const chimCollar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.145, 0.042, 10, 18),
-    sharedMats.snowShadeMat
+    new THREE.TorusGeometry(0.135, 0.036, 10, 18),
+    sharedMats.snowCapMat
   );
   chimCollar.rotation.x = Math.PI * 0.5;
-  chimCollar.position.set(gablePeakX, chimBaseY + 0.03, 0);
+  chimCollar.position.set(gablePeakX, chimBaseY + 0.02, 0);
   house.add(chimCollar);
 
   const chimTopPos = new THREE.Vector3(
@@ -1136,37 +1119,38 @@ function buildSingleWhovilleHouse(
 
   if (cfg.chimneyStyle === 't-cap') {
     const tBar = new THREE.Mesh(
-      new RoundedBoxGeometry(0.46, 0.18, 0.24, 3, 0.06),
-      sharedMats.snowCapMat
+      new RoundedBoxGeometry(0.42, 0.15, 0.22, 3, 0.05),
+      ribMat
     );
     tBar.castShadow = true;
     chimTopGroup.add(tBar);
 
-    const snowPuffTop = new THREE.Mesh(
-      new THREE.SphereGeometry(0.16, 12, 10),
-      sharedMats.snowShadeMat
-    );
-    snowPuffTop.scale.set(1.45, 0.65, 0.9);
-    snowPuffTop.position.set(0, 0.1, 0.03);
-    chimTopGroup.add(snowPuffTop);
-  } else if (cfg.chimneyStyle === 'bulb-pot') {
-    const potBulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 14, 12),
+    const tSnowRim = new THREE.Mesh(
+      new RoundedBoxGeometry(0.44, 0.055, 0.23, 2, 0.025),
       sharedMats.snowCapMat
     );
-    potBulb.scale.set(1.18, 0.88, 0.92);
-    chimTopGroup.add(potBulb);
-
+    tSnowRim.position.set(0, 0.08, 0);
+    chimTopGroup.add(tSnowRim);
+  } else if (cfg.chimneyStyle === 'bulb-pot') {
     const potRim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.13, 0.038, 10, 16),
-      sharedMats.snowShadeMat
+      new THREE.TorusGeometry(0.135, 0.038, 10, 18),
+      ribMat
     );
-    potRim.position.set(0, 0.08, 0.04);
+    potRim.rotation.x = Math.PI * 0.5;
+    potRim.position.set(0, 0.02, 0);
     chimTopGroup.add(potRim);
+
+    const potSnowLip = new THREE.Mesh(
+      new THREE.TorusGeometry(0.138, 0.026, 10, 18),
+      sharedMats.snowCapMat
+    );
+    potSnowLip.rotation.x = Math.PI * 0.5;
+    potSnowLip.position.set(0, 0.05, 0);
+    chimTopGroup.add(potSnowLip);
   } else {
     const ringPot = new THREE.Mesh(
-      new THREE.TorusGeometry(0.14, 0.055, 12, 20),
-      sharedMats.snowCapMat
+      new THREE.TorusGeometry(0.135, 0.044, 12, 20),
+      ribMat
     );
     chimTopGroup.add(ringPot);
 
@@ -1176,14 +1160,6 @@ function buildSingleWhovilleHouse(
     );
     innerHole.rotation.x = Math.PI * 0.5;
     chimTopGroup.add(innerHole);
-
-    const topPuff = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 10, 10),
-      sharedMats.snowShadeMat
-    );
-    topPuff.scale.set(1.3, 0.7, 0.9);
-    topPuff.position.set(0, 0.16, 0.02);
-    chimTopGroup.add(topPuff);
   }
   house.add(chimTopGroup);
 
@@ -1881,6 +1857,145 @@ export function buildGrinchWhovilleHouses(
   housesGroup.add(carolerChild);
 
   return housesGroup;
+}
+
+/**
+ * Builds the standalone DSR Whoville Upside-Down Trapezoid House Wagon for Scene 1F
+ * so Scene 1F shares the exact same upgraded house geometry, round bullseye windows,
+ * and integrated snow roof mantle as Scene 1B/1D/1G.
+ */
+export function buildDsrWhovilleHouseWagon(
+  rockTex: THREE.CanvasTexture
+): THREE.Group {
+  const snowRoofTex = createWhovilleSnowRoofTexture();
+  const papierMacheNormalTex = createPapierMacheNormalTexture();
+  const sharedMats = {
+    snowCapMat: new THREE.MeshStandardMaterial({
+      map: snowRoofTex,
+      normalMap: papierMacheNormalTex,
+      normalScale: new THREE.Vector2(0.28, 0.28),
+      color: 0xbcd0d8,
+      roughness: 0.62,
+      metalness: 0.02,
+    }),
+    snowShadeMat: new THREE.MeshStandardMaterial({
+      map: rockTex,
+      normalMap: papierMacheNormalTex,
+      normalScale: new THREE.Vector2(0.28, 0.28),
+      color: 0x9ab4cc,
+      roughness: 0.66,
+      metalness: 0.02,
+    }),
+    icicleMat: new THREE.MeshStandardMaterial({
+      color: 0xaec6d6,
+      roughness: 0.56,
+      metalness: 0.08,
+    }),
+    inkMat: new THREE.MeshBasicMaterial({ color: 0x181422 }),
+    wagonSteelMat: new THREE.MeshStandardMaterial({
+      color: 0x242a38,
+      roughness: 0.68,
+    }),
+    stoneStepMat: new THREE.MeshStandardMaterial({
+      map: rockTex,
+      color: 0x8a929e,
+      roughness: 0.72,
+    }),
+    oliveFrameMat: new THREE.MeshStandardMaterial({
+      color: 0x6e8c3a,
+      roughness: 0.56,
+    }),
+    creamFrameMat: new THREE.MeshStandardMaterial({
+      map: createWhovilleArchCasingTexture(),
+      color: 0xd8d0c4,
+      roughness: 0.58,
+    }),
+    candyFrameMat: new THREE.MeshStandardMaterial({
+      map: createCandyStripeTexture('#d8d0c8', '#d4283c', 10),
+      roughness: 0.52,
+    }),
+    giantCandyCaneMat: new THREE.MeshStandardMaterial({
+      map: createCandyStripeTexture('#d8d4d0', '#d81c34', 6),
+      roughness: 0.28,
+      metalness: 0.06,
+    }),
+    brassMat: new THREE.MeshStandardMaterial({
+      color: 0xe6b832,
+      roughness: 0.32,
+      metalness: 0.65,
+    }),
+    wreathGreenMat: new THREE.MeshStandardMaterial({
+      map: createPaintedPineFoliageTexture(false),
+      roughness: 0.58,
+    }),
+    crimsonBowMat: new THREE.MeshStandardMaterial({
+      color: 0xd42236,
+      roughness: 0.48,
+    }),
+    goldBowMat: new THREE.MeshStandardMaterial({
+      color: 0xf2c428,
+      roughness: 0.42,
+    }),
+    windowGlowMat: new THREE.MeshStandardMaterial({
+      map: createAmberWindowTexture(),
+      color: 0xffe478,
+      emissive: 0xffa622,
+      emissiveIntensity: 0.68,
+      roughness: 0.35,
+    }),
+    shutterMat: new THREE.MeshStandardMaterial({
+      map: createPaintedShutterTexture(),
+      roughness: 0.56,
+    }),
+    doorPanelMat: new THREE.MeshStandardMaterial({
+      map: createWhovilleDoorTexture(),
+      roughness: 0.48,
+    }),
+  };
+
+  return buildSingleWhovilleHouse(
+    {
+      label: 'DSR_1F',
+      position: new THREE.Vector3(-3.32, 0, -2.82),
+      rotationY: 0.14,
+      widthM: 2.26,
+      heightM: 2.84,
+      depthScale: 0.36,
+      basePinkHex: '#d83e82',
+      bellyPinkHex: '#f26aa8',
+      stripePinkHex: '#b42464',
+      ribColor: 0xc42e72,
+      doorX: 0.22,
+      doorWidth: 0.56,
+      doorHeight: 1.24,
+      doorTiltZ: -0.05,
+      doorFrameStyle: 'candy',
+      dormerSide: -1,
+      chimneyLeanX: -0.14,
+      chimneyStyle: 't-cap',
+      windows: [
+        {
+          x: -0.48,
+          y: 1.54,
+          width: 0.62,
+          height: 0.62,
+          tiltZ: 0.08,
+          hasShutters: true,
+          hasWreath: true,
+        },
+        {
+          x: 0.48,
+          y: 1.74,
+          width: 0.4,
+          height: 0.4,
+          tiltZ: -0.07,
+          hasShutters: false,
+          hasWreath: false,
+        },
+      ],
+    },
+    sharedMats
+  );
 }
 
 /**
