@@ -950,37 +950,45 @@ function createProceduralStratifiedCliffWing(
   const totalSpanW = Math.max(0.85, outerEdgeAbsX - innerEdgeAbsX);
 
   const outerTopY = height * (0.95 + rng() * 0.05);
-  const midRidgeY = height * (0.86 + (rng() - 0.5) * 0.05);
+  const midRidgeY = height * (0.89 + (rng() - 0.5) * 0.04);
   const innerShoulderY =
     archetype === 'overhanging-bluff'
-      ? height * (0.82 + rng() * 0.05)
+      ? height * (0.82 + rng() * 0.04)
       : archetype === 'canyon-ridge'
-        ? height * (0.74 + rng() * 0.06)
-        : height * (0.76 + rng() * 0.06);
+        ? height * (0.76 + rng() * 0.05)
+        : height * (0.78 + rng() * 0.05);
 
-  const topReachW =
+  // Subtle cantilevered upper overhang: the top prow reaches slightly further onstage (`prowTipU`),
+  // then carves an angled undercut inward (`undercutU`) before stepping to the mid ledge and base!
+  const prowTipU =
     archetype === 'overhanging-bluff'
-      ? totalSpanW * (0.94 + rng() * 0.04)
+      ? totalSpanW * (1.06 + rng() * 0.04)
       : archetype === 'stepped-terrace'
-        ? totalSpanW * (0.88 + rng() * 0.06)
-        : totalSpanW * (0.9 + rng() * 0.06);
+        ? totalSpanW * (1.02 + rng() * 0.04)
+        : totalSpanW * (1.04 + rng() * 0.04);
 
-  // Stepped craggy inner rock cliff profile descending to the stage floor
-  const upperLedgeY = innerShoulderY * 0.72;
-  const upperLedgeU = Math.min(totalSpanW, topReachW + 0.05 + rng() * 0.05);
+  const prowCrownU = prowTipU * 0.84;
+  const prowCrownY = innerShoulderY + height * 0.045;
+  const prowUndersideU = prowTipU - (0.1 + rng() * 0.03);
+  const prowUndersideY = innerShoulderY - height * 0.075;
+
+  // Concave rock undercut beneath the overhanging upper lip (~0.36m-0.42m overhang)
+  const upperLedgeY = innerShoulderY * 0.68;
+  const undercutU = Math.max(0.55, prowTipU - (0.38 + rng() * 0.06));
   const midLedgeY = innerShoulderY * 0.44;
-  const midLedgeU = Math.min(totalSpanW, upperLedgeU + 0.08 + rng() * 0.06);
-  const baseU = Math.min(totalSpanW, midLedgeU + 0.05 + rng() * 0.05);
+  const midLedgeU = undercutU + (0.15 + rng() * 0.04);
+  const baseU = Math.max(0.6, prowTipU - (0.3 + rng() * 0.05));
 
   const pts: Array<readonly [number, number]> = [
     [-0.1 * (0.8 + rng() * 0.3), 0],
     [-0.14 * (0.75 + rng() * 0.3), height * 0.45],
     [-0.08 * (0.7 + rng() * 0.3), height * 0.78],
     [0.02, outerTopY],
-    [topReachW * 0.48, midRidgeY],
-    [topReachW, innerShoulderY],
-    [upperLedgeU, upperLedgeY],
-    [upperLedgeU - 0.02, upperLedgeY - 0.16],
+    [prowTipU * 0.46, midRidgeY],
+    [prowCrownU, prowCrownY],
+    [prowTipU, innerShoulderY],
+    [prowUndersideU, prowUndersideY],
+    [undercutU, upperLedgeY],
     [midLedgeU, midLedgeY],
     [baseU, 0],
   ];
@@ -1036,9 +1044,9 @@ function createProceduralStratifiedCliffWing(
   //    Each buttress has a topology-conforming snow & ice cap seated directly on its actual 3D top ridge!
   const rockButtressSpecs = [
     {
-      u: topReachW * 0.34,
+      u: baseU * 0.34,
       y: height * 0.31,
-      w: totalSpanW * 0.42,
+      w: baseU * 0.42,
       h: height * 0.38,
       d: extrudeDepth * 0.48,
       zCenter: extrudeDepth * 0.24,
@@ -1046,9 +1054,9 @@ function createProceduralStratifiedCliffWing(
       sOff: 19,
     },
     {
-      u: topReachW * 0.7,
+      u: baseU * 0.68,
       y: height * 0.21,
-      w: totalSpanW * 0.36,
+      w: baseU * 0.36,
       h: height * 0.3,
       d: extrudeDepth * 0.44,
       zCenter: extrudeDepth * 0.22,
@@ -1119,13 +1127,13 @@ function createProceduralStratifiedCliffWing(
   }
 
   // 3. Integrated Summit Snow Mantle (`createIntegratedRidgeSnowMantle`)
-  //    Follows the exact upper ridge vertices of `pts` AND the 3D `cliffSurfaceZOffset`!
+  //    Follows the exact upper ridge vertices out to the overhanging prow tip `[prowTipU, innerShoulderY]`!
   const ridgePtsLocal: Array<readonly [number, number]> = [
     [-0.04 * inwardSign, outerTopY - 0.04],
     [0.02 * inwardSign, outerTopY],
-    [topReachW * 0.48 * inwardSign, midRidgeY],
-    [topReachW * inwardSign, innerShoulderY],
-    [upperLedgeU * inwardSign, upperLedgeY],
+    [prowTipU * 0.46 * inwardSign, midRidgeY],
+    [prowCrownU * inwardSign, prowCrownY],
+    [prowTipU * inwardSign, innerShoulderY],
   ];
 
   const summitSnowMantle = createIntegratedRidgeSnowMantle(
@@ -1138,9 +1146,9 @@ function createProceduralStratifiedCliffWing(
   );
   group.add(summitSnowMantle);
 
-  // 4. Stepped inner cliff terrace snow pocket seated directly on the actual `[upperLedgeU - 0.02, upperLedgeY - 0.16] -> [midLedgeU, midLedgeY]` rock step!
+  // 4. Stepped inner cliff terrace snow pocket seated directly on the actual `[undercutU, upperLedgeY] -> [midLedgeU, midLedgeY]` rock step beneath the overhang!
   const stepTerracePts: Array<readonly [number, number]> = [
-    [(upperLedgeU - 0.02) * inwardSign, upperLedgeY - 0.16],
+    [undercutU * inwardSign, upperLedgeY],
     [midLedgeU * inwardSign, midLedgeY],
   ];
   const stepTerraceSnow = createIntegratedRidgeSnowMantle(
@@ -1164,7 +1172,7 @@ function createProceduralStratifiedCliffWing(
       inwardSign
     );
     pine.position.set(
-      inwardSign * (topReachW * 0.52),
+      inwardSign * (prowTipU * 0.48),
       midRidgeY + 0.14,
       0.02
     );
@@ -1509,7 +1517,7 @@ export function buildGrinchSnowPortals(
       archetype: side === -1 ? 'stepped-terrace' : 'fractured-buttress',
       seed: side === -1 ? 109 : 227,
       outerEdgeAbsX: side === -1 ? 5.82 : 5.76,
-      innerEdgeAbsX: side === -1 ? 3.88 : 3.94,
+      innerEdgeAbsX: side === -1 ? 3.98 : 4.02,
       height: side === -1 ? 3.98 : 4.08,
       zPos: side === -1 ? 0.26 : 0.21,
       extrudeDepth: 0.34,
@@ -1547,7 +1555,7 @@ export function buildGrinchSnowPortals(
       archetype: 'canyon-ridge',
       seed: side === -1 ? 347 : 463,
       outerEdgeAbsX: side === -1 ? 5.84 : 5.86,
-      innerEdgeAbsX: side === -1 ? 4.28 : 4.34,
+      innerEdgeAbsX: side === -1 ? 4.38 : 4.42,
       height: side === -1 ? 3.16 : 3.24,
       zPos: side === -1 ? -0.92 : -0.98,
       extrudeDepth: 0.26,
@@ -1567,13 +1575,13 @@ export function buildGrinchSnowPortals(
     wingWavesGroup.add(layer2);
 
     // Layer 3: Iconic Back Overhanging Cantilevered Cliff Prows (z = -3.38m SR / -3.42m SL)
-    // Seated cleanly behind the DSR & MSL Whoville Houses!
+    // Back-left cliff (`side === -1`, audience left) shifted 30cm (+0.30m) further offstage!
     const layer3BackProw = createBackOverhangingSnowCliffProw({
       side,
       seed: side === -1 ? 587 : 691,
-      outerEdgeAbsX: side === -1 ? 5.88 : 5.9,
-      baseInnerAbsX: side === -1 ? 4.38 : 4.42,
-      prowInnerAbsX: side === -1 ? 3.08 : 3.14,
+      outerEdgeAbsX: side === -1 ? 6.18 : 5.9,
+      baseInnerAbsX: side === -1 ? 4.68 : 4.42,
+      prowInnerAbsX: side === -1 ? 3.38 : 3.14,
       height: side === -1 ? 4.62 : 4.72,
       zPos: side === -1 ? -3.38 : -3.42,
       extrudeDepth: 0.22,
